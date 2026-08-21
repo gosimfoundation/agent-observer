@@ -1,0 +1,98 @@
+# Reference copy of the confirmed 2026 event data.
+# The website currently reads public copy from src/i18n/en.ts and src/i18n/zh.ts.
+
+event:
+  name: "2026 Open Survey Agent Hackathon"
+  tagline: "Requirements as Source Code"
+  organizer: "OAIC"
+  dates: "September 20–October 17, 2026"
+  start_time: "2026-09-01T00:00:00+08:00"
+  end_time: "2026-10-17T23:59:59+08:00"
+  format: "Online + GOSIM Shenzhen"
+  registration_status: "open"
+  team_size: null
+  registration_deadline: null
+  participation_fee: null
+  contact: null
+
+confirmed_contributors:
+  - name: "FWAI Institute"
+    role: "Lead · Funding"
+  - name: "Shanghai Jiao Tong University CoPhi"
+    role: "ARC · ARC-Bench"
+
+models:
+  - "Kimi"
+  - "GLM"
+  - "MiniMax"
+  - "DeepSeek"
+
+capability_domains:
+  - id: "auth-session"
+    title: "Auth & Session"
+    stage: "Qualifier"
+  - id: "repository-lifecycle"
+    title: "Repository Lifecycle"
+    stage: "Qualifier"
+  - id: "issues-forms"
+    title: "Issues & Issue Forms"
+    stage: "Qualifier"
+  - id: "pull-request-review"
+    title: "Pull Request Review"
+    stage: "Qualifier"
+  - id: "actions-workflow"
+    title: "Actions: Workflow & Scheduling"
+    stage: "Qualifier · Foundation"
+  - id: "org-permissions-audit"
+    title: "Org, Permissions & Audit"
+    stage: "Qualifier · Foundation"
+  - id: "compute-engine"
+    title: "The Compute Engine"
+    stage: "Grand Challenge"
+
+awards:
+  total_pool: "$51,500"
+  count: 11
+  tiers:
+    - name: "OAIC Grand Prize"
+      prize: "$20,000"
+      count: 1
+    - name: "First Prize"
+      prize: "$10,000"
+      count: 2
+    - name: "Second Prize"
+      prize: "$3,000"
+      count: 3
+    - name: "Third Prize"
+      prize: "$500"
+      count: 5
+
+judging:
+  weights: null
+  criteria:
+    - name: "GUI Test Pass Rate"
+      method: "automatic"
+    - name: "Token Efficiency"
+      method: "automatic"
+    - name: "Completion Time"
+      method: "automatic"
+    - name: "Harness Engineering"
+      method: "AI prescore + judges"
+    - name: "Software Maintainability"
+      method: "AI prescore + judges"
+
+schedule:
+  - name: "Online Training"
+    dates: "September 20–30"
+    format: "Online"
+  - name: "Competition"
+    dates: "October 1–17"
+    format: "Online"
+  - name: "Awards Day"
+    dates: "October 17"
+    format: "GOSIM Shenzhen"
+
+submission:
+  - "Runnable rebuild with code and startup instructions"
+  - "Complete production trace"
+  - "3–5 minute demo"

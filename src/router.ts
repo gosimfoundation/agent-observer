@@ -1,0 +1,22 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from './pages/HomePage.vue'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    { path: '/', component: HomePage },
+    { path: '/vision', component: () => import('./pages/VisionPage.vue') },
+    { path: '/register', component: () => import('./pages/RegisterPage.vue') },
+  ],
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) {
+      return new Promise(resolve => {
+        window.setTimeout(() => resolve({ el: to.hash, top: 64, behavior: 'smooth' }), 50)
+      })
+    }
+    return { top: 0 }
+  },
+})
+
+export default router
