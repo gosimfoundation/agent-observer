@@ -25,9 +25,9 @@ const { t, pick } = useI18n()
                 <p class="max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">{{ t('cta.tagline') }}</p>
                 <p class="mt-4 font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('cta.location') }}</p>
               </div>
-              <router-link to="/register" class="inline-flex min-w-60 items-center justify-between bg-[#f5f5f5] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-black transition-colors hover:bg-[#315efb] hover:text-white">
-                {{ pick('Registration coming soon', '报名即将开始') }} <span>↗</span>
-              </router-link>
+              <span aria-disabled="true" class="inline-flex min-w-60 items-center bg-[#f5f5f5] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-black">
+                {{ pick('Registration coming soon', '报名即将开始') }}
+              </span>
             </div>
           </div>
         </div>

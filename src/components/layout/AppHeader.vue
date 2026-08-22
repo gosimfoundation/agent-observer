@@ -58,7 +58,7 @@ function scrollTo(hash: string) {
         <button @click="toggleLocale" class="inline-flex h-10 min-w-12 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
           {{ pick('中文', 'EN') }}
         </button>
-        <router-link to="/register" class="cosmos-register-link ml-1 hidden h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Registration coming soon', '报名即将开始') }}</router-link>
+        <span aria-disabled="true" class="cosmos-register-link pointer-events-none ml-1 hidden h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Registration coming soon', '报名即将开始') }}</span>
         <button class="ml-1 lg:hidden" @click="mobileOpen = !mobileOpen" :aria-label="pick('Menu', '菜单')">
           <svg class="h-6 w-6 text-text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
@@ -80,9 +80,9 @@ function scrollTo(hash: string) {
         @click.prevent="scrollTo(item.href!)"
         class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white"
       >{{ t(item.key) }}</a>
-      <router-link to="/register" @click="mobileOpen = false" class="cosmos-register-link mt-3 block border px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-widest">
+      <span aria-disabled="true" class="cosmos-register-link pointer-events-none mt-3 block border px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-widest">
         {{ pick('Registration coming soon', '报名即将开始') }}
-      </router-link>
+      </span>
     </div>
   </header>
 </template>

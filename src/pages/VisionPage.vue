@@ -127,12 +127,12 @@ const sections = computed(() => t('vision.sections') as Section[])
 
       <div class="reveal paper-sheet mt-16 p-8 text-center md:p-14">
         <p class="text-2xl font-semibold tracking-[-.045em] text-[#0a0a0b] md:text-4xl">{{ pick('Ready to build the next observer?', '准备好构建下一代观测员了吗？') }}</p>
-        <router-link
-          to="/register"
-          class="relative z-10 mt-8 inline-block bg-[#0a0a0b] px-7 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] transition-colors hover:bg-[#315efb]"
+        <span
+          aria-disabled="true"
+          class="relative z-10 mt-8 inline-block bg-[#0a0a0b] px-7 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5]"
         >
-          {{ pick('Registration coming soon', '报名即将开始') }} ↗
-        </router-link>
+          {{ pick('Registration coming soon', '报名即将开始') }}
+        </span>
       </div>
     </article>
   </main>

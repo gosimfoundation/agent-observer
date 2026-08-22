@@ -7,7 +7,7 @@ const router = createRouter({
     { path: '/', component: HomePage },
     { path: '/brief', component: () => import('./pages/VisionPage.vue') },
     { path: '/vision', redirect: '/brief' },
-    { path: '/register', component: () => import('./pages/RegisterPage.vue') },
+    { path: '/register', redirect: '/' },
   ],
   scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) return savedPosition

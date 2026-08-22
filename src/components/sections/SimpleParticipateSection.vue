@@ -40,9 +40,9 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
               </div>
             </div>
 
-            <router-link to="/register" class="mt-10 inline-flex w-full items-center justify-between bg-[#090909] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] transition-colors hover:bg-[#315efb] md:w-auto md:min-w-60">
-              {{ t('home.participate.cta') }} <span>↗</span>
-            </router-link>
+            <span aria-disabled="true" class="mt-10 inline-flex w-full items-center bg-[#090909] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] md:w-auto md:min-w-60">
+              {{ t('home.participate.cta') }}
+            </span>
           </div>
         </div>
       </div>

@@ -40,9 +40,9 @@ const pipeline = computed(() => t('hero.pipeline') as Step[])
             <p class="mt-4 font-mono text-xs uppercase leading-[1.7] tracking-[.08em] text-[#315efb] md:text-sm">{{ t('hero.subtitle') }}</p>
           </div>
           <div class="flex flex-wrap gap-3 md:justify-end">
-            <router-link to="/register" class="hero-action hero-action-primary">
-              {{ pick('Registration coming soon', '报名即将开始') }} <span>↗</span>
-            </router-link>
+            <span aria-disabled="true" class="hero-action hero-action-primary pointer-events-none">
+              {{ pick('Registration coming soon', '报名即将开始') }}
+            </span>
             <router-link to="/brief" class="hero-action">
               {{ pick('Mission brief', '赛题简报') }} <span>→</span>
             </router-link>
