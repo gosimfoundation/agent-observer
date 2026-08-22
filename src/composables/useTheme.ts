@@ -9,7 +9,7 @@ const THEME_KEY: InjectionKey<{
 }> = Symbol('theme')
 
 export function provideTheme() {
-  const theme = ref<Theme>('light')
+  const theme = ref<Theme>('dark')
   const isDark = computed(() => theme.value === 'dark')
 
   function applyTheme(t: Theme) {
@@ -23,12 +23,12 @@ export function provideTheme() {
 
   function toggleTheme() {
     theme.value = theme.value === 'dark' ? 'light' : 'dark'
-    localStorage.setItem('oaic-theme-v2', theme.value)
+    localStorage.setItem('cosmos26-theme-v1', theme.value)
     applyTheme(theme.value)
   }
 
   onMounted(() => {
-    const saved = localStorage.getItem('oaic-theme-v2') as Theme | null
+    const saved = localStorage.getItem('cosmos26-theme-v1') as Theme | null
     if (saved === 'light' || saved === 'dark') {
       theme.value = saved
     }

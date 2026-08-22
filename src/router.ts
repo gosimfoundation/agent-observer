@@ -5,7 +5,8 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: HomePage },
-    { path: '/vision', component: () => import('./pages/VisionPage.vue') },
+    { path: '/brief', component: () => import('./pages/VisionPage.vue') },
+    { path: '/vision', redirect: '/brief' },
     { path: '/register', component: () => import('./pages/RegisterPage.vue') },
   ],
   scrollBehavior(to, _from, savedPosition) {

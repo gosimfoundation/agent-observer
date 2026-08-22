@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import { useScrollReveal } from '../composables/useScrollReveal'
+import domeImage from '../assets/images/cosmos-dome.jpg'
 
 useScrollReveal()
 const { t, pick } = useI18n()
@@ -25,131 +26,128 @@ const sections = computed(() => t('vision.sections') as Section[])
 </script>
 
 <template>
-  <main class="min-h-screen bg-bg-primary pb-24">
-    <div class="border-b border-border-subtle">
-      <div class="mx-auto max-w-[1440px] px-6 py-16 md:px-10 md:py-24 xl:px-14">
-        <div class="reveal mx-auto max-w-3xl">
+  <main class="poster-canvas min-h-screen pb-24">
+    <header class="vision-hero hero-section relative min-h-[720px] overflow-hidden border-b border-white/20">
+      <div class="vision-hero-photo" aria-hidden="true">
+        <img :src="domeImage" alt="">
+        <div class="vision-plasma plasma-field"></div>
+      </div>
+      <div class="vision-hero-overlay" aria-hidden="true"></div>
+      <div class="relative z-10 mx-auto flex min-h-[720px] max-w-[1600px] flex-col justify-between px-5 py-12 md:px-10 md:py-20 xl:px-14">
+        <div>
           <router-link
             to="/"
-            class="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.12em] text-text-tertiary transition-colors hover:text-accent"
+            class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[.1em] text-white/55 transition-colors hover:text-[#315efb]"
           >
             <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5m7 7-7-7 7-7"/></svg>
             {{ t('vision.backToHome') }}
           </router-link>
-          <h1 class="mt-8 text-4xl font-semibold tracking-[-.04em] text-text-primary md:text-6xl">
-            {{ t('vision.pageTitle') }}
-          </h1>
-          <p class="mt-4 text-lg text-text-secondary md:text-xl">{{ t('vision.pageSubtitle') }}</p>
-          <p class="mt-8 text-base leading-relaxed text-text-secondary md:text-lg">{{ t('vision.intro') }}</p>
+        </div>
+        <div>
+          <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('OPEN SURVEY AGENT HACKATHON / EVENT BRIEF / 01—07', '巡天开源智能体黑客松 / 赛事说明 / 01—07') }}</span>
+          <h1 class="mt-7 max-w-[14ch] text-balance text-[clamp(3rem,6.5vw,6.75rem)] font-semibold leading-[1.02] tracking-[-.055em] text-[#f5f5f5]">{{ t('vision.pageTitle') }}</h1>
+          <p class="mt-8 max-w-2xl text-base font-medium leading-[1.7] text-white/80 md:text-lg">{{ t('vision.pageSubtitle') }}</p>
+          <p class="mt-7 max-w-3xl border-t border-white/30 pt-6 text-sm leading-relaxed text-white/65 md:text-base">{{ t('vision.intro') }}</p>
         </div>
       </div>
-    </div>
+    </header>
 
-    <article class="mx-auto max-w-3xl px-6 pt-16 md:px-10 md:pt-24 xl:px-14">
+    <article class="mx-auto max-w-[1400px] px-5 pt-12 md:px-10 md:pt-20 xl:px-14">
       <section
         v-for="(section, index) in sections"
         :key="index"
-        class="reveal mb-20 scroll-mt-24 md:mb-28"
+        class="vision-section reveal grid scroll-mt-24 border-t border-white/20 py-16 md:py-24 lg:grid-cols-[12rem_1fr] lg:gap-16"
         :id="`section-${index + 1}`"
       >
-        <span class="section-kicker">{{ section.kicker }}</span>
-        <h2 class="mt-6 text-2xl font-semibold tracking-[-.03em] text-text-primary md:text-4xl">
-          {{ section.title }}
-        </h2>
+        <aside class="mb-10 lg:mb-0">
+          <div class="vision-number font-mono text-xs text-[#315efb]">0{{ index + 1 }}</div>
+          <span class="mt-8 inline-block font-mono text-xs uppercase tracking-[.1em] text-text-tertiary">{{ section.kicker }}</span>
+        </aside>
 
-        <div class="mt-8 space-y-5 text-base leading-relaxed text-text-secondary md:text-lg">
-          <p v-for="(paragraph, pIndex) in section.paragraphs" :key="pIndex">{{ paragraph }}</p>
-        </div>
+        <div>
+          <h2 class="section-title">{{ section.title }}</h2>
 
-        <blockquote
-          v-if="section.highlight"
-          class="mt-8 border-l-2 border-accent bg-bg-secondary p-6 text-base leading-relaxed text-text-primary md:text-lg"
-        >
-          {{ section.highlight }}
-        </blockquote>
+          <div class="mt-10 grid gap-6 text-base leading-relaxed text-text-secondary md:text-lg lg:grid-cols-2">
+            <p v-for="(paragraph, pIndex) in section.paragraphs" :key="pIndex" :class="pIndex === 0 ? 'text-text-primary' : ''">{{ paragraph }}</p>
+          </div>
 
-        <div v-if="section.duties" class="mt-10">
-          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <blockquote v-if="section.highlight" class="paper-sheet relative z-10 mt-10 p-7 text-lg font-medium leading-relaxed text-[#0a0a0b] md:p-10 md:text-2xl">{{ section.highlight }}</blockquote>
+
+          <div v-if="section.duties" class="mt-12 grid border-t border-white/25 sm:grid-cols-2 lg:grid-cols-3">
             <div
               v-for="duty in section.duties"
               :key="duty.n"
-              class="border border-border bg-bg-secondary p-5"
+              class="border-b border-white/20 p-5 sm:border-r md:p-6"
             >
-              <span class="mono-label text-accent">{{ duty.n }}</span>
-              <h3 class="mt-3 text-base font-medium text-text-primary">{{ duty.title }}</h3>
+              <span class="font-mono text-xs tracking-[.1em] text-[#315efb]">{{ duty.n }}</span>
+              <h3 class="mt-4 text-xl font-semibold leading-tight tracking-[-.03em] text-text-primary md:text-2xl">{{ duty.title }}</h3>
               <p class="mt-2 text-sm leading-relaxed text-text-secondary">{{ duty.desc }}</p>
             </div>
-          </div>
-        </div>
 
-        <div v-if="section.loop" class="mt-10">
-          <h3 class="text-base font-medium text-text-primary md:text-lg">{{ section.loopTitle }}</h3>
-          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          </div>
+
+          <div v-if="section.loop" class="mt-12">
+            <h3 class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ section.loopTitle }}</h3>
+            <div class="mt-6 grid border-y border-white/25 sm:grid-cols-2 lg:grid-cols-5">
             <div
               v-for="stage in section.loop"
               :key="stage.stage"
-              class="border border-border bg-bg-secondary p-4"
+              class="border-b border-white/20 p-4 last:border-b-0 sm:border-r lg:border-b-0"
             >
-              <h4 class="font-mono text-[10px] uppercase tracking-[.12em] text-accent">{{ stage.stage }}</h4>
+              <h4 class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ stage.stage }}</h4>
               <ul class="mt-3 space-y-1 text-sm text-text-secondary">
                 <li v-for="item in stage.items" :key="item">{{ item }}</li>
               </ul>
             </div>
-          </div>
-        </div>
-
-        <div v-if="section.starterCode" class="mt-10">
-          <pre class="code-block">{{ section.starterCode }}</pre>
-        </div>
-
-        <div v-if="section.archCode" class="mt-4">
-          <pre class="code-block">{{ section.archCode }}</pre>
-        </div>
-
-        <div v-if="section.formula" class="mt-10">
-          <pre class="code-block">{{ section.formula }}</pre>
-        </div>
-
-        <div v-if="section.actionCode" class="mt-10">
-          <pre class="code-block">{{ section.actionCode }}</pre>
-        </div>
-
-        <div v-if="section.rounds" class="mt-10 space-y-4">
-          <div
-            v-for="round in section.rounds"
-            :key="round.number"
-            class="border border-border bg-bg-secondary p-5 md:p-6"
-          >
-            <div class="flex flex-wrap items-baseline gap-3">
-              <span class="mono-label text-accent">{{ round.number }}</span>
-              <h3 class="text-lg font-medium text-text-primary">{{ round.name }}</h3>
-              <span class="text-sm text-text-tertiary">{{ round.dates }} · {{ round.format }}</span>
             </div>
-            <div class="mt-4 grid gap-4 text-sm leading-relaxed text-text-secondary md:grid-cols-2 md:text-base">
+          </div>
+
+          <div v-if="section.starterCode" class="mt-10"><pre class="code-block">{{ section.starterCode }}</pre></div>
+          <div v-if="section.archCode" class="mt-4"><pre class="code-block">{{ section.archCode }}</pre></div>
+          <div v-if="section.formula" class="mt-10"><pre class="code-block">{{ section.formula }}</pre></div>
+          <div v-if="section.actionCode" class="mt-10"><pre class="code-block">{{ section.actionCode }}</pre></div>
+
+          <div v-if="section.rounds" class="mt-12 space-y-4">
+            <div v-for="round in section.rounds" :key="round.number" class="grid border-t border-white/25 py-7 md:grid-cols-[8rem_1fr] md:gap-8">
               <div>
-                <span class="mono-label text-text-tertiary">{{ t('schedule.challengeLabel') }}</span>
-                <p class="mt-1">{{ round.challenge }}</p>
+                <span class="font-mono text-xs text-[#315efb]">{{ round.number }}</span>
+                <p class="mt-3 font-mono text-xs uppercase tracking-[.1em] text-text-tertiary">{{ round.dates }}<br>{{ round.format }}</p>
               </div>
-              <div>
-                <span class="mono-label text-text-tertiary">{{ t('schedule.participantsLabel') }}</span>
-                <p class="mt-1">{{ round.participants }}</p>
+              <div class="mt-5 md:mt-0">
+                <h3 class="text-2xl font-semibold leading-tight tracking-[-.04em] text-text-primary md:text-3xl">{{ round.name }}</h3>
+                <div class="mt-5 grid gap-5 text-sm leading-relaxed text-text-secondary md:grid-cols-2 md:text-base">
+                  <div><span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('schedule.challengeLabel') }}</span><p class="mt-2">{{ round.challenge }}</p></div>
+                  <div><span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('schedule.participantsLabel') }}</span><p class="mt-2">{{ round.participants }}</p></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div class="reveal mt-16 border-t border-border pt-12 text-center">
-        <p class="text-lg text-text-secondary md:text-xl">
-          {{ pick('Ready to build the next observer?', '准备好构建下一代观测员了吗？') }}
-        </p>
+      <div class="reveal paper-sheet mt-16 p-8 text-center md:p-14">
+        <p class="text-2xl font-semibold tracking-[-.045em] text-[#0a0a0b] md:text-4xl">{{ pick('Ready to build the next observer?', '准备好构建下一代观测员了吗？') }}</p>
         <router-link
           to="/register"
-          class="mt-6 inline-block border border-accent px-6 py-3 font-mono text-[10px] uppercase tracking-[.12em] text-accent transition-colors hover:bg-accent hover:text-btn-text"
+          class="relative z-10 mt-8 inline-block bg-[#0a0a0b] px-7 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] transition-colors hover:bg-[#315efb]"
         >
-          {{ t('nav.applyNow') }}
+          {{ pick('Registration coming soon', '报名即将开始') }} ↗
         </router-link>
       </div>
     </article>
   </main>
 </template>
+
+<style scoped>
+.vision-hero { background: #060607; }
+.vision-hero-photo { position: absolute; inset: 0; }
+.vision-hero-photo > img { width: 100%; height: 100%; object-fit: cover; object-position: 58% center; filter: grayscale(1) contrast(1.28) brightness(.58); }
+.vision-hero-overlay { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(6,6,7,.94) 0%, rgba(6,6,7,.74) 46%, rgba(6,6,7,.18) 100%), linear-gradient(0deg, rgba(6,6,7,.88), transparent 62%); }
+.vision-plasma { top: 18%; right: -6%; transform: rotate(-8deg); }
+.vision-section:nth-child(even) .vision-number { color: #315efb; }
+@media (max-width: 720px) {
+  .vision-hero-photo > img { object-position: 66% center; }
+  .vision-hero-overlay { background: linear-gradient(90deg, rgba(6,6,7,.88), rgba(6,6,7,.5)), linear-gradient(0deg, rgba(6,6,7,.9), transparent 60%); }
+  .vision-plasma { top: 15%; right: -42%; }
+}
+</style>

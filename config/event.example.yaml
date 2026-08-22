@@ -2,7 +2,7 @@
 # The website currently reads public copy from src/i18n/en.ts and src/i18n/zh.ts.
 
 event:
-  name: "2026 Open Survey Agent Hackathon"
+  name: "Open Survey Agent Hackathon"
   tagline: "Requirements as Source Code"
   organizer: "OAIC"
   dates: "September 20–October 17, 2026"

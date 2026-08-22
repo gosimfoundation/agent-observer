@@ -22,10 +22,20 @@ npm run dev
 
 ## 与其它站点的差异
 
-报名、登录和组队流程沿用 Factory26，但必须连接独立的 Cosmos26 Supabase 项目。先在该项目执行
+报名、登录和组队流程沿用 Factory26，但必须连接赛事独立的 Supabase 项目。先在该项目执行
 `supabase/migrations/20260820_00_cosmos26_registration.sql`，再配置 `.env` 中的
 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_ANON_KEY`。不要复用 Factory26 的数据库凭据。
 
 最终测评与排行榜由 CosmosBench 支撑。配置 `VITE_COSMOSBENCH_URL` 与
 `VITE_COSMOSBENCH_LEADERBOARD_API`；接口可直接返回数组，也可返回 `{ entries: [...] }` 或
 `{ data: [...] }`。若接口不可用，站点会尝试读取 `public/cosmosbench-leaderboard.json` 快照。
+
+## 报名与组队
+
+`/register` 提供 Supabase Auth 注册、登录、密码重置、队伍创建与加入。在独立的
+赛事独立的 Supabase 项目中按文件名顺序执行 `supabase/migrations/` 下的所有 SQL：
+
+1. `20260820_00_cosmos26_registration.sql`
+2. `20260820_01_cosmos26_team_workflow.sql`
+
+第二个迁移使队伍创建、加入、退出与解散在数据库事务中完成，并防止客户端绕过人数上限。

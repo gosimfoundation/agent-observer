@@ -2,17 +2,64 @@
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useLeaderboard } from '../../composables/useLeaderboard'
+
 const { t, pick } = useI18n()
 const { entries, loading, refreshing, error, updatedAt, reload, leaderboardUrl } = useLeaderboard(20)
 const updated = computed(() => updatedAt.value?.toLocaleTimeString(pick('en-US', 'zh-CN')) || '')
 const metric = (value: number | null) => value == null ? '—' : value.toFixed(2)
 </script>
+
 <template>
-  <section id="leaderboard" class="bg-bg-primary py-24 md:py-36"><div class="mx-auto max-w-[1440px] px-6 md:px-10 xl:px-14">
-    <div class="grid gap-10 lg:grid-cols-[.7fr_1.3fr] lg:gap-20"><div class="reveal"><span class="section-kicker">{{ t('home.leaderboard.kicker') }}</span><h2 class="section-title mt-8">{{ t('home.leaderboard.title') }}</h2><p class="mt-8 max-w-lg leading-relaxed text-text-secondary">{{ t('home.leaderboard.lede') }}</p></div>
-    <div class="reveal reveal-delay-1"><div class="flex items-center justify-between border-b border-border pb-4"><span v-if="updated" class="mono-label text-text-muted">{{ t('leaderboard.updated') }} {{ updated }}</span><div class="ml-auto flex gap-4"><button class="mono-label text-text-muted hover:text-accent disabled:opacity-50" :disabled="refreshing" @click="reload">↻ {{ t('leaderboard.refresh') }}</button><a v-if="leaderboardUrl !== '#'" :href="leaderboardUrl" target="_blank" rel="noopener" class="mono-label text-accent">{{ t('leaderboard.full') }} ↗</a></div></div>
-      <p v-if="loading" class="mt-6 text-sm text-text-secondary">{{ t('leaderboard.loading') }}</p><p v-else-if="error && !entries.length" class="mt-6 text-sm text-text-secondary">{{ t('leaderboard.unavailable') }}</p><p v-else-if="!entries.length" class="mt-6 text-sm text-text-secondary">{{ t('leaderboard.empty') }}</p>
-      <div v-else class="overflow-x-auto"><table class="w-full min-w-[720px] border-collapse text-left"><thead><tr class="border-b border-border"><th class="mono-label py-3">#</th><th class="mono-label py-3">{{ t('leaderboard.team') }}</th><th class="mono-label py-3 text-right">{{ t('leaderboard.score') }}</th><th class="mono-label py-3 text-right">{{ t('leaderboard.science') }}</th><th class="mono-label py-3 text-right">{{ t('leaderboard.completion') }}</th><th class="mono-label py-3 text-right">{{ t('leaderboard.uniformity') }}</th><th class="mono-label py-3 text-right">{{ t('leaderboard.submissions') }}</th></tr></thead><tbody><tr v-for="row in entries" :key="`${row.rank}:${row.name}`" class="border-b border-border-subtle"><td class="py-3 font-mono text-xs text-accent">{{ row.rank }}</td><td class="py-3 text-sm font-medium text-text-primary">{{ row.name }}</td><td class="py-3 text-right font-mono text-sm">{{ metric(row.score) }}</td><td class="py-3 text-right font-mono text-sm">{{ metric(row.science) }}</td><td class="py-3 text-right font-mono text-sm">{{ metric(row.completion) }}</td><td class="py-3 text-right font-mono text-sm">{{ metric(row.uniformity) }}</td><td class="py-3 text-right font-mono text-sm">{{ row.submissions }}</td></tr></tbody></table></div>
-    </div></div>
-  </div></section>
+  <section id="leaderboard" class="poster-section poster-canvas py-24 md:py-40">
+    <div class="leaderboard-aura plasma-field" aria-hidden="true"></div>
+    <div class="relative z-10 mx-auto max-w-[1600px] px-5 md:px-10 xl:px-14">
+      <div class="grid gap-14 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
+        <div class="reveal">
+          <div class="poster-number" aria-hidden="true">04</div>
+          <span class="poster-kicker mt-14">{{ t('home.leaderboard.kicker') }}</span>
+          <h2 class="section-title distressed-type mt-9">{{ t('home.leaderboard.title') }}</h2>
+          <p class="mt-8 max-w-lg text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.leaderboard.lede') }}</p>
+
+          <div class="mt-12 flex items-center gap-4 font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">
+            <span class="signal-dot"></span>
+            {{ error ? pick('Awaiting benchmark signal', '等待基准信号') : pick('CosmosBench signal live', 'CosmosBench 信号在线') }}
+          </div>
+        </div>
+
+        <div class="reveal reveal-delay-1 border-y poster-rule">
+          <div class="flex items-center justify-between gap-4 border-b poster-rule py-5">
+            <span class="font-mono text-xs uppercase tracking-[.1em] text-text-muted">
+              {{ updated ? `${t('leaderboard.updated')} ${updated}` : pick('Live evaluation feed', '实时评测数据') }}
+            </span>
+            <div class="flex gap-5">
+              <button class="font-mono text-xs uppercase tracking-[.1em] text-text-tertiary hover:text-[#315efb] disabled:opacity-50" :disabled="refreshing" @click="reload">↻ {{ t('leaderboard.refresh') }}</button>
+              <a v-if="leaderboardUrl !== '#'" :href="leaderboardUrl" target="_blank" rel="noopener" class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('leaderboard.full') }} ↗</a>
+            </div>
+          </div>
+
+          <div v-if="loading || (error && !entries.length) || !entries.length" class="grid min-h-80 place-items-center py-16 text-center">
+            <div>
+              <div class="text-4xl font-semibold text-white/8">00</div>
+              <p class="mt-4 max-w-sm text-sm leading-relaxed text-text-secondary">
+                {{ loading ? t('leaderboard.loading') : error ? t('leaderboard.unavailable') : t('leaderboard.empty') }}
+              </p>
+            </div>
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="w-full min-w-[720px] border-collapse text-left">
+              <thead><tr class="border-b poster-rule"><th class="table-label py-4">#</th><th class="table-label py-4">{{ t('leaderboard.team') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.score') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.science') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.completion') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.uniformity') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.submissions') }}</th></tr></thead>
+              <tbody><tr v-for="row in entries" :key="`${row.rank}:${row.name}`" class="border-b border-white/10"><td class="py-4 font-mono text-xs text-[#315efb]">{{ row.rank }}</td><td class="py-4 text-sm font-medium text-text-primary">{{ row.name }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.score) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.science) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.completion) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.uniformity) }}</td><td class="py-4 text-right font-mono text-sm">{{ row.submissions }}</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
+
+<style scoped>
+.leaderboard-aura { top: 8%; right: -23rem; width: 58rem; opacity: .44; transform: rotate(54deg); }
+.signal-dot { width: .55rem; height: .55rem; background: #315efb; box-shadow: 1rem 0 0 rgba(255,255,255,.8); }
+.table-label { color: #858585; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .875rem; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; }
+</style>
