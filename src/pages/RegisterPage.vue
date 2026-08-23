@@ -409,9 +409,9 @@ onUnmounted(() => authSubscription?.unsubscribe())
         <router-link to="/" class="font-mono text-xs uppercase tracking-[.1em] text-white/55 transition-colors hover:text-white">← {{ pick('Back to hackathon', '返回黑客松主页') }}</router-link>
         <div class="mt-12 grid gap-12 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
           <div>
-            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('OPEN SURVEY AGENT HACKATHON / REGISTRATION', '巡天开源智能体黑客松 / 报名') }}</span>
+            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('AGENTIC COSMOS / REGISTRATION', '智能体巡天 / 报名') }}</span>
             <h1 class="mt-7 max-w-[14ch] text-balance text-[clamp(3rem,6.5vw,6.75rem)] font-semibold leading-[1.02] tracking-[-.055em]">
-              {{ pick('Open Survey Agent Hackathon', '巡天开源智能体黑客松') }}
+              {{ pick('Agentic Cosmos', '智能体巡天') }}
             </h1>
             <p class="mt-8 max-w-2xl text-base leading-[1.7] text-white/70 md:text-lg">
               {{ pick('Create your event account, then create or join a team. A team is the final unit of registration and CosmosBench evaluation.', '创建赛事账户，然后创建或加入队伍。队伍是报名和 CosmosBench 评测的最终单位。') }}

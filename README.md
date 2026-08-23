@@ -1,4 +1,4 @@
-# 巡天开源智能体黑客松 · Open Survey Agent Hackathon
+# 智能体巡天 · Agentic Cosmos
 
 GOSIM 黑客松站点，面向智能巡天运行。参赛者提交一个观测智能体：读取夜空状态，
 在每 900 秒的时隙里决定观测哪个天区，或者等待。
@@ -17,8 +17,11 @@ npm run dev
 
 ## 内容位置
 
-公开文案全部在 `src/i18n/zh.ts` 与 `src/i18n/en.ts`。赛程、赛题与报名方式尚未确定，
-页面上一律标「待定」——未确定的事不写死。
+公开文案全部在 `src/i18n/zh.ts` 与 `src/i18n/en.ts`。赛程与奖金以团队版赛事安排为准；
+报名方式及现场邀请规模仍待确定。
+
+网站对标结论、分阶段改进方案与待确认数据见
+[`docs/goaihz-benchmark-and-improvement-plan.md`](docs/goaihz-benchmark-and-improvement-plan.md)。
 
 ## 与其它站点的差异
 

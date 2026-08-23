@@ -4,6 +4,7 @@ import HeroSection from '../components/sections/HeroSection.vue'
 import SimpleVisionSection from '../components/sections/SimpleVisionSection.vue'
 import SimpleMissionSection from '../components/sections/SimpleMissionSection.vue'
 import SimpleParticipateSection from '../components/sections/SimpleParticipateSection.vue'
+import PrizeSection from '../components/sections/PrizeSection.vue'
 import LeaderboardSection from '../components/sections/LeaderboardSection.vue'
 import CtaSection from '../components/sections/CtaSection.vue'
 
@@ -16,6 +17,7 @@ useScrollReveal()
     <SimpleVisionSection />
     <SimpleMissionSection />
     <SimpleParticipateSection />
+    <PrizeSection />
     <LeaderboardSection />
     <CtaSection />
   </main>

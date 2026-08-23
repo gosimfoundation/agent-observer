@@ -14,7 +14,7 @@ const { t, pick } = useI18n()
 
         <div class="relative z-10 flex min-h-[590px] flex-col justify-between md:min-h-[680px]">
           <div class="flex justify-between gap-6 border-b border-white/30 pb-5 font-mono text-xs uppercase tracking-[.1em] text-white/60">
-            <span>2026 / GOSIM / OPEN SURVEY AGENT HACKATHON</span>
+            <span>2026 / GOSIM / AGENTIC COSMOS</span>
             <span>{{ pick('Final transmission', '最终传输') }}</span>
           </div>
 
