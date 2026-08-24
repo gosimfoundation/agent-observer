@@ -131,7 +131,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
   hero: {
     eyebrow: 'GOSIM Hackathon · Astronomy × Agents',
     system: 'Agentic Cosmos',
-    subtitle: '智能体巡天',
+    subtitle: '智能体巡天黑客松',
     lede:
       'Build an observing agent for the telescopes to come: read the state of the night sky, reason the way a seasoned observer does, and decide the next observation every 900 seconds.',
     pipeline: [

@@ -8,7 +8,7 @@ export default {
     applyNow: "报名即将开始",
   },
   vision: {
-    pageTitle: "智能体巡天",
+    pageTitle: "智能体巡天黑客松",
     pageSubtitle: "赛事说明 · 为夜空构建智能体",
     intro:
       "这是一份面向参赛者、合作方与好奇者的愿景文档。它把 01–07 的核心内容串成一篇连贯的陈述：我们为什么需要观测智能体、它要接替什么工作、挑战赛如何设计、你要做什么、如何计分、需要懂哪些概念，以及整个赛程。",
@@ -130,7 +130,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
   },
   hero: {
     eyebrow: "GOSIM 黑客松 · 天文观测 × 智能体",
-    system: "智能体巡天",
+    system: "智能体巡天黑客松",
     subtitle: "Agentic Cosmos",
     lede:
       "构建巡天观测智能体：像资深观测员那样观测星空，发现宇宙的奥妙。",
@@ -396,7 +396,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
     location: "线上开发与 CosmosBench 统一评测 · 10 月 17 日 GOSIM 深圳",
   },
   footer: {
-    copyright: "2026 GOSIM · 智能体巡天",
+    copyright: "2026 GOSIM · 智能体巡天黑客松",
     mainSite: "GOSIM",
     register: "赛题即将发布",
   },

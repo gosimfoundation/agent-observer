@@ -30,13 +30,13 @@ function scrollTo(hash: string) {
 <template>
   <header class="cosmos-header sticky top-0 z-50 border-b border-border backdrop-blur">
     <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-5 md:px-10 xl:px-14">
-      <router-link to="/" class="flex items-baseline gap-3">
-        <span class="cosmos-wordmark text-lg text-[#f5f5f5]">OPEN <span class="text-[#315efb]">SURVEY</span></span>
+      <a href="https://create.gosim.org/" aria-label="GOSIM Create home" class="flex items-center gap-3">
+        <span class="cosmos-wordmark shrink-0 whitespace-nowrap text-lg text-[#f5f5f5]">GOSIM <span class="text-[#315efb]">Create</span></span>
         <span class="hidden h-4 w-px bg-white/25 sm:block"></span>
-        <span class="hidden max-w-[22ch] font-mono text-xs uppercase leading-[1.35] tracking-[.1em] text-white/45 sm:block">
-          AGENT HACKATHON // 2026
+        <span class="hidden whitespace-nowrap font-mono text-xs uppercase tracking-[.1em] text-white/45 sm:block">
+          AGENT HACKATHON
         </span>
-      </router-link>
+      </a>
 
       <nav class="hidden items-center gap-5 lg:flex">
         <router-link
