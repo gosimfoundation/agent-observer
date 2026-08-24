@@ -83,7 +83,7 @@ const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天'
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 62%;
+  object-position: center bottom;
   filter: saturate(1.16) contrast(1.06) brightness(.94);
 }
 
@@ -171,7 +171,7 @@ const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天'
 @media (max-width: 720px) {
   .cosmos-hero { min-height: 900px; }
   .hero-layout { min-height: 900px; }
-  .hero-media video { object-position: center center; }
+  .hero-media video { object-position: center bottom; }
   .hero-media::after {
     background:
       linear-gradient(90deg, rgba(2,5,14,.82), rgba(2,7,18,.28)),
