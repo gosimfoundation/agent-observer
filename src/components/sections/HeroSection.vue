@@ -11,8 +11,12 @@ const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天'
 
 <template>
   <section id="top" class="hero-section cosmos-hero poster-canvas">
-    <div class="hero-media" aria-hidden="true">
-      <video autoplay loop muted playsinline preload="auto" :poster="assetUrl('/media/survey-milky-way.png')">
+    <div
+      class="hero-media"
+      aria-hidden="true"
+      :style="{ backgroundImage: `url(${assetUrl('/media/survey-milky-way.jpg')})` }"
+    >
+      <video autoplay loop muted playsinline preload="metadata" :poster="assetUrl('/media/survey-milky-way.jpg')">
         <source :src="assetUrl('/media/survey-night-sky.mp4')" type="video/mp4">
       </video>
     </div>
@@ -70,6 +74,9 @@ const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天'
   position: absolute;
   z-index: 0;
   inset: 0;
+  background-color: #02050c;
+  background-position: center bottom;
+  background-size: cover;
 }
 
 .hero-media video {
