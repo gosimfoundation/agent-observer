@@ -19,13 +19,6 @@ const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天'
     <div class="hero-overlay" aria-hidden="true"></div>
 
     <div class="hero-layout relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-[1600px] flex-col px-5 md:px-10 xl:px-14">
-      <div class="hero-meta grid grid-cols-2 gap-4 border-b border-white/20 py-5 font-mono text-xs uppercase tracking-[.1em] text-white/60 md:grid-cols-4">
-        <span>GOSIM / OPEN SURVEY</span>
-        <span>{{ pick('Open call / 2026', '公开征集 / 2026') }}</span>
-        <span class="hidden md:block">RA 18H 36M / DEC +38°</span>
-        <span class="text-right text-[#78a6ff]">{{ pick('Registration coming soon', '报名即将开始') }}</span>
-      </div>
-
       <div class="hero-stage flex flex-1 items-center py-10">
         <div class="hero-copy">
           <div class="hero-kicker mb-7 flex items-center gap-4 font-mono text-xs uppercase leading-relaxed tracking-[.12em] text-[#78a6ff] md:text-sm">
