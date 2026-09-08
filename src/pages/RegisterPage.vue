@@ -374,7 +374,6 @@ onMounted(async () => {
     authMode.value = 'reset'
   }
 
-  await hydrateSession()
   if (!isSupabaseConfigured) return
 
   const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -392,6 +391,9 @@ onMounted(async () => {
     }
   })
   authSubscription = data.subscription
+  // Subscribe before session initialization can consume the recovery URL and
+  // emit PASSWORD_RECOVERY, otherwise the reset form may never be displayed.
+  await hydrateSession()
 })
 
 onUnmounted(() => authSubscription?.unsubscribe())
