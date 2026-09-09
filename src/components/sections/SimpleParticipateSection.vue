@@ -49,7 +49,7 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
 
       <div class="reveal mt-14 flex flex-col justify-between gap-4 border-t poster-rule pt-6 font-mono text-xs uppercase tracking-[.1em] text-text-tertiary md:flex-row">
         <span>{{ pick('Open worldwide / solo builders welcome', '全球开放 / 欢迎个人开发者') }}</span>
-        <span>{{ pick('Same simulator / same weather / same score', '同一模拟器 / 同一天气 / 同一评分') }}</span>
+        <span>{{ pick('Same scenario / same simulator / same score', '同一场景 / 同一模拟器 / 同一评分') }}</span>
       </div>
     </div>
   </section>

@@ -12,7 +12,6 @@ const prizes = computed(() => t('home.prizes.tiers') as Prize[])
     <div class="mx-auto max-w-[1600px] px-5 md:px-10 xl:px-14">
       <div class="reveal grid gap-14 border-y poster-rule py-14 lg:grid-cols-[.65fr_1.35fr] lg:gap-20 lg:py-20">
         <div>
-          <div class="font-mono text-xs text-[#315efb]" aria-hidden="true">04</div>
           <span class="mt-8 inline-block font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('home.prizes.kicker') }}</span>
           <h2 class="section-title distressed-type mt-8">{{ t('home.prizes.title') }}</h2>
           <p class="mt-7 max-w-lg text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.prizes.lede') }}</p>
@@ -27,12 +26,11 @@ const prizes = computed(() => t('home.prizes.tiers') as Prize[])
             </div>
             <strong class="text-2xl font-semibold tracking-[-.04em] text-[#f5f5f5] md:text-4xl">{{ prize.amount }}</strong>
           </article>
-          <p class="mt-8 border-l-2 border-[#315efb] pl-5 text-sm leading-relaxed text-text-secondary">{{ t('home.prizes.note') }}</p>
         </div>
       </div>
 
       <div class="reveal mt-8 flex justify-between gap-6 font-mono text-xs uppercase tracking-[.1em] text-text-tertiary">
-        <span>{{ pick('7 awards total', '共 7 个奖项') }}</span>
+        <span>{{ pick('6 awards total', '共 6 个奖项') }}</span>
         <span>{{ pick('Awards · Oct 17 · Shenzhen', '10 月 17 日 · 深圳颁奖') }}</span>
       </div>
     </div>

@@ -26,13 +26,13 @@ export function provideI18n() {
     watch(locale, (value) => {
       document.documentElement.lang = value === 'zh' ? 'zh-CN' : 'en'
       document.title = value === 'zh'
-        ? '智能体巡天黑客松'
-        : 'Agentic Cosmos'
+        ? '巡天智能体'
+        : 'Agent Observer'
       const description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
       if (description) {
         description.content = value === 'zh'
-          ? 'GOSIM 智能体巡天黑客松（Agentic Cosmos）：构建观测智能体，读取夜空状态，并在每 900 秒决定下一次观测。'
-          : 'Agentic Cosmos by GOSIM: build an observing agent that reads the night sky and decides the next observation every 900 seconds.'
+          ? '面向智能巡天的 GOSIM 黑客松：构建观测智能体，读取天空状态，并在每 900 秒选择下一次观测。'
+          : 'A GOSIM hackathon for intelligent survey operations: build an agent observer that reads the sky state and chooses the next observation every 900 seconds.'
       }
       window.localStorage.setItem('cosmos-locale', value)
     }, { immediate: true })
