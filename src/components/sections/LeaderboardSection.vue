@@ -15,7 +15,6 @@ const metric = (value: number | null) => value == null ? '—' : value.toFixed(2
     <div class="relative z-10 mx-auto max-w-[1600px] px-5 md:px-10 xl:px-14">
       <div class="grid gap-14 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
         <div class="reveal">
-          <div class="poster-number" aria-hidden="true">04</div>
           <span class="poster-kicker mt-14">{{ t('home.leaderboard.kicker') }}</span>
           <h2 class="section-title distressed-type mt-9">{{ t('home.leaderboard.title') }}</h2>
           <p class="mt-8 max-w-lg text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.leaderboard.lede') }}</p>

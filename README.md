@@ -1,9 +1,9 @@
-# 智能体巡天黑客松 · Agentic Cosmos
+# 巡天智能体 · Agent Observer
 
-GOSIM 黑客松站点，面向智能巡天运行。参赛者提交一个观测智能体：读取夜空状态，
-在每 900 秒的时隙里决定观测哪个天区，或者等待。
+GOSIM 黑客松站点，面向智能巡天。参赛者构建观测智能体，让它读取天空状态，
+在每 900 秒的时隙里决定观测哪个天区或等待，并向比赛平台提交智能体生成的观测结果。
 
-内容源自 `cosmos-hackathon/开放巡天智能体挑战赛-中文版.html`，站点结构沿用
+赛题内容源自 `cosmos-hackathon/gosim_survey_agent_hackathon_intro 2.pdf`，站点结构沿用
 `events/oaic-harness-2026`。
 
 ## 本地开发

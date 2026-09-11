@@ -6,7 +6,9 @@ import { assetUrl } from '../../composables/api'
 const { t, pick, locale } = useI18n()
 type Step = { label: string; date: string }
 const pipeline = computed(() => t('hero.pipeline') as Step[])
-const heroTitleLines = computed(() => locale.value === 'zh' ? ['智能体巡天', '黑客松'] : [t('hero.system')])
+const heroTitleLines = computed(() => locale.value === 'zh'
+  ? ['巡天智能体']
+  : ['Agent Observer'])
 </script>
 
 <template>

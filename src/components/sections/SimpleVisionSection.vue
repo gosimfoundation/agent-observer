@@ -13,7 +13,6 @@ const stats = computed(() => t('home.vision.stats') as Stat[])
     <div class="mx-auto max-w-[1600px] px-5 md:px-10 xl:px-14">
       <div class="grid gap-12 lg:grid-cols-[.66fr_1.34fr] lg:gap-16">
         <div class="reveal lg:pt-4">
-          <div class="poster-number" aria-hidden="true">01</div>
           <span class="poster-kicker mt-14">{{ t('home.vision.kicker') }}</span>
           <h2 class="section-title distressed-type mt-8">{{ t('home.vision.title') }}</h2>
         </div>

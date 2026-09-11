@@ -8,10 +8,10 @@ export default {
     applyNow: 'Registration coming soon',
   },
   vision: {
-    pageTitle: 'Agentic Cosmos',
-    pageSubtitle: 'Event Brief · Building agents for the night sky',
+    pageTitle: 'Agent Observer',
+    pageSubtitle: 'A GOSIM Hackathon for Intelligent Survey Operations',
     intro:
-      'This is a vision document for participants, partners, and the curious. It weaves the 01–07 material into one coherent statement: why we need observing agents, what human job they are taking over, how the challenge is designed, what you build, how scoring works, the little astronomy you need, and the overall schedule.',
+      'This participant briefing explains why survey operations need agent observers, what a human leading observer does, how the challenge works across three planning horizons, what you submit, how scoring works, the astronomy you need, and the event schedule.',
     backToHome: 'Back to home',
     sections: [
       {
@@ -30,7 +30,7 @@ export default {
         kicker: '02 / The Observer',
         title: 'What a human lead observer actually does',
         paragraphs: [
-          'A seasoned lead observer makes a full set of decisions every 900-second slot: understand the science goal and decide tonight’s tactical priority; read seeing, transparency, sky brightness, and the short-term forecast; judge whether tonight suits DARK, BRIGHT, or BACKUP observing; keep the tiles that are visible now, legal, and worth the time; trade off science yield, priority, airmass, footprint balance, and wasted time; finish a tile when completing it beats over-exposure; react to sudden downtime and fluctuating efficiency; use fast validation signals to calibrate later decisions; and explain why this action was chosen in this slot.',
+          'A seasoned lead observer makes a full set of decisions every 900-second slot: understand the science goal and decide tonight’s tactical priority; read seeing, transparency, sky brightness, and the short-term forecast; judge whether tonight suits DARK, BRIGHT, or BACKUP observing; keep the tiles that are visible now, legal, and worth the time; trade off science yield, priority, airmass, footprint balance, and wasted time; finish a tile when completing it beats over-exposure; replan around weather systems, forest-fire smoke, scheduled rocket launches, and changing efficiency; use fast validation signals to calibrate later decisions; and explain why this action was chosen in this slot.',
           'These duties are what the observing agent is taking over. We do not expect an agent to outperform a human immediately. We expect it to be evaluated objectively against a fixed interface, fixed data, and fixed scoring — so it can become a viable component of real survey operations.',
         ],
         duties: [
@@ -40,58 +40,59 @@ export default {
           { n: '04', title: 'Candidate filtering', desc: 'Keep the tiles that are visible now, legal, and worth the time.' },
           { n: '05', title: 'Tile ranking', desc: 'Trade off science yield, priority, airmass, footprint balance, and wasted time.' },
           { n: '06', title: 'Completion management', desc: 'Finish a tile when the value of completing it beats the cost of over-exposure.' },
-          { n: '07', title: 'Replanning', desc: 'React to sudden downtime and fluctuating observing efficiency.' },
+          { n: '07', title: 'Replanning', desc: 'React to forecast disruptions, inserted requests, and changing observing efficiency.' },
           { n: '08', title: 'Quality monitoring', desc: 'Use fast validation signals to calibrate later decisions.' },
           { n: '09', title: 'Logging the reason', desc: 'Explain why the observer chose this action in this slot.' },
         ],
       },
       {
-        kicker: '03 / Format',
+        kicker: '03 / Challenge Format',
         title: 'The Survey Mission Card and the challenge loop',
         paragraphs: [
-          'Every challenge instance starts from a Survey Mission Card. It states the science goal, footprint area, time budget, telescope site, available observing programs, target classes, observing constraints, and scoring rules. It also provides public dev data — tile catalogue, example weather scenarios, initial state, and visual reports — plus final evaluation data, an organizer-supplied weather replay.',
-          'You submit a Python file containing class MyAgent. The simulator calls MyAgent.act(state) repeatedly, and the method returns either observe(tile_id) or wait. In this competition the only variable is the agent’s strategy. Simulator, weather replay, and scoring function are all fixed.',
+          'Every challenge instance starts from a Survey Mission Card. It states the science goal, footprint area, time budget, telescope site, available observing programs, target classes, observing constraints, and scoring rules. The mission card and public development data — tile catalogue, example weather scenarios, initial state, and visual reports — will be released before the hackathon begins.',
+          'Every participant faces the same evaluation scenario: the overall survey plan, per-night seeing and weather replay, ad-hoc observing requests, predictable mid-term disruptions, simulator, and scoring rule are fixed. The agent receives the current state and returns the next observing action every 900 seconds.',
         ],
         loopTitle: 'The challenge loop',
         loop: [
-          { stage: 'Fixed inputs', items: ['Science goal', 'Tile table', 'Weather'] },
-          { stage: 'Agent state', items: ['Forecast', 'Progress', 'Candidates'] },
+          { stage: 'Fixed inputs', items: ['Science goal', 'Footprint tiles', 'Weather replay'] },
+          { stage: 'Agent state', items: ['Weather + forecast', 'Survey progress', 'Available tiles'] },
           { stage: 'Reasoning', items: ['Rank', 'Explain', 'Decide'] },
           { stage: 'Action', items: ['Observe', 'or wait'] },
-          { stage: 'Metrics', items: ['Score', 'Uniformity', 'Violations'] },
+          { stage: 'Metrics', items: ['Science yield', 'Uniformity + waste', 'Violations'] },
         ],
       },
       {
-        kicker: '04 / What to Build',
-        title: 'From a first agent to a competitive design',
+        kicker: '04 / Planning Horizons',
+        title: 'Plan across the survey, the week, and the next 900 seconds',
         paragraphs: [
-          'Your deliverable is one agent file plus a short note explaining the observer’s architecture. Start from one plain utility rule: among the legal tiles, take the one with the highest expected weighted gain. That already is a working observer.',
-          'Then add weather, completion, airmass, footprint balance, and a waste term. A competitive agent usually combines immediate science yield with forecast awareness, a completion bonus, footprint balancing, an airmass penalty, and one concise reason string.',
-          'Architectures worth trying include utility agents, weather-aware planners, completion managers, footprint balancers, risk-controlled agents, lead/support pairs, and LLM planner plus rule checker. A modular observing agent can be decomposed into weather interpretation, program selection, candidate filtering, tile ranking, footprint balancing, completion management, support/risk checking, and reason logging.',
+          'Long term — the organizers provide the overall survey plan in the mission card, while the agent manages that plan in flight. Final scoring includes survey completeness and completion quality.',
+          'Middle term — the agent builds a flexible month, week, and day plan from progress and forecast conditions, absorbing weather systems, forest-fire smoke, scheduled launches, and newly inserted observing requests. This layer may be enabled as mission cards evolve.',
+          'Short term — every 900-second slot, the agent makes an immediate tactical choice using the middle-term plan and real-time seeing and transparency. This is the focus of the scored benchmark.',
         ],
-        starterCode: `tiles = state["available_tiles"]
-if len(tiles) == 0:
-    return {"action": "wait"}
-
-best = max(tiles, key=lambda t: t["expected_weighted_gain"])
-return {"action": "observe", "tile_id": best["tile_id"]}`,
-        archCode: `AgentObserver
-  -> WeatherInterpreter
-  -> ProgramSelector
-  -> CandidateFilter
-  -> TileRanker
-  -> FootprintBalancer
-  -> CompletionManager
-  -> SupportObserver / RiskChecker
-  -> ReasonLogger`,
       },
       {
-        kicker: '05 / Scoring',
+        kicker: '05 / Participant Job',
+        title: 'Build a reproducibly runnable observer project',
+        paragraphs: [
+          'Programming language is not restricted. Your project must implement the observer interface defined by the Survey Mission Card: the simulator repeatedly provides the current situation, and the agent returns the next action, such as observe or wait, with a free-form reason. Examples on this site illustrate the concept; the mission card is the authoritative interface contract.',
+          'Run your agent against the challenge scenario to generate the observation results required by the competition platform.',
+          'Read the mission card, study the public development scenarios and visual reports, prototype against the observer interface, evaluate on development scenarios, inspect the observed-universe maps, then submit only the observation results generated by your agent.',
+        ],
+        actionCode: `return {
+    "action": "observe",
+    "tile_id": 100123,
+    "plan": "DARK",
+    "reason": "good weather and highest useful gain",
+}`,
+      },
+      {
+        kicker: '06 / Scoring',
         title: 'Scientific, reproducible, inspectable evaluation',
         paragraphs: [
           'The score rewards weighted effective targets and penalizes uneven footprint coverage, wasted time, rule violations, and unfinished high-priority tiles. A good agent trades immediate yield against completion, uniformity, weather risk, and operational discipline.',
-          'Evaluation follows open-science principles: fixed seeds, fixed data, fixed scoring; participants see a compact state dictionary and a readable history file; metrics focus on target yield, tile completion, weather response, footprint balance, and waste; development and evaluation weather are separated to support robust comparison.',
+          'Evaluation follows open-science principles: fixed data and fixed scoring let every submitted observation result be evaluated consistently; readable result artifacts make outcomes inspectable; separate development and final-evaluation weather compare generalization instead of tuning to a known scenario.',
           'Visualization turns completed tile fractions into an observed-target map — a 3D spatial sample and a 2D butterfly plot of sky position plus simulated redshift, in the style DESI uses — so different strategies produce visibly different maps.',
+          'The same observer interface can support future mission cards for real survey-log replay, z > 5 quasar planning, LBG planning, and target-of-opportunity inserts; the community can propose new fixed datasets for follow-up tracks.',
         ],
         formula: `score = science_score
   - uniformity_penalty
@@ -100,46 +101,47 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
   - incomplete_priority_penalty`,
       },
       {
-        kicker: '06 / Glossary',
+        kicker: '07 / Glossary',
         title: 'A little astronomy is enough',
         paragraphs: [
-          'You do not need an astronomy background to read the state dictionary and reason about it. A Tile is a small patch of sky the telescope can observe in one pointing. The Footprint is the whole sky area the survey intends to cover. Targets, in this planning benchmark, are the object counts inside each tile.',
-          'Seeing describes how blurred the image is — lower is better. Transparency describes how clear the atmosphere is — higher is better. Sky brightness is background noise; for faint targets, darker is usually better. Airmass measures how much atmosphere the light passes through — lower is better. donefrac is tile completion: 0 means just started, 1 means finished.',
+          'You do not need an astronomy background to read the state dictionary and reason about it. A Tile is a patch of sky observed in one pointing; the Footprint is the full survey area; Targets are the object counts inside each tile. High-priority tiles carry extra scientific weight, nearly complete tiles are one exposure from completion, and under-covered regions are lagging behind the rest of the footprint.',
+          'Seeing describes atmospheric blur — lower is better. Transparency describes how clear the atmosphere is — higher is better. Sky brightness is background glow; darker is better for faint targets. Airmass measures how much atmosphere the light crosses and changes with sky position — lower is better. DARK, BRIGHT, and BACKUP are programs matched to dark, bright, and poor conditions. donefrac is tile completion: 0 means just started, 1 means finished.',
           'The state dictionary contains weather (current seeing, transparency, sky brightness, program, observability, and speed), forecast (this slot plus the next four), progress (tiles completed, mean completion, footprint balance, wasted time, and violations), and available_tiles (the legal options right now, with expected gain, expected waste, target counts, priority, and airmass).',
         ],
         actionCode: `return {
     "action": "observe",
     "tile_id": 100123,
-    "reason": "highest useful gain",
+    "plan": "DARK",
+    "reason": "good weather and highest useful gain",
 }`,
       },
       {
-        kicker: '07 / Timeline',
+        kicker: '08 / Timeline',
         title: 'Three stages from training to awards',
         paragraphs: [
-          'The event has three stages: online training, competition, and awards day. Online training runs September 15–30 and is open worldwide to individuals and teams. The goal is to learn CosmosBench, the shared simulator, mission cards, and the observing-agent interface, and to prepare using public weather scenarios.',
-          'The hybrid finals run October 1–17 online and at GOSIM Shenzhen under one evaluation protocol. Evaluation, submissions, and live standings are powered by CosmosBench and are open to all registered teams. Final results are announced and prizes presented on October 17.',
+          'The event has three stages: online training from October 1–4, online competition from October 5–7, and Awards Day at GOSIM Shenzhen on October 17.',
+          'Training introduces CosmosBench, the shared simulator, mission cards, and the observer interface. During the online competition, registered teams submit the observation results generated by their agents; CosmosBench powers evaluation and live standings.',
         ],
         rounds: [
-          { number: '01', name: 'Online Training', dates: 'Sep 15–30', format: 'Online', challenge: 'Learn CosmosBench, the shared simulator, mission cards, and the observing-agent interface, then prepare with public weather scenarios.', participants: 'Open worldwide to individuals and teams.' },
-          { number: '02', name: 'Finals', dates: 'Oct 1–17', format: 'Online + GOSIM Shenzhen', challenge: 'Complete the survey task under one evaluation protocol, with online and conference participation. Evaluation, submissions, and live standings are powered by CosmosBench.', participants: 'All registered teams.' },
+          { number: '01', name: 'Online Training', dates: 'Oct 1–4', format: 'Online', challenge: 'Learn CosmosBench, the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.', participants: 'Open worldwide to individuals and teams.' },
+          { number: '02', name: 'Online Competition', dates: 'Oct 5–7', format: 'Online', challenge: 'Run the survey task and submit agent-generated observation results. Evaluation and live standings are powered by CosmosBench.', participants: 'All registered teams.' },
           { number: '03', name: 'Awards Day', dates: 'Oct 17', format: 'GOSIM Shenzhen', challenge: 'Final results are announced and prizes are presented.', participants: 'Winning teams and invited participants.' },
         ],
       },
     ],
   },
   hero: {
-    eyebrow: 'GOSIM Hackathon · Astronomy × Agents',
-    system: 'Agentic Cosmos',
-    subtitle: '智能体巡天黑客松',
+    eyebrow: 'GOSIM Hackathon · Intelligent Survey Operations',
+    system: 'Agent Observer',
+    subtitle: '巡天智能体',
     lede:
-      'Build an observing agent for the telescopes to come: read the state of the night sky, reason the way a seasoned observer does, and decide the next observation every 900 seconds.',
+      'Build a future agent observer for survey nights: read the sky state, reason like a leading observer, and choose the next observation every 900 seconds.',
     pipeline: [
-      { label: 'Online Training', date: 'Sep 15–30' },
-      { label: 'Hybrid Finals', date: 'Oct 1–17' },
+      { label: 'Online Training', date: 'Oct 1–4' },
+      { label: 'Online Competition', date: 'Oct 5–7' },
       { label: 'Awards Day', date: 'Oct 17' },
     ],
-    location: ['Online training Sep 15–30 · Hybrid finals Oct 1–17', 'October 17 · Awards Day at GOSIM Shenzhen'],
+    location: ['Online training Oct 1–4 · Online competition Oct 5–7', 'October 17 · Awards at GOSIM Shenzhen'],
     cta: 'Mission card coming soon',
   },
   home: {
@@ -149,7 +151,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
       lede: 'The night sky is too vast and too precious to leave to chance.',
       paragraphs: [
         'Every night a survey telescope faces thousands of observable tiles. Weather changes, target visibility changes, and science priorities change. Every decision a human observer makes shapes the quality of the final cosmic sample.',
-        'We are building an open benchmark: an agent reads the state of the night sky, reasons like a seasoned observer, and decides the next observation every 900 seconds. Same mission card, same weather replay, same scoring function — the only variable is your strategy.',
+        'We are building an open benchmark: an agent reads the state of the night sky, reasons like a seasoned observer, and decides the next observation every 900 seconds. Every participant receives the same survey plan, weather replay, inserted requests, simulator, and scoring rule — the only variable is strategy.',
       ],
       link: 'Read the full event brief',
       stats: [
@@ -160,7 +162,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
     },
     mission: {
       kicker: '02 / Mission',
-      title: 'Design a digital observer',
+      title: 'Design an agentic observer',
       lede: 'Your agent takes over the core decisions of a human lead observer.',
       cards: [
         { title: 'Read the night sky', desc: 'Weather, forecast, tile progress, and legal candidates are packed into one compact state dictionary.' },
@@ -175,27 +177,25 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
       lede: 'From training to awards, the path is clear.',
       steps: [
         { n: '01', title: 'Register & team up', desc: 'Sign up online and create or join a team. Solo developers are welcome too.' },
-        { n: '02', title: 'Build your agent', desc: 'Train, test, and iterate on your observing strategy with CosmosBench public data.' },
-        { n: '03', title: 'Submit for evaluation', desc: 'During the competition, submit your agent. CosmosBench runs everyone on the same benchmark and updates the live leaderboard.' },
+        { n: '02', title: 'Build your agent', desc: 'Build a reproducibly runnable project in any programming language, then test and iterate with CosmosBench public data.' },
+        { n: '03', title: 'Submit for evaluation', desc: 'Submit only the observation results generated by your agent. CosmosBench evaluates every team on the same benchmark.' },
       ],
       timeline: [
-        { label: 'Sep 15–30', desc: 'Online training' },
-        { label: 'Oct 1–17', desc: 'Online + Shenzhen finals' },
+        { label: 'Oct 1–4', desc: 'Online training' },
+        { label: 'Oct 5–7', desc: 'Online competition' },
         { label: 'Oct 17', desc: 'Awards at GOSIM Shenzhen' },
       ],
       cta: 'Registration coming soon',
     },
     prizes: {
       kicker: '04 / Awards',
-      title: '$5,700 in prizes',
-      lede: 'Four award categories recognize the strongest observing agents and the best live presentation at GOSIM Shenzhen.',
+      title: '$5,500 in prizes',
+      lede: 'Three award tiers recognize the strongest observing agents.',
       tiers: [
         { place: 'First Prize', amount: '$2,000', count: '1 winner' },
         { place: 'Second Prize', amount: '$1,000', count: '2 winners' },
         { place: 'Third Prize', amount: '$500', count: '3 winners' },
-        { place: 'Best Live Presentation', amount: '$200', count: '1 winner' },
       ],
-      note: 'The Best Live Presentation award is reserved for teams presenting at the conference venue. The number of teams and participants invited onsite is still to be confirmed.',
     },
     leaderboard: {
       kicker: '05 / Leaderboard',
@@ -238,7 +238,7 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
       { n: '04', title: 'Candidate filtering', desc: 'Keep the tiles that are visible now, legal, and worth the time.' },
       { n: '05', title: 'Tile ranking', desc: 'Trade off science yield, priority, airmass, footprint balance, and wasted time.' },
       { n: '06', title: 'Completion management', desc: 'Finish a tile when the value of completing it beats the cost of over-exposure.' },
-      { n: '07', title: 'Replanning', desc: 'React to sudden downtime and fluctuating observing efficiency.' },
+      { n: '07', title: 'Replanning', desc: 'React to forecast disruptions, inserted requests, and changing observing efficiency.' },
       { n: '08', title: 'Quality monitoring', desc: 'Use fast validation signals to calibrate later decisions.' },
       { n: '09', title: 'Logging the reason', desc: 'Explain why the observer chose this action in this slot.' },
     ],
@@ -247,48 +247,49 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
     kicker: '03 / Format',
     title: 'The Survey Mission Card',
     intro:
-      'Every challenge instance starts from a Survey Mission Card. It states the science goal, footprint area, time budget, telescope site, available observing programs, target classes, observing constraints, and scoring rules.',
+      'Every challenge instance starts from a Survey Mission Card. It defines the science goal, footprint area, time budget, telescope site, observing programs, target classes, constraints, scoring rules, and authoritative interface contract. The mission card and public development data will be released before the hackathon begins.',
     cards: [
       { title: 'Mission definition', desc: 'Which sky to cover, which targets matter, how much time you have.' },
       { title: 'Telescope / site', desc: 'Latitude, visibility limits, slot length, airmass constraints.' },
       { title: 'Public dev data', desc: 'Tile catalogue, example weather scenarios, initial state, and visual reports.' },
       { title: 'Final eval data', desc: 'Organizer-supplied weather replay, run in the same simulator.' },
-      { title: 'Your deliverable', desc: 'An observing agent that reads state and returns an observing action.' },
-      { title: 'One evaluation', desc: 'Every submitted agent runs on the same mission card, the same weather, the same scoring function.' },
+      { title: 'Your deliverable', desc: 'The observation results generated by your agent, submitted through the competition platform.' },
+      { title: 'One evaluation', desc: 'Every agent faces the same survey plan, weather replay, inserted requests, disruptions, simulator, and scoring rule.' },
     ],
     loopTitle: 'The challenge loop',
     loop: [
-      { stage: 'Fixed inputs', items: ['Science goal', 'Tile table', 'Weather'] },
-      { stage: 'Agent state', items: ['Forecast', 'Progress', 'Candidates'] },
+      { stage: 'Fixed inputs', items: ['Science goal', 'Footprint tiles', 'Weather replay'] },
+      { stage: 'Agent state', items: ['Weather + forecast', 'Survey progress', 'Available tiles'] },
       { stage: 'Reasoning', items: ['Rank', 'Explain', 'Decide'] },
       { stage: 'Action', items: ['Observe', 'or wait'] },
-      { stage: 'Metrics', items: ['Score', 'Uniformity', 'Violations'] },
+      { stage: 'Metrics', items: ['Science yield', 'Uniformity + waste', 'Violations'] },
     ],
-    loopNote: 'In this competition the only variable is the agent’s strategy. Simulator, weather replay, and scoring function are all fixed.',
+    loopNote: 'The only variable is agent strategy. The overall survey plan, weather replay, ad-hoc requests, predictable disruptions, simulator, and scoring rule are fixed for every participant.',
   },
   build: {
-    kicker: '04 / What to Build',
+    kicker: '04 / Participant Job',
     title: 'What participants do',
     intro:
-      'Submit a Python file containing class MyAgent. The simulator calls MyAgent.act(state) repeatedly, and that method returns either observe(tile_id) or wait.',
+      'Build and run an agent in any programming language using the observer interface defined by the Survey Mission Card. Submit only the observation results generated by the agent.',
     io: [
       { term: 'Input', desc: 'A small state dictionary: weather, forecast, survey progress, and the legal candidate tiles.' },
-      { term: 'Output', desc: 'One action — for this 900-second slot, either observe a tile_id or wait.' },
+      { term: 'Output', desc: 'One observing plan for the next 900-second slot, such as observe a tile_id under DARK or wait. The reason text is free form.' },
       { term: 'Scoring', desc: 'Effective targets, tiles completed, evenness of footprint coverage, time efficiency, and action legality.' },
-      { term: 'Deliverable', desc: 'One agent file plus a short note explaining the observer’s architecture.' },
+      { term: 'Deliverable', desc: 'Only the observation results generated by the agent, submitted in the format required by the competition platform.' },
     ],
-    starterTitle: 'Your first working agent',
+    starterTitle: 'Illustrative example only',
     starterIntro:
-      'Start from one plain utility rule: among the legal tiles, take the one with the highest expected weighted gain. That already is a working observer.',
+      'This minimal utility rule illustrates one possible design; it does not constrain implementation language, architecture, or strategy. Follow the Survey Mission Card for the official interface.',
     starterCode: `tiles = state["available_tiles"]
 if len(tiles) == 0:
     return {"action": "wait"}
 
 best = max(tiles, key=lambda t: t["expected_weighted_gain"])
-return {"action": "observe", "tile_id": best["tile_id"]}`,
+return {"action": "observe", "tile_id": best["tile_id"], "plan": "DARK",
+        "reason": "highest useful gain"}`,
     starterClosing:
-      'Then add weather, completion, airmass, footprint balance, and a waste term. A competitive agent usually combines immediate science yield with forecast awareness, a completion bonus, footprint balancing, an airmass penalty, and one concise reason string.',
-    archTitle: 'Architectures worth trying',
+      'Weather, completion, airmass, footprint balance, and waste are useful strategy factors. How to weigh them and how to structure the agent are left to each participant.',
+    archTitle: 'Illustrative architectures',
     architectures: [
       { name: 'Utility agent', desc: 'Score every candidate tile, take the highest.' },
       { name: 'Weather-aware planner', desc: 'Use the forecast to decide whether to spend or save a high-value tile.' },
@@ -330,14 +331,14 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
       - incomplete_priority_penalty`,
     principlesTitle: 'Open-science design principles',
     principles: [
-      { term: 'Reproducible benchmark', desc: 'Fixed seeds, fixed data, fixed scoring.' },
-      { term: 'Inspectable interface', desc: 'Participants see a compact state dictionary and a readable history file.' },
+      { term: 'Consistent benchmark', desc: 'Fixed data and scoring evaluate every submitted observation result under the same standard.' },
+      { term: 'Inspectable results', desc: 'Readable observation-result artifacts make each team’s outcome reviewable.' },
       { term: 'Scientific but light evaluation', desc: 'Target yield, tile completion, weather response, footprint balance, and waste.' },
-      { term: 'Clearly bounded scoring', desc: 'Observation-planning metrics inside a fast simulator.' },
-      { term: 'Dev and eval weather separated', desc: 'Development weather and final evaluation weather can differ, which supports a robust comparison.' },
+      { term: 'Clearly bounded scoring', desc: 'Short-term planning is primary; middle-term planning may be enabled as mission cards evolve.' },
+      { term: 'Dev and eval weather separated', desc: 'Separate scenarios compare generalization instead of tuning to known weather.' },
     ],
     principlesClosing:
-      'Future mission cards can add real survey log replay, z > 5 quasar planning, and LBG planning while keeping the same observing-agent interface.',
+      'Future mission cards can add real survey-log replay, z > 5 quasar planning, LBG planning, and target-of-opportunity inserts. The community can propose new fixed datasets for follow-up tracks.',
     vizTitle: 'Seeing the result',
     viz: [
       'The test data includes a deterministic table of simulated target coordinates. Each tile’s target count is bound to fixed simulated coordinates through the random seed, the tile_id, and the target class.',
@@ -359,6 +360,8 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
       { term: 'Transparency', desc: 'How clear the atmosphere is. Higher is better.' },
       { term: 'Sky brightness', desc: 'Background noise. For faint targets, darker is usually better.' },
       { term: 'Airmass', desc: 'How much atmosphere the light passes through. Lower is better.' },
+      { term: 'DARK / BRIGHT / BACKUP', desc: 'Observing programs matched to dark, bright, and poor sky conditions.' },
+      { term: 'Priority and coverage', desc: 'High-priority, nearly complete, and under-covered tiles compete for each observing slot.' },
       { term: 'donefrac', desc: 'Tile completion: 0 means just started, 1 means finished.' },
     ],
     stateTitle: 'What is in the state',
@@ -371,38 +374,39 @@ return {"action": "observe", "tile_id": best["tile_id"]}`,
     actionCode: `return {
     "action": "observe",
     "tile_id": 100123,
-    "reason": "highest useful gain",
+    "plan": "DARK",
+    "reason": "good weather and highest useful gain",
 }`,
   },
   schedule: {
     kicker: '07 / Timeline', title: 'Schedule',
-    intro: 'Online training leads into the CosmosBench-powered competition, followed by Awards Day on October 17.',
+    intro: 'Online training runs October 1–4, the CosmosBench-powered online competition runs October 5–7, and Awards Day is October 17.',
     challengeLabel: 'Survey task', participantsLabel: 'Who participates',
     rounds: [
-      { number: '01', name: 'Online Training', dates: 'Sep 15–30', format: 'Online', challenge: 'Learn CosmosBench, the shared simulator, mission cards, and the observing-agent interface, then prepare with public weather scenarios.', participants: 'Open worldwide to individuals and teams.' },
-      { number: '02', name: 'Finals', dates: 'Oct 1–17', format: 'Online + GOSIM Shenzhen', challenge: 'Complete the survey task under one evaluation protocol, with online and conference participation. Evaluation, submissions, and live standings are powered by CosmosBench.', participants: 'All registered teams.' },
+      { number: '01', name: 'Online Training', dates: 'Oct 1–4', format: 'Online', challenge: 'Learn CosmosBench, the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.', participants: 'Open worldwide to individuals and teams.' },
+      { number: '02', name: 'Online Competition', dates: 'Oct 5–7', format: 'Online', challenge: 'Complete the survey task and submit agent-generated observation results. Evaluation and live standings are powered by CosmosBench.', participants: 'All registered teams.' },
       { number: '03', name: 'Awards Day', dates: 'Oct 17', format: 'GOSIM Shenzhen', challenge: 'Final results are announced and prizes are presented.', participants: 'Winning teams and invited participants.' },
     ],
   },
   leaderboard: {
     kicker: '08 / CosmosBench', title: 'Live Leaderboard · Top 20',
     intro: 'One mission card, weather replay, simulator, and scoring function. Evaluation and live standings are powered by CosmosBench.',
-    refresh: 'Refresh', full: 'Full board', updated: 'Updated', loading: 'Loading CosmosBench…', empty: 'The leaderboard goes live when the competition opens on October 1.', unavailable: 'The CosmosBench leaderboard is temporarily unavailable. Please try again shortly.',
-    team: 'Team / Agent', score: 'Score', science: 'Science', completion: 'Completion', uniformity: 'Uniformity', submissions: 'Submissions',
+    refresh: 'Refresh', full: 'Full board', updated: 'Updated', loading: 'Loading CosmosBench…', empty: 'The leaderboard goes live when the online competition opens on October 5.', unavailable: 'The CosmosBench leaderboard is temporarily unavailable. Please try again shortly.',
+    team: 'Team / Agent', score: 'Score', science: 'Science', completion: 'Completion', uniformity: 'Uniformity', submissions: 'Result submissions',
   },
   cta: {
     title: 'Hand the next move of the night sky to the agent you wrote',
-    tagline: 'Same mission card, same weather, same scoring function. The only variable is strategy.',
+    tagline: 'Same survey plan, weather replay, inserted requests, simulator, and scoring rule. The only variable is strategy.',
     location: 'Online development and CosmosBench evaluation · October 17 at GOSIM Shenzhen',
   },
   footer: {
-    copyright: '2026 GOSIM · Agentic Cosmos',
+    copyright: '2026 GOSIM · Agent Observer',
     mainSite: 'GOSIM',
     register: 'Mission card coming soon',
   },
   construction: {
     title: 'Site Under Construction',
-    desc: 'This site is still being built. Dates, the mission card, and how to register are not final — treat nothing here as settled until announced.',
+    desc: 'This site is still being completed. The mission card and registration details are forthcoming; the schedule shown on the site is the current confirmed schedule.',
     ok: 'Got it',
   },
 }

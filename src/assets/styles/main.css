@@ -300,16 +300,6 @@ select:focus {
   line-height: 1.04;
 }
 
-.poster-number {
-  color: #315efb;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -.07em;
-  opacity: .96;
-}
-
 .poster-rule { border-color: rgba(255,255,255,.2); }
 
 .paper-sheet {
