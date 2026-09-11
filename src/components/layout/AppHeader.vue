@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EventSwitcher from './EventSwitcher.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '../../composables/useI18n'
@@ -6,6 +7,7 @@ import { useI18n } from '../../composables/useI18n'
 const { t, pick, toggleLocale } = useI18n()
 const router = useRouter()
 const mobileOpen = ref(false)
+const base = import.meta.env.BASE_URL
 
 type NavItem = { key: string; to?: string; href?: string }
 
@@ -29,14 +31,14 @@ function scrollTo(hash: string) {
 
 <template>
   <header class="cosmos-header sticky top-0 z-50 border-b border-border backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-5 md:px-10 xl:px-14">
+    <div class="gosim-nav-inner flex items-center justify-between gap-6">
+      <div class="gosim-brand-switcher">
       <a href="https://create.gosim.org/" aria-label="GOSIM Create home" class="flex items-center gap-3">
-        <span class="cosmos-wordmark shrink-0 whitespace-nowrap text-lg text-[#f5f5f5]">GOSIM <span class="text-[#315efb]">Create</span></span>
-        <span class="hidden h-4 w-px bg-white/25 sm:block"></span>
-        <span class="hidden whitespace-nowrap font-mono text-xs uppercase tracking-[.1em] text-white/45 sm:block">
-          AGENT HACKATHON
-        </span>
+        <span class="create-brand"><img :src="`${base}gosim-logo.svg`" alt="GOSIM"><span>Create</span></span>
       </a>
+        <span class="gosim-brand-divider" aria-hidden="true"></span>
+        <EventSwitcher current="/survey26/" :english="pick('en', 'zh') === 'en'" />
+      </div>
 
       <nav class="hidden items-center gap-5 lg:flex">
         <router-link
@@ -86,3 +88,20 @@ function scrollTo(hash: string) {
     </div>
   </header>
 </template>
+
+<style scoped>
+.create-brand { display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; white-space: nowrap; color: #f5f5f5; font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.035em; }
+.create-brand img { width: 76px; height: 24px; }
+@media (min-width: 1024px) and (max-width: 1279px) { nav { gap: 12px; } .cosmos-register-link { display: none; } }
+</style>
+
+<style scoped>
+.gosim-nav-inner { box-sizing: border-box; width: 100%; max-width: 1280px; height: 64px; margin-inline: auto; padding-inline: 24px; }
+@media (max-width: 760px) { .gosim-nav-inner { padding-inline: 16px; } }
+</style>
+
+<style scoped>
+.gosim-brand-switcher { display: flex; align-items: center; gap: 12px; flex-shrink: 0; color: var(--color-text-primary); }
+.gosim-brand-divider { height: 20px; width: 1px; background: currentColor; opacity: .25; }
+@media (max-width: 639px) { .gosim-brand-switcher { gap: 6px; } .gosim-nav-inner { gap: 8px; } }
+</style>
