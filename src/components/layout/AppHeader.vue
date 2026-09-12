@@ -45,14 +45,14 @@ function scrollTo(hash: string) {
           v-for="item in items.filter(i => i.to)"
           :key="item.to"
           :to="item.to!"
-          class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] text-white/50 transition-colors hover:text-[#315efb]"
+          class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] text-white/50 transition-colors hover:text-[#edb28b]"
         >{{ t(item.key) }}</router-link>
         <a
           v-for="item in items.filter(i => i.href)"
           :key="item.href"
           :href="item.href"
           @click.prevent="scrollTo(item.href!)"
-          class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] text-white/50 transition-colors hover:text-[#315efb]"
+          class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] text-white/50 transition-colors hover:text-[#edb28b]"
         >{{ t(item.key) }}</a>
       </nav>
 
@@ -67,7 +67,7 @@ function scrollTo(hash: string) {
       </div>
     </div>
 
-    <div v-if="mobileOpen" class="border-t border-white/20 bg-[#070708] px-5 py-4 lg:hidden">
+    <div v-if="mobileOpen" class="border-t border-white/20 bg-[#18242f] px-5 py-4 lg:hidden">
       <router-link
         v-for="item in items.filter(i => i.to)"
         :key="item.to"
@@ -90,7 +90,7 @@ function scrollTo(hash: string) {
 </template>
 
 <style scoped>
-.create-brand { display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; white-space: nowrap; color: #f5f5f5; font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.035em; }
+.create-brand { display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; white-space: nowrap; color: #f0e9dd; font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.035em; }
 .create-brand img { width: 76px; height: 24px; }
 @media (min-width: 1024px) and (max-width: 1279px) { nav { gap: 12px; } .cosmos-register-link { display: none; } }
 </style>

@@ -18,29 +18,29 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
 
         <div class="relative z-10 grid gap-14 lg:grid-cols-[.7fr_1.3fr] lg:gap-20">
           <div>
-            <div class="font-mono text-xs text-[#315efb]" aria-hidden="true">03</div>
-            <span class="mt-8 inline-block font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('home.participate.kicker') }}</span>
-            <h2 class="mt-8 max-w-[16ch] text-[clamp(2.25rem,4.6vw,4.75rem)] font-semibold leading-[1.04] tracking-[-.05em] text-[#09090a]">{{ t('home.participate.title') }}</h2>
-            <p class="mt-7 max-w-md text-base leading-relaxed text-[#404040] md:text-lg">{{ t('home.participate.lede') }}</p>
+            <div class="font-mono text-xs text-[#edb28b]" aria-hidden="true">03</div>
+            <span class="mt-8 inline-block font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">{{ t('home.participate.kicker') }}</span>
+            <h2 class="mt-8 max-w-[16ch] text-[clamp(2.25rem,4.6vw,4.75rem)] font-semibold leading-[1.04] tracking-[-.05em] text-[#18242f]">{{ t('home.participate.title') }}</h2>
+            <p class="mt-7 max-w-md text-base leading-relaxed text-[#41515c] md:text-lg">{{ t('home.participate.lede') }}</p>
           </div>
 
           <div>
             <article v-for="(step, index) in steps" :key="step.n" class="grid grid-cols-[3.5rem_1fr] gap-4 border-t border-black/35 py-7 md:grid-cols-[5rem_1fr] md:py-9" :class="index === steps.length - 1 ? 'border-b' : ''">
-              <span class="font-mono text-xs tracking-[.15em] text-[#315efb]">{{ step.n }}</span>
+              <span class="font-mono text-xs tracking-[.15em] text-[#edb28b]">{{ step.n }}</span>
               <div>
-                <h3 class="text-xl font-semibold leading-tight tracking-[-.03em] text-[#09090a] md:text-2xl">{{ step.title }}</h3>
-                <p class="mt-4 max-w-2xl text-sm leading-relaxed text-[#4a4a4a] md:text-base">{{ step.desc }}</p>
+                <h3 class="text-xl font-semibold leading-tight tracking-[-.03em] text-[#18242f] md:text-2xl">{{ step.title }}</h3>
+                <p class="mt-4 max-w-2xl text-sm leading-relaxed text-[#4c5c68] md:text-base">{{ step.desc }}</p>
               </div>
             </article>
 
             <div class="mt-10 grid grid-cols-3 border-y border-black/30">
               <div v-for="item in timeline" :key="item.label" class="border-r border-black/25 py-5 pr-3 last:border-r-0 md:px-5 md:first:pl-0">
-                <div class="text-lg font-semibold text-[#315efb] md:text-xl">{{ item.label }}</div>
-                <div class="mt-2 font-mono text-xs uppercase leading-relaxed tracking-[.08em] text-[#5f5f5f]">{{ item.desc }}</div>
+                <div class="text-lg font-semibold text-[#edb28b] md:text-xl">{{ item.label }}</div>
+                <div class="mt-2 font-mono text-xs uppercase leading-relaxed tracking-[.08em] text-[#6b7a83]">{{ item.desc }}</div>
               </div>
             </div>
 
-            <span aria-disabled="true" class="mt-10 inline-flex w-full items-center bg-[#090909] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] md:w-auto md:min-w-60">
+            <span aria-disabled="true" class="mt-10 inline-flex w-full items-center bg-[#18242f] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f0e9dd] md:w-auto md:min-w-60">
               {{ t('home.participate.cta') }}
             </span>
           </div>
@@ -61,8 +61,8 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
   z-index: 3;
   width: 6rem;
   height: 1.25rem;
-  background: #315efb;
-  box-shadow: 0 2px 5px rgba(0,0,0,.26);
+  background: #edb28b;
+  box-shadow: 0 2px 5px rgba(16,29,41,.26);
 }
 .paper-marker-top { top: -.45rem; left: 8%; transform: rotate(-3deg); }
 .paper-marker-bottom { right: 7%; bottom: -.4rem; transform: rotate(4deg); }

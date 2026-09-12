@@ -24,7 +24,7 @@ function dismiss() {
       <span class="mono-label text-accent">{{ t('nav.applyNow') }}</span>
       <h2 class="mt-4 text-2xl font-semibold tracking-[-.03em] text-text-primary">{{ t('construction.title') }}</h2>
       <p class="mt-4 text-sm leading-relaxed text-text-secondary">{{ t('construction.desc') }}</p>
-      <button @click="dismiss" class="mt-7 w-full bg-accent px-5 py-3 text-xs font-semibold uppercase tracking-[.14em] text-[#111310] transition-colors hover:bg-accent-hover">
+      <button @click="dismiss" class="mt-7 w-full bg-accent px-5 py-3 text-xs font-semibold uppercase tracking-[.14em] text-[#18242f] transition-colors hover:bg-accent-hover">
         {{ t('construction.ok') }}
       </button>
     </div>
