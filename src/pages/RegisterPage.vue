@@ -411,7 +411,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
         <router-link to="/" class="font-mono text-xs uppercase tracking-[.1em] text-white/55 transition-colors hover:text-white">← {{ pick('Back to hackathon', '返回黑客松主页') }}</router-link>
         <div class="mt-12 grid gap-12 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
           <div>
-            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('AGENT OBSERVER / REGISTRATION', '巡天智能体 / 报名') }}</span>
+            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">{{ pick('AGENT OBSERVER / REGISTRATION', '巡天智能体 / 报名') }}</span>
             <h1 class="mt-7 max-w-[14ch] text-balance text-[clamp(3rem,6.5vw,6.75rem)] font-semibold leading-[1.02] tracking-[-.055em]">
               {{ pick('Agent Observer', '巡天智能体') }}
             </h1>
@@ -689,7 +689,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
 </template>
 
 <style scoped>
-.registration-hero { min-height: 760px; background: #060607; }
+.registration-hero { min-height: 760px; background: #18242f; }
 
 .registration-hero-photo {
   position: absolute;
@@ -708,7 +708,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6,6,7,.94) 0%, rgba(6,6,7,.75) 48%, rgba(6,6,7,.24) 100%), linear-gradient(0deg, rgba(6,6,7,.85), transparent 60%);
+  background: linear-gradient(90deg, rgba(24,36,47,.94) 0%, rgba(24,36,47,.75) 48%, rgba(24,36,47,.24) 100%), linear-gradient(0deg, rgba(24,36,47,.85), transparent 60%);
 }
 
 .registration-plasma {
@@ -717,27 +717,27 @@ onUnmounted(() => authSubscription?.unsubscribe())
   transform: rotate(-9deg);
 }
 
-.registration-body { background: #070708; }
+.registration-body { background: #18242f; }
 
 .registration-form-panel {
-  --color-text-primary: #0a0a0b;
-  --color-text-secondary: #4a4a4a;
-  --color-text-tertiary: #6a6a6a;
-  --color-text-muted: #898989;
-  --color-border: #818181;
+  --color-text-primary: #101d29;
+  --color-text-secondary: #4c5c68;
+  --color-text-tertiary: #8f9ba1;
+  --color-text-muted: #8f9ba1;
+  --color-border: #8f9ba1;
   --color-bg-secondary: rgba(0,0,0,.035);
-  --color-input-bg: rgba(255,255,255,.28);
-  --color-input-border: #7a7a7a;
-  --color-input-placeholder: #838383;
-  --color-btn-text: #ffffff;
-  color: #0a0a0b;
+  --color-input-bg: rgba(240,233,221,.28);
+  --color-input-border: #8f9ba1;
+  --color-input-placeholder: #8f9ba1;
+  --color-btn-text: #202b36;
+  color: #101d29;
 }
 
 .field-label {
   display: block;
   margin-bottom: .55rem;
   color: var(--color-text-tertiary);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: .875rem;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -761,7 +761,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
   border-bottom: 2px solid transparent;
   padding: 0 0 1rem;
   color: var(--color-text-tertiary);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: .875rem;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -776,7 +776,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: .875rem;
   font-weight: 600;
   letter-spacing: .1em;
@@ -799,14 +799,14 @@ onUnmounted(() => authSubscription?.unsubscribe())
 
 .metric-card { display: flex; flex-direction: column; border: 1px solid var(--color-border); background: var(--color-bg-card); padding: 1.4rem; }
 .metric-value { color: var(--color-text-primary); font-size: 2.25rem; font-weight: 600; letter-spacing: -.05em; }
-.metric-label { margin-top: .35rem; color: var(--color-text-tertiary); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .875rem; letter-spacing: .1em; text-transform: uppercase; }
+.metric-label { margin-top: .35rem; color: var(--color-text-tertiary); font-family: var(--font-mono); font-size: .875rem; letter-spacing: .1em; text-transform: uppercase; }
 .team-record { border: 1px solid var(--color-border); background: var(--color-bg-card); padding: 1.5rem; transition: border-color .18s ease, background-color .18s ease; }
 .team-record:hover { border-color: var(--color-border-strong); background: var(--color-bg-elevated); }
 
 @media (max-width: 720px) {
   .registration-hero { min-height: 680px; }
   .registration-hero-photo > img { object-position: 68% center; }
-  .registration-hero-overlay { background: linear-gradient(90deg, rgba(6,6,7,.9), rgba(6,6,7,.52)), linear-gradient(0deg, rgba(6,6,7,.9), transparent 65%); }
+  .registration-hero-overlay { background: linear-gradient(90deg, rgba(24,36,47,.9), rgba(24,36,47,.52)), linear-gradient(0deg, rgba(24,36,47,.9), transparent 65%); }
   .registration-plasma { top: 17%; right: -42%; }
 }
 </style>

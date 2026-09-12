@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { assetUrl } from '../../composables/api'
 
 const { t, pick, locale } = useI18n()
 type Step = { label: string; date: string }
 const pipeline = computed(() => t('hero.pipeline') as Step[])
+const heroVideo = ref<HTMLVideoElement | null>(null)
+const slowDown = () => { if (heroVideo.value) heroVideo.value.playbackRate = 0.5 }
+onMounted(slowDown)
 const heroTitleLines = computed(() => locale.value === 'zh'
   ? ['巡天智能体']
   : ['Agent Observer'])
@@ -18,7 +21,7 @@ const heroTitleLines = computed(() => locale.value === 'zh'
       aria-hidden="true"
       :style="{ backgroundImage: `url(${assetUrl('/media/survey-milky-way.jpg')})` }"
     >
-      <video autoplay loop muted playsinline preload="metadata" :poster="assetUrl('/media/survey-milky-way.jpg')">
+      <video ref="heroVideo" autoplay loop muted playsinline preload="metadata" @loadedmetadata="slowDown" @play="slowDown" :poster="assetUrl('/media/survey-milky-way.jpg')">
         <source :src="assetUrl('/media/survey-night-sky.mp4')" type="video/mp4">
       </video>
     </div>
@@ -27,15 +30,15 @@ const heroTitleLines = computed(() => locale.value === 'zh'
     <div class="hero-layout relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-[1600px] flex-col px-5 md:px-10 xl:px-14">
       <div class="hero-stage flex flex-1 items-center py-10">
         <div class="hero-copy">
-          <div class="hero-kicker mb-7 flex items-center gap-4 font-mono text-xs uppercase leading-relaxed tracking-[.12em] text-[#78a6ff] md:text-sm">
-            <span class="live-dot h-2 w-2 bg-[#78a6ff]"></span>
+          <div class="hero-kicker mb-7 flex items-center gap-4 font-mono text-xs uppercase leading-relaxed tracking-[.12em] text-[#edb28b] md:text-sm">
+            <span class="live-dot h-2 w-2 bg-[#edb28b]"></span>
             {{ t('hero.eyebrow') }}
           </div>
 
           <h1 class="hero-title" :class="{ 'hero-title-zh': locale === 'zh' }" :aria-label="t('hero.system')">
             <span v-for="line in heroTitleLines" :key="line" class="hero-title-line">{{ line }}</span>
           </h1>
-          <p class="hero-subtitle mt-4 font-mono text-sm uppercase tracking-[.22em] text-[#78a6ff] md:text-base">{{ t('hero.subtitle') }}</p>
+          <p class="hero-subtitle mt-4 font-mono text-sm uppercase tracking-[.22em] text-[#edb28b] md:text-base">{{ t('hero.subtitle') }}</p>
 
           <div class="hero-intro mt-8 max-w-3xl border-t border-white/25 pt-6">
             <p class="text-base leading-[1.75] text-white/82 md:text-lg">{{ t('hero.lede') }}</p>
@@ -54,7 +57,7 @@ const heroTitleLines = computed(() => locale.value === 'zh'
 
       <div class="hero-timeline grid grid-cols-3 border-t border-white/22">
         <div v-for="(step, index) in pipeline" :key="step.label" class="border-r border-white/16 py-5 last:border-r-0 md:py-6">
-          <span class="font-mono text-xs text-[#78a6ff]">0{{ index + 1 }}</span>
+          <span class="font-mono text-xs text-[#edb28b]">0{{ index + 1 }}</span>
           <p class="mt-2 text-sm font-semibold leading-snug">{{ step.label }}</p>
           <p class="mt-1 font-mono text-xs leading-snug tracking-[.04em] text-white/50">{{ step.date }}</p>
         </div>
@@ -68,15 +71,15 @@ const heroTitleLines = computed(() => locale.value === 'zh'
 <style scoped>
 .cosmos-hero {
   min-height: 760px;
-  color: #f7f9ff;
-  background: #02050c;
+  color: #f0e9dd;
+  background: #0d1822;
 }
 
 .hero-media {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background-color: #02050c;
+  background-color: #0d1822;
   background-position: center bottom;
   background-size: cover;
 }
@@ -94,8 +97,8 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   inset: 0;
   content: '';
   background:
-    linear-gradient(90deg, rgba(2,5,14,.9) 0%, rgba(3,10,25,.62) 42%, rgba(2,6,16,.12) 76%, rgba(2,5,14,.24) 100%),
-    linear-gradient(0deg, rgba(2,5,14,.72) 0%, rgba(2,5,14,.1) 54%, rgba(2,5,14,.3) 100%);
+    linear-gradient(90deg, rgba(13,24,34,.9) 0%, rgba(16,29,41,.62) 42%, rgba(13,24,34,.12) 76%, rgba(13,24,34,.24) 100%),
+    linear-gradient(0deg, rgba(13,24,34,.72) 0%, rgba(13,24,34,.1) 54%, rgba(13,24,34,.3) 100%);
 }
 
 .hero-overlay {
@@ -104,8 +107,8 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 62% 34%, rgba(70,126,255,.1), transparent 27%),
-    linear-gradient(180deg, transparent 72%, rgba(2,5,14,.4));
+    radial-gradient(circle at 62% 34%, rgba(237,178,139,.1), transparent 27%),
+    linear-gradient(180deg, transparent 72%, rgba(13,24,34,.4));
 }
 
 .hero-layout { min-height: max(760px, calc(100svh - 4rem)); }
@@ -113,20 +116,21 @@ const heroTitleLines = computed(() => locale.value === 'zh'
 
 .hero-title {
   max-width: 11ch;
-  color: #f7f9ff;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
-  font-size: clamp(4rem, 7.6vw, 8rem);
-  font-weight: 600;
-  letter-spacing: -.065em;
-  line-height: .92;
+  color: #f0e9dd;
+  font-family: var(--font-serif);
+  font-size: clamp(4.5rem, 8.4vw, 9rem);
+  font-weight: 500;
+  letter-spacing: -.02em;
+  line-height: .95;
   text-wrap: balance;
 }
 
 .hero-title-line { display: block; }
 .hero-title-zh {
-  font-size: clamp(3.6rem, 6.6vw, 7rem);
-  line-height: 1.04;
-  letter-spacing: -.065em;
+  font-size: clamp(3.4rem, 6.4vw, 6.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: .02em;
 }
 .hero-title-zh + .hero-subtitle { margin-top: 1.5rem; }
 
@@ -136,19 +140,19 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   min-height: 48px;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid rgba(217,229,255,.48);
+  border: 1px solid rgba(240,233,221,.48);
   padding: .8rem 1rem;
-  color: #f7f9ff;
-  background: rgba(2,8,20,.46);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: #f0e9dd;
+  background: rgba(16,29,41,.46);
+  font-family: var(--font-mono);
   font-size: .75rem;
   letter-spacing: .11em;
   text-transform: uppercase;
   transition: color .2s ease, background .2s ease, border-color .2s ease;
 }
 
-.hero-action:hover { color: #06102a; border-color: #f7f9ff; background: #f7f9ff; }
-.hero-action-primary { color: #ffffff; border-color: #315efb; background: #315efb; }
+.hero-action:hover { color: #202b36; border-color: #f0e9dd; background: #f0e9dd; }
+.hero-action-primary { color: #18242f; border-color: #edb28b; background: #edb28b; }
 .hero-timeline > div { padding-left: clamp(.65rem, 2vw, 1.5rem); }
 
 .hero-side-note {
@@ -156,8 +160,8 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   z-index: 3;
   top: 50%;
   right: -8.4rem;
-  color: rgba(255,255,255,.4);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: rgba(240,233,221,.4);
+  font-family: var(--font-mono);
   font-size: .75rem;
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -176,8 +180,8 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   .hero-media video { object-position: center bottom; }
   .hero-media::after {
     background:
-      linear-gradient(90deg, rgba(2,5,14,.82), rgba(2,7,18,.28)),
-      linear-gradient(0deg, rgba(2,5,14,.78), transparent 58%, rgba(2,5,14,.34));
+      linear-gradient(90deg, rgba(13,24,34,.82), rgba(13,24,34,.28)),
+      linear-gradient(0deg, rgba(13,24,34,.78), transparent 58%, rgba(13,24,34,.34));
   }
   .hero-stage { gap: 2rem; padding-top: 2rem; }
   .hero-title { font-size: clamp(3.6rem, 18vw, 5.5rem); }

@@ -25,12 +25,12 @@ const stats = computed(() => t('home.vision.stats') as Stat[])
           </div>
 
           <div class="mt-9 grid gap-8 border-t poster-rule pt-8 md:grid-cols-[.72fr_1.28fr]">
-            <p class="max-w-3xl text-xl font-medium leading-relaxed tracking-[-.02em] text-[#f5f5f5] md:text-3xl">{{ t('home.vision.lede') }}</p>
+            <p class="max-w-3xl text-xl font-medium leading-relaxed tracking-[-.02em] text-[#f0e9dd] md:text-3xl">{{ t('home.vision.lede') }}</p>
             <div>
               <div class="space-y-5 text-base leading-relaxed text-text-secondary md:text-lg">
                 <p v-for="(paragraph, index) in t('home.vision.paragraphs')" :key="index">{{ paragraph }}</p>
               </div>
-              <router-link to="/brief" class="mt-8 inline-flex items-center gap-3 border-b border-[#315efb] pb-2 font-mono text-xs uppercase tracking-[.1em] text-[#f5f5f5] transition-colors hover:text-[#315efb]">
+              <router-link to="/brief" class="mt-8 inline-flex items-center gap-3 border-b border-[#edb28b] pb-2 font-mono text-xs uppercase tracking-[.1em] text-[#f0e9dd] transition-colors hover:text-[#edb28b]">
                 {{ t('home.vision.link') }} <span>↗</span>
               </router-link>
             </div>
@@ -40,9 +40,9 @@ const stats = computed(() => t('home.vision.stats') as Stat[])
 
       <div class="reveal mt-20 grid border-y poster-rule md:grid-cols-3">
         <div v-for="(stat, index) in stats" :key="stat.label" class="grid grid-cols-[auto_1fr] items-end gap-5 border-b poster-rule px-2 py-8 last:border-b-0 md:border-r md:border-b-0 md:px-8 md:first:pl-0 md:last:border-r-0">
-          <span class="text-3xl font-semibold tracking-[-.04em] text-[#315efb] md:text-4xl">{{ stat.value }}</span>
+          <span class="text-3xl font-semibold tracking-[-.04em] text-[#edb28b] md:text-4xl">{{ stat.value }}</span>
           <span class="mb-2 font-mono text-xs uppercase tracking-[.1em] text-text-tertiary">{{ stat.label }}</span>
-          <span class="hidden text-right font-mono text-xs text-[#315efb] md:block">0{{ index + 1 }}</span>
+          <span class="hidden text-right font-mono text-xs text-[#edb28b] md:block">0{{ index + 1 }}</span>
         </div>
       </div>
     </div>
@@ -50,17 +50,17 @@ const stats = computed(() => t('home.vision.stats') as Stat[])
 </template>
 
 <style scoped>
-.vision-photo { transform: rotate(-.2deg); box-shadow: 8px 8px 0 #315efb; }
+.vision-photo { transform: rotate(-.2deg); box-shadow: 8px 8px 0 #edb28b; }
 .vision-photo img { object-position: center 45%; }
-.vision-photo::after { background: linear-gradient(90deg, rgba(7,7,8,.46), transparent 48%), linear-gradient(0deg, rgba(7,7,8,.7), transparent 45%); }
+.vision-photo::after { background: linear-gradient(90deg, rgba(24,36,47,.46), transparent 48%), linear-gradient(0deg, rgba(24,36,47,.7), transparent 45%); }
 .vision-plasma { right: -10%; bottom: -12%; width: min(45rem, 65vw); opacity: .88; transform: rotate(5deg); }
 .vision-stamp {
   position: absolute;
   z-index: 4;
   right: 1.25rem;
   bottom: 1.1rem;
-  color: rgba(255,255,255,.7);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: rgba(240,233,221,.7);
+  font-family: var(--font-mono);
   font-size: .875rem;
   letter-spacing: .16em;
   text-transform: uppercase;
