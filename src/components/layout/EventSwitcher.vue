@@ -5,7 +5,7 @@ const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 const events = [
-  { href: '/agent2app26/', name: 'Agentic App 黑客松', en: 'Agentic App', detail: 'Shenzhen 2026 · Agentic App' },
+  { href: '/agenticapp26/', name: 'Agentic App 黑客松', en: 'Agentic App', detail: 'Shenzhen 2026 · Agentic App' },
   { href: '/factory26/', name: '智能体工厂国际黑客松与大奖赛', en: 'Agentic Factory', detail: 'Shenzhen 2026 · OAIC' },
   { href: '/survey26/', name: '智能体巡天黑客松', en: 'Agentic Cosmos', detail: 'Shenzhen 2026 · Agentic Cosmos' },
 ]
