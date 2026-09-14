@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { registrationUrl } from '../../registration'
 import { useI18n } from '../../composables/useI18n'
 import heroImage from '../../assets/images/cosmos-observatory-hero.jpg'
 const { t, pick } = useI18n()
@@ -25,9 +26,9 @@ const { t, pick } = useI18n()
                 <p class="max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">{{ t('cta.tagline') }}</p>
                 <p class="mt-4 font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">{{ t('cta.location') }}</p>
               </div>
-              <span aria-disabled="true" class="inline-flex min-w-60 items-center bg-[#f0e9dd] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-black">
-                {{ pick('Registration coming soon', '报名即将开始') }}
-              </span>
+              <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="inline-flex min-w-60 items-center bg-[#f0e9dd] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-black">
+                {{ pick('Register now', '立即报名') }}
+              </a>
             </div>
           </div>
         </div>

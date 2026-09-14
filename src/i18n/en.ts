@@ -5,7 +5,7 @@ export default {
     mission: 'Mission',
     participate: 'Participate',
     leaderboard: 'Leaderboard',
-    applyNow: 'Registration coming soon',
+    applyNow: 'Register now',
   },
   vision: {
     pageTitle: 'Agent Observer',
@@ -185,7 +185,7 @@ export default {
         { label: 'Oct 5–7', desc: 'Online competition' },
         { label: 'Oct 17', desc: 'Awards at GOSIM Shenzhen' },
       ],
-      cta: 'Registration coming soon',
+      cta: 'Register now',
     },
     prizes: {
       kicker: '04 / Awards',

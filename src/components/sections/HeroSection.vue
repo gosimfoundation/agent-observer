@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { registrationUrl } from '../../registration'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { assetUrl } from '../../composables/api'
@@ -43,9 +44,9 @@ const heroTitleLines = computed(() => locale.value === 'zh'
           <div class="hero-intro mt-8 max-w-3xl border-t border-white/25 pt-6">
             <p class="text-base leading-[1.75] text-white/82 md:text-lg">{{ t('hero.lede') }}</p>
             <div class="mt-7 flex flex-wrap gap-3">
-              <span aria-disabled="true" class="hero-action hero-action-primary pointer-events-none">
-                {{ pick('Registration coming soon', '报名即将开始') }}
-              </span>
+              <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="hero-action hero-action-primary ">
+                {{ pick('Register now', '立即报名') }}
+              </a>
               <router-link to="/brief" class="hero-action">
                 {{ pick('Mission brief', '赛题简报') }} <span>→</span>
               </router-link>

@@ -535,7 +535,7 @@ onUnmounted(() => authSubscription?.unsubscribe())
                   {{ pick('I am looking for teammates', '我正在寻找队友') }}
                 </label>
                 <button class="primary-action md:col-span-2" :disabled="!isSupabaseConfigured || authLoading">
-                  {{ authLoading ? pick('Creating account…', '正在创建账户…') : pick('Registration coming soon', '报名即将开始') }}
+                  {{ authLoading ? pick('Creating account…', '正在创建账户…') : pick('Register now', '立即报名') }}
                 </button>
               </form>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { registrationUrl } from '../registration'
 import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import { useScrollReveal } from '../composables/useScrollReveal'
@@ -127,12 +128,11 @@ const sections = computed(() => t('vision.sections') as Section[])
 
       <div class="reveal paper-sheet mt-16 p-8 text-center md:p-14">
         <p class="text-2xl font-semibold tracking-[-.045em] text-[#101d29] md:text-4xl">{{ pick('Ready to build the next observer?', '准备好构建下一代观测员了吗？') }}</p>
-        <span
-          aria-disabled="true"
+        <a :href="registrationUrl" target="_blank" rel="noopener noreferrer"
           class="relative z-10 mt-8 inline-block bg-[#101d29] px-7 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f0e9dd]"
         >
-          {{ pick('Registration coming soon', '报名即将开始') }}
-        </span>
+          {{ pick('Register now', '立即报名') }}
+        </a>
       </div>
     </article>
   </main>

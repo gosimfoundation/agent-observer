@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { registrationUrl } from '../../registration'
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -40,9 +41,9 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
               </div>
             </div>
 
-            <span aria-disabled="true" class="mt-10 inline-flex w-full items-center bg-[#18242f] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f0e9dd] md:w-auto md:min-w-60">
+            <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="mt-10 inline-flex w-full items-center bg-[#18242f] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f0e9dd] md:w-auto md:min-w-60">
               {{ t('home.participate.cta') }}
-            </span>
+            </a>
           </div>
         </div>
       </div>

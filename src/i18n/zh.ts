@@ -5,7 +5,7 @@ export default {
     mission: "赛题",
     participate: "参赛",
     leaderboard: "排行榜",
-    applyNow: "报名即将开始",
+    applyNow: "立即报名",
   },
   vision: {
     pageTitle: "巡天智能体",
@@ -185,7 +185,7 @@ export default {
         { label: "10.5–10.7", desc: "线上比赛" },
         { label: "10.17", desc: "GOSIM 深圳颁奖" },
       ],
-      cta: "报名即将开始",
+      cta: "立即报名",
     },
     prizes: {
       kicker: "04 / 奖项",

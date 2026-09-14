@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { registrationUrl } from '../../registration'
 import EventSwitcher from './EventSwitcher.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -60,7 +61,7 @@ function scrollTo(hash: string) {
         <button @click="toggleLocale" class="inline-flex h-10 min-w-12 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
           {{ pick('中文', 'EN') }}
         </button>
-        <span aria-disabled="true" class="cosmos-register-link pointer-events-none ml-1 hidden h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Registration coming soon', '报名即将开始') }}</span>
+        <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="cosmos-register-link ml-1 hidden h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Register now', '立即报名') }}</a>
         <button class="ml-1 lg:hidden" @click="mobileOpen = !mobileOpen" :aria-label="pick('Menu', '菜单')">
           <svg class="h-6 w-6 text-text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
@@ -82,9 +83,9 @@ function scrollTo(hash: string) {
         @click.prevent="scrollTo(item.href!)"
         class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white"
       >{{ t(item.key) }}</a>
-      <span aria-disabled="true" class="cosmos-register-link pointer-events-none mt-3 block border px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-widest">
-        {{ pick('Registration coming soon', '报名即将开始') }}
-      </span>
+      <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="cosmos-register-link mt-3 block border px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-widest">
+        {{ pick('Register now', '立即报名') }}
+      </a>
     </div>
   </header>
 </template>
@@ -92,7 +93,7 @@ function scrollTo(hash: string) {
 <style scoped>
 .create-brand { display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; white-space: nowrap; color: #f0e9dd; font: 500 21px/1 'Manrope', sans-serif; letter-spacing: -.035em; }
 .create-brand img { width: 76px; height: 24px; }
-@media (min-width: 1024px) and (max-width: 1279px) { nav { gap: 12px; } .cosmos-register-link { display: none; } }
+@media (min-width: 1024px) and (max-width: 1279px) { nav { gap: 12px; } }
 </style>
 
 <style scoped>
