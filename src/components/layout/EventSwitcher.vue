@@ -7,11 +7,11 @@ const trigger = ref<HTMLButtonElement | null>(null)
 const events = [
   { href: '/agenticapp26/', name: 'Agentic App 黑客松', en: 'Agentic App', detail: 'Shenzhen 2026 · Agentic App' },
   { href: '/factory26/', name: '智能体工厂国际黑客松与大奖赛', en: 'Agentic Factory', detail: 'Shenzhen 2026 · OAIC' },
-  { href: '/survey26/', name: '智能体巡天黑客松', en: 'Agentic Cosmos', detail: 'Shenzhen 2026 · Agentic Cosmos' },
+  { href: '/survey26/', name: '巡天智能体', en: 'Agent Observer', detail: 'Shenzhen 2026 · Agent Observer' },
 ]
 const labels: Record<string, string[]> = {
   '/factory26/': ['智能体工厂', 'Agentic Factory'],
-  '/survey26/': ['智能体巡天', 'Agentic Cosmos'],
+  '/survey26/': ['巡天智能体', 'Agent Observer'],
 }
 
 function dismiss(event: PointerEvent) {
