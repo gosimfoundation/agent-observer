@@ -1,12 +1,14 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 
-const API = String(import.meta.env.VITE_COSMOSBENCH_LEADERBOARD_API || '')
+import { leaderboardApi, platformLinks } from '../registration'
+
+const API = leaderboardApi
 const STATIC_API = `${import.meta.env.BASE_URL}cosmosbench-leaderboard.json`
-export const COSMOSBENCH_URL = String(import.meta.env.VITE_COSMOSBENCH_URL || '#')
+export const COSMOSBENCH_URL = platformLinks.leaderboard
 
 export interface LeaderboardEntry {
   rank: number; name: string; score: number | null; science: number | null
-  completion: number | null; uniformity: number | null; submissions: number
+  bonus: number | null; requests: number | null; penalties: number | null; submissions: number
 }
 const numberOrNull = (value: unknown) => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value)
 function normalize(raw: Record<string, unknown>, index: number): LeaderboardEntry {
@@ -14,9 +16,10 @@ function normalize(raw: Record<string, unknown>, index: number): LeaderboardEntr
     rank: Number(raw.rank ?? index + 1),
     name: String(raw.team_name ?? raw.agent_name ?? raw.username ?? raw.name ?? '—'),
     score: numberOrNull(raw.total_score ?? raw.score),
-    science: numberOrNull(raw.science_score ?? raw.science),
-    completion: numberOrNull(raw.completion_rate ?? raw.completion),
-    uniformity: numberOrNull(raw.uniformity_score ?? raw.uniformity),
+    science: numberOrNull(raw.base_science ?? raw.science_score ?? raw.science),
+    bonus: numberOrNull(raw.program_bonus),
+    requests: numberOrNull(raw.request_reward),
+    penalties: numberOrNull(raw.penalty_total),
     submissions: Number(raw.submission_count ?? raw.submissions ?? 0),
   }
 }
@@ -33,7 +36,8 @@ export function useLeaderboard(limit = 20) {
           const url = new URL(endpoint, window.location.origin); url.searchParams.set('limit', String(limit))
           const response = await fetch(url, { headers: { Accept: 'application/json' } })
           if (!response.ok) throw new Error(String(response.status))
-          const body = await response.json(); const rows = Array.isArray(body) ? body : (body.entries ?? body.data ?? [])
+          const body = await response.json(); const rows = Array.isArray(body) ? body : (body?.entries ?? body?.data)
+          if (!Array.isArray(rows)) throw new Error('Invalid leaderboard response')
           entries.value = rows.slice(0, limit).map(normalize); updatedAt.value = new Date(); loaded = true; break
         } catch { /* Try the same-origin snapshot next. */ }
       }

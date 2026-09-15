@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { registrationUrl } from './registration'
 import HomePage from './pages/HomePage.vue'
 
 const router = createRouter({
@@ -7,7 +8,7 @@ const router = createRouter({
     { path: '/', component: HomePage },
     { path: '/brief', component: () => import('./pages/VisionPage.vue') },
     { path: '/vision', redirect: '/brief' },
-    { path: '/register', redirect: '/' },
+    { path: '/register', component: HomePage, beforeEnter: () => { window.location.replace(registrationUrl); return false } },
   ],
   scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) return savedPosition

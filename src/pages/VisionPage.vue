@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { registrationUrl } from '../registration'
+import { registrationUrl, platformLinks } from '../registration'
 import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import { useScrollReveal } from '../composables/useScrollReveal'
@@ -54,6 +54,13 @@ const sections = computed(() => t('vision.sections') as Section[])
     </header>
 
     <article class="mx-auto max-w-[1400px] px-5 pt-12 md:px-10 md:pt-20 xl:px-14">
+      <div class="mb-8 border border-[#edb28b]/40 p-6 text-sm leading-relaxed text-text-secondary">
+        <p>{{ pick('This page explains the observing challenge. Current interfaces, submission formats and scoring follow the competition platform rules and documentation.', '本页介绍巡天挑战的背景与思路；当前接口、提交格式及计分规则以比赛平台的规则和开发文档为准。') }}</p>
+        <div class="mt-4 flex flex-wrap gap-6 text-[#edb28b]">
+          <a :href="platformLinks.rules" target="_blank" rel="noopener noreferrer">{{ pick('Competition rules', '比赛规则') }} ↗</a>
+          <a :href="platformLinks.docs" target="_blank" rel="noopener noreferrer">{{ pick('Development documentation', '开发文档') }} ↗</a>
+        </div>
+      </div>
       <section
         v-for="(section, index) in sections"
         :key="index"

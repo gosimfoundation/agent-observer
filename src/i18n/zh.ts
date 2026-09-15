@@ -74,9 +74,9 @@ export default {
         kicker: "05 / 参赛任务",
         title: "构建可复现运行的观测智能体项目",
         paragraphs: [
-          "编程语言不限。项目必须实现巡天任务卡定义的观测员接口：模拟器反复提供当前情境，智能体返回下一步动作，例如观测或等待，并附带格式自由的理由。网站中的示例只用于说明概念，任务卡才是权威接口约定。",
-          "运行智能体完成挑战场景，生成比赛平台要求的观测结果。",
-          "阅读任务卡，研究公开开发场景与可视化报告，依据观测员接口开发原型，在开发场景中评测并检查已观测宇宙图，最后只提交智能体生成的观测结果。",
+          "项目须实现比赛平台当前版本的智能体接口。正式比赛的程序包使用 Python 3.12 运行环境；请从平台下载入门工具包。本站示例仅用于说明观测决策思路，正式接口以平台开发文档为准。",
+          "练习阶段可以上传观测结果文件或智能体程序包；正式线上比赛只接受智能体程序包，由平台在隐藏场景中运行。",
+          "阅读平台规则与开发文档，下载入门工具包，在公开场景中开发测试，再通过平台提交。平台提供评分报告、运行日志与决策回放。",
         ],
         actionCode: `return {
     "action": "observe",
@@ -89,16 +89,13 @@ export default {
         kicker: "06 / 计分",
         title: "科学、可复现、可检视的评测",
         paragraphs: [
-          "得分奖励加权有效目标数，并惩罚天区覆盖不均、时间浪费、规则违规，以及未完成的高优先级天区。一个好的智能体，会在即时产出与完成度、均匀性、天气风险和运行纪律之间做出权衡。",
+          "当前平台采用 challenge-score-v3：总分由基础科学产出、项目加成和请求奖励构成，再扣除惩罚项。正式阶段有多个场景时取场景得分均值，排行榜采用每队最佳已评分提交。具体规则以比赛平台为准。",
           "评测遵循开放科学原则：固定数据与固定计分，让每份观测结果都按同一标准评估；可读的结果文件便于检查最终产出；开发天气与最终评测天气分离，比较的是泛化能力，而不是针对已知场景调参。",
           "结果可视化把已完成的天区比例转换成「已观测目标图」——三维空间采样与二维蝴蝶图（天球位置加模拟红移，风格与 DESI 一致），让不同策略肉眼可辨。",
           "同一观测员接口未来可以承载真实巡天日志回放、z > 5 类星体规划、LBG 规划和临时目标插入等任务卡；社区也可以为后续赛道提议新的固定数据集。",
         ],
-        formula: `score = science_score
-  - uniformity_penalty            均匀性惩罚
-  - wasted_time_penalty           时间浪费惩罚
-  - violation_penalty             违规惩罚
-  - incomplete_priority_penalty   高优先级未完成惩罚`,
+        formula: `score = base_science + program_bonus + request_reward
+  - penalty_total`,
       },
       {
         kicker: "07 / 名词",
@@ -120,11 +117,11 @@ export default {
         title: "从培训到颁奖的三阶段",
         paragraphs: [
           "赛事分为三个阶段：10 月 1–4 日线上培训、10 月 5–7 日线上比赛，以及 10 月 17 日 GOSIM 深圳大会颁奖。",
-          "培训将介绍 CosmosBench、统一模拟器、任务卡和观测员接口。线上比赛期间，已报名队伍提交智能体生成的观测结果；测评与实时排名由 CosmosBench 支撑。",
+          "培训将介绍 CosmosBench、统一模拟器、任务卡和观测员接口。线上比赛期间，已报名队伍提交智能体程序包；运行、测评与排名由 Agent Observer 比赛平台提供。",
         ],
         rounds: [
           { number: "01", name: "线上培训", dates: "10 月 1–4 日", format: "线上", challenge: "熟悉 CosmosBench、统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。", participants: "面向全球开放，个人与团队均可参加。" },
-          { number: "02", name: "线上比赛", dates: "10 月 5–7 日", format: "线上", challenge: "完成巡天任务并提交智能体生成的观测结果；测评与实时排名由 CosmosBench 支撑。", participants: "所有完成报名的参赛队伍。" },
+          { number: "02", name: "线上比赛", dates: "10 月 5–7 日", format: "线上", challenge: "提交智能体程序包，由 Agent Observer 比赛平台运行、评测并公布排名。", participants: "所有完成报名的参赛队伍。" },
           { number: "03", name: "颁奖日", dates: "10 月 17 日", format: "GOSIM 深圳", challenge: "公布最终成绩并举行颁奖典礼。", participants: "获奖队伍及受邀参赛者。" },
         ],
       },
@@ -176,9 +173,9 @@ export default {
       title: "三步加入挑战",
       lede: "从培训到颁奖，整个赛程清晰透明。",
       steps: [
-        { n: "01", title: "报名组队", desc: "在线注册并创建或加入一支队伍。个人开发者也欢迎。" },
-        { n: "02", title: "开发智能体", desc: "使用任意编程语言构建可复现运行的项目，再利用 CosmosBench 公开数据测试并迭代策略。" },
-        { n: "03", title: "提交评测", desc: "只需提交智能体生成的观测结果，由 CosmosBench 在同一基准上统一评测。" },
+        { n: "01", title: "报名组队", desc: "在比赛平台注册账号，再创建或加入一支队伍。个人开发者也欢迎。" },
+        { n: "02", title: "开发智能体", desc: "下载比赛平台的入门工具包，按当前接口开发智能体，并在公开练习场景中测试。" },
+        { n: "03", title: "提交评测", desc: "练习阶段支持观测结果文件或智能体程序包；正式线上比赛提交智能体程序包，由平台运行并评测。" },
       ],
       timeline: [
         { label: "10.1–10.4", desc: "线上培训" },
@@ -200,7 +197,7 @@ export default {
     leaderboard: {
       kicker: "05 / 排行榜",
       title: "实时排名",
-      lede: "比赛开始后，排行榜将由 CosmosBench 实时更新。",
+      lede: "正式线上比赛排行榜由 Agent Observer 比赛平台提供；练习榜及各阶段状态请查看完整榜单。",
     },
   },
   about: {
@@ -253,7 +250,7 @@ export default {
       { title: "望远镜 / 台址", desc: "纬度、可见性限制、时隙长度、大气质量约束。" },
       { title: "公开开发数据", desc: "天区目录、示例天气场景、初始状态与可视化报告。" },
       { title: "最终评测数据", desc: "由主办方提供的天气回放，在同一套模拟器中运行。" },
-      { title: "提交物", desc: "通过比赛平台提交的、由智能体生成的观测结果。" },
+      { title: "提交物", desc: "练习结果文件或智能体程序包；正式线上比赛只接受程序包。" },
       { title: "统一评测", desc: "所有智能体面对相同的巡天计划、天气回放、新增请求、中断、模拟器与计分规则。" },
     ],
     loopTitle: "挑战赛闭环",
@@ -270,16 +267,16 @@ export default {
     kicker: "04 / 参赛任务",
     title: "参赛者要做什么",
     intro:
-      "使用任意编程语言，依据巡天任务卡定义的观测员接口构建并运行智能体；最终只提交智能体生成的观测结果。",
+      "按比赛平台文档开发智能体。练习阶段支持结果文件与程序包；正式线上比赛提交程序包，由平台在 Python 3.12 环境中运行。",
     io: [
       { term: "输入", desc: "一个小的状态字典，包含天气、预报、巡天进度与合法候选天区。" },
       { term: "输出", desc: "下一个 900 秒时隙的观测计划，例如在 DARK 项目下观测某个 tile_id，或者等待；理由文本不受格式限制。" },
       { term: "计分", desc: "有效目标数、完成的天区、天区覆盖的均衡性、时间使用效率，以及动作的合规性。" },
-      { term: "提交物", desc: "只提交智能体生成的观测结果，格式以比赛平台要求为准。" },
+      { term: "提交物", desc: "练习阶段支持结果文件与智能体程序包；正式比赛只接受程序包，格式以平台文档为准。" },
     ],
     starterTitle: "仅供说明的示例",
     starterIntro:
-      "这条最小效用规则只展示一种可能设计，不限制实现语言、架构或策略；正式接口以巡天任务卡为准。",
+      "这条最小效用规则仅展示策略思路；正式程序包的运行环境与接口以比赛平台开发文档为准。",
     starterCode: `tiles = state["available_tiles"]
 if len(tiles) == 0:
     return {"action": "wait"}
@@ -323,12 +320,9 @@ return {"action": "observe", "tile_id": best["tile_id"], "plan": "DARK",
     kicker: "05 / 计分",
     title: "计分怎么算",
     intro:
-      "得分奖励加权有效目标数，并惩罚天区覆盖不均、时间浪费、规则违规，以及未完成的高优先级天区。一个好的智能体，会在即时产出与完成度、均匀性、天气风险和运行纪律之间做出权衡。",
-    formula: `score = science_score
-      - uniformity_penalty            均匀性惩罚
-      - wasted_time_penalty           时间浪费惩罚
-      - violation_penalty             违规惩罚
-      - incomplete_priority_penalty   高优先级未完成惩罚`,
+      "当前平台采用 challenge-score-v3：总分由基础科学产出、项目加成和请求奖励构成，再扣除惩罚项。正式阶段有多个场景时取场景得分均值，排行榜采用每队最佳已评分提交。具体规则以比赛平台为准。",
+    formula: `score = base_science + program_bonus + request_reward
+  - penalty_total`,
     principlesTitle: "开放科学的设计原则",
     principles: [
       { term: "统一评测", desc: "固定数据和计分，让每份提交的观测结果都按同一标准评估。" },
@@ -384,15 +378,15 @@ return {"action": "observe", "tile_id": best["tile_id"], "plan": "DARK",
     challengeLabel: "巡天任务", participantsLabel: "参与范围",
     rounds: [
       { number: "01", name: "线上培训", dates: "10 月 1–4 日", format: "线上", challenge: "熟悉 CosmosBench、统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。", participants: "面向全球开放，个人与团队均可参加。" },
-      { number: "02", name: "线上比赛", dates: "10 月 5–7 日", format: "线上", challenge: "完成巡天任务并提交智能体生成的观测结果；测评与实时排名由 CosmosBench 支撑。", participants: "所有完成报名的参赛队伍。" },
+      { number: "02", name: "线上比赛", dates: "10 月 5–7 日", format: "线上", challenge: "提交智能体程序包，由 Agent Observer 比赛平台运行、评测并公布排名。", participants: "所有完成报名的参赛队伍。" },
       { number: "03", name: "颁奖日", dates: "10 月 17 日", format: "GOSIM 深圳", challenge: "公布最终成绩并举行颁奖典礼。", participants: "获奖队伍及受邀参赛者。" },
     ],
   },
   leaderboard: {
     kicker: "08 / CosmosBench", title: "实时排行榜 · Top 20",
     intro: "同一任务卡、天气回放、模拟器与计分函数；测评和实时成绩均由 CosmosBench 支撑。",
-    refresh: "刷新", full: "完整榜单", updated: "更新时间", loading: "正在读取 CosmosBench…", empty: "排行榜将在 10 月 5 日线上比赛开始后实时更新。", unavailable: "CosmosBench 排行榜暂时不可用，请稍后重试。",
-    team: "队伍 / 智能体", score: "总分", science: "科学产出", completion: "完成度", uniformity: "均匀性", submissions: "结果提交",
+    refresh: "刷新", full: "完整榜单", updated: "更新时间", loading: "正在读取比赛平台…", empty: "正式线上比赛暂无公开成绩，请前往比赛平台查看阶段状态和练习榜。", unavailable: "排行榜暂时无法加载，请点击“完整榜单”前往比赛平台查看。",
+    team: "队伍 / 智能体", score: "总分", science: "科学产出", completion: "完成度", uniformity: "均匀性", submissions: "已评分提交",
   },
   cta: {
     title: "把夜空的下一步，交给你写的智能体",
@@ -406,7 +400,7 @@ return {"action": "observe", "tile_id": best["tile_id"], "plan": "DARK",
   },
   construction: {
     title: "网站建设中",
-    desc: "本站内容仍在完善，任务卡与报名细节即将发布；页面展示的赛程为当前已确认版本。",
+    desc: "报名、组队、开发文档和提交已统一接入 Agent Observer 比赛平台；最新安排请查看平台赛事通知。",
     ok: "知道了",
   },
 }

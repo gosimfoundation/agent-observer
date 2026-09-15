@@ -21,7 +21,7 @@ const metric = (value: number | null) => value == null ? '—' : value.toFixed(2
 
           <div class="mt-12 flex items-center gap-4 font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">
             <span class="signal-dot"></span>
-            {{ error ? pick('Awaiting benchmark signal', '等待基准信号') : pick('CosmosBench signal live', 'CosmosBench 信号在线') }}
+            {{ loading ? pick('Connecting to platform', '正在连接比赛平台') : error ? pick('Awaiting benchmark signal', '等待基准信号') : pick('Competition platform connected', '比赛平台已连接') }}
           </div>
         </div>
 
@@ -47,8 +47,8 @@ const metric = (value: number | null) => value == null ? '—' : value.toFixed(2
 
           <div v-else class="overflow-x-auto">
             <table class="w-full min-w-[720px] border-collapse text-left">
-              <thead><tr class="border-b poster-rule"><th class="table-label py-4">#</th><th class="table-label py-4">{{ t('leaderboard.team') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.score') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.science') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.completion') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.uniformity') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.submissions') }}</th></tr></thead>
-              <tbody><tr v-for="row in entries" :key="`${row.rank}:${row.name}`" class="border-b border-white/10"><td class="py-4 font-mono text-xs text-[#edb28b]">{{ row.rank }}</td><td class="py-4 text-sm font-medium text-text-primary">{{ row.name }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.score) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.science) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.completion) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.uniformity) }}</td><td class="py-4 text-right font-mono text-sm">{{ row.submissions }}</td></tr></tbody>
+              <thead><tr class="border-b poster-rule"><th class="table-label py-4">#</th><th class="table-label py-4">{{ t('leaderboard.team') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.score') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.science') }}</th><th class="table-label py-4 text-right">{{ pick('Program bonus', '项目加成') }}</th><th class="table-label py-4 text-right">{{ pick('Request reward', '请求奖励') }}</th><th class="table-label py-4 text-right">{{ pick('Penalties', '惩罚项') }}</th><th class="table-label py-4 text-right">{{ t('leaderboard.submissions') }}</th></tr></thead>
+              <tbody><tr v-for="row in entries" :key="`${row.rank}:${row.name}`" class="border-b border-white/10"><td class="py-4 font-mono text-xs text-[#edb28b]">{{ row.rank }}</td><td class="py-4 text-sm font-medium text-text-primary">{{ row.name }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.score) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.science) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.bonus) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.requests) }}</td><td class="py-4 text-right font-mono text-sm">{{ metric(row.penalties) }}</td><td class="py-4 text-right font-mono text-sm">{{ row.submissions }}</td></tr></tbody>
             </table>
           </div>
         </div>

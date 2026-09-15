@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { registrationUrl } from '../../registration'
+import { registrationUrl, platformLinks } from '../../registration'
 import EventSwitcher from './EventSwitcher.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -41,7 +41,7 @@ function scrollTo(hash: string) {
         <EventSwitcher current="/survey26/" :english="pick('en', 'zh') === 'en'" />
       </div>
 
-      <nav class="hidden items-center gap-5 lg:flex">
+      <nav class="hidden items-center gap-5 xl:flex">
         <router-link
           v-for="item in items.filter(i => i.to)"
           :key="item.to"
@@ -55,20 +55,21 @@ function scrollTo(hash: string) {
           @click.prevent="scrollTo(item.href!)"
           class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] text-white/50 transition-colors hover:text-[#edb28b]"
         >{{ t(item.key) }}</a>
+        <a :href="platformLinks.login" target="_blank" rel="noopener noreferrer" class="inline-flex h-10 items-center whitespace-nowrap font-mono text-xs text-[#edb28b]">{{ pick('Log in', '登录') }} ↗</a>
       </nav>
 
       <div class="flex items-center gap-2">
         <button @click="toggleLocale" class="inline-flex h-10 min-w-12 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
           {{ pick('中文', 'EN') }}
         </button>
-        <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="cosmos-register-link ml-1 hidden h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Register now', '立即报名') }}</a>
-        <button class="ml-1 lg:hidden" @click="mobileOpen = !mobileOpen" :aria-label="pick('Menu', '菜单')">
+        <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="cosmos-register-link ml-1 hidden shrink-0 whitespace-nowrap h-10 items-center border px-4 font-mono text-xs font-semibold uppercase tracking-widest md:inline-flex">{{ pick('Register now', '立即报名') }}</a>
+        <button class="ml-1 xl:hidden" @click="mobileOpen = !mobileOpen" :aria-label="pick('Menu', '菜单')">
           <svg class="h-6 w-6 text-text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
       </div>
     </div>
 
-    <div v-if="mobileOpen" class="border-t border-white/20 bg-[#18242f] px-5 py-4 lg:hidden">
+    <div v-if="mobileOpen" class="border-t border-white/20 bg-[#18242f] px-5 py-4 xl:hidden">
       <router-link
         v-for="item in items.filter(i => i.to)"
         :key="item.to"
@@ -83,6 +84,7 @@ function scrollTo(hash: string) {
         @click.prevent="scrollTo(item.href!)"
         class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white"
       >{{ t(item.key) }}</a>
+      <a :href="platformLinks.login" target="_blank" rel="noopener noreferrer" class="block py-3 text-base text-[#edb28b]">{{ pick('Log in', '登录') }} ↗</a>
       <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="cosmos-register-link mt-3 block border px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-widest">
         {{ pick('Register now', '立即报名') }}
       </a>

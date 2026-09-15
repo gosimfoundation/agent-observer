@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { registrationUrl } from '../../registration'
+import { registrationUrl, platformLinks } from '../../registration'
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
 const { t, pick } = useI18n()
 type Step = { n: string; title: string; desc: string }
 type TimelineItem = { label: string; desc: string }
+const links = computed(() => [
+  { href: platformLinks.login, label: pick('Log in', '登录账号') },
+  { href: platformLinks.team, label: pick('Manage team', '创建 / 加入队伍') },
+  { href: platformLinks.submit, label: pick('Submit agent', '提交智能体') },
+  { href: platformLinks.resources, label: pick('Starter kit', '入门工具包') },
+  { href: platformLinks.docs, label: pick('Documentation', '开发文档') },
+  { href: platformLinks.announcements, label: pick('Announcements', '赛事通知') },
+])
 const steps = computed(() => t('home.participate.steps') as Step[])
 const timeline = computed(() => t('home.participate.timeline') as TimelineItem[])
 </script>
@@ -44,6 +52,10 @@ const timeline = computed(() => t('home.participate.timeline') as TimelineItem[]
             <a :href="registrationUrl" target="_blank" rel="noopener noreferrer" class="mt-10 inline-flex w-full items-center bg-[#18242f] px-5 py-3 font-mono text-xs font-semibold uppercase tracking-widest text-[#f0e9dd] md:w-auto md:min-w-60">
               {{ t('home.participate.cta') }}
             </a>
+            <p class="mt-4 text-sm leading-relaxed text-[#4a4a4a]">{{ pick('Register, form a team and submit on the Agent Observer platform. Each participant needs a platform account.', '报名、组队与提交统一在 Agent Observer 比赛平台完成，每位参赛者需注册平台账号。') }}</p>
+            <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
+              <a v-for="link in links" :key="link.href" :href="link.href" target="_blank" rel="noopener noreferrer" class="border border-black/25 px-4 py-3 text-sm text-[#18242f] transition-colors hover:bg-black/5">{{ link.label }} ↗</a>
+            </div>
           </div>
         </div>
       </div>
