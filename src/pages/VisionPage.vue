@@ -4,6 +4,14 @@ import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import { useScrollReveal } from '../composables/useScrollReveal'
 import domeImage from '../assets/images/cosmos-dome.jpg'
+import redshiftMapImage from '../assets/images/survey-redshift-map.jpg'
+import reviewOverlayImage from '../assets/images/survey-review-overlay.jpg'
+
+// i18n carries the caption and credit; the key picks the bundled asset.
+const figureAssets: Record<string, string> = {
+  redshiftMap: redshiftMapImage,
+  reviewOverlay: reviewOverlayImage,
+}
 
 useScrollReveal()
 const { t, pick } = useI18n()
@@ -21,6 +29,7 @@ type Section = {
   formula?: string
   actionCode?: string
   rounds?: { number: string; name: string; dates: string; format: string; challenge: string; participants: string }[]
+  figure?: { key: string; alt: string; caption: string; credit?: string; plate?: boolean }
 }
 
 const sections = computed(() => t('vision.sections') as Section[])
@@ -80,6 +89,21 @@ const sections = computed(() => t('vision.sections') as Section[])
           </div>
 
           <blockquote v-if="section.highlight" class="paper-sheet relative z-10 mt-10 p-7 text-lg font-medium leading-relaxed text-[#101d29] md:p-10 md:text-2xl">{{ section.highlight }}</blockquote>
+
+          <figure
+            v-if="section.figure"
+            class="survey-figure mt-12"
+            :class="section.figure.plate ? 'survey-figure--plate' : 'survey-figure--sky'"
+          >
+            <div v-if="section.figure.plate" class="survey-plate paper-sheet">
+              <img :src="figureAssets[section.figure.key]" :alt="section.figure.alt" loading="lazy">
+            </div>
+            <img v-else :src="figureAssets[section.figure.key]" :alt="section.figure.alt" loading="lazy">
+            <figcaption>
+              {{ section.figure.caption }}
+              <span v-if="section.figure.credit" class="figure-credit">{{ section.figure.credit }}</span>
+            </figcaption>
+          </figure>
 
           <div v-if="section.duties" class="mt-12 grid border-t border-white/25 sm:grid-cols-2 lg:grid-cols-3">
             <div

@@ -25,6 +25,12 @@ export default {
         ],
         highlight:
           'You build the observer’s logic. We provide the mission definition, tile table, observing constraints, weather scenarios, simulator, and evaluation protocol.',
+        figure: {
+          key: 'redshiftMap',
+          alt: 'A survey map built from sky coordinates and redshift',
+          caption: 'Sky position plus redshift becomes a map — which is what a survey ultimately delivers.',
+          credit: 'David Kirkby / DESI collaboration · CC BY 4.0',
+        },
       },
       {
         kicker: '02 / The Observer',
@@ -96,6 +102,13 @@ export default {
         ],
         formula: `score = base_science + program_bonus + request_reward
   - penalty_total`,
+        figure: {
+          key: 'reviewOverlay',
+          alt: 'Review overlay of the fixed target catalog and an observed sample',
+          caption:
+            'The review overlay: grey is the full target catalog, colour is what one agent actually observed. The policy difference is visible at a glance.',
+          plate: true,
+        },
       },
       {
         kicker: '07 / Glossary',
@@ -144,27 +157,20 @@ export default {
   home: {
     vision: {
       kicker: '01 / Vision',
-      title: 'Hand the night sky to an agent',
-      lede: 'The night sky is too vast and too precious to leave to chance.',
+      title: 'Build an open benchmark for intelligent survey operations',
       paragraphs: [
         'Every night a survey telescope faces thousands of observable tiles. Weather changes, target visibility changes, and science priorities change. Every decision a human observer makes shapes the quality of the final cosmic sample.',
         'We are building an open benchmark: an agent reads the state of the night sky, reasons like a seasoned observer, and decides the next observation every 900 seconds. Every participant receives the same survey plan, weather replay, inserted requests, simulator, and scoring rule — the only variable is strategy.',
       ],
-      link: 'Read the full event brief',
-      stats: [
-        { value: '900s', label: 'per decision slot' },
-        { value: '1', label: 'unified mission card' },
-        { value: '∞', label: 'possible strategies' },
-      ],
     },
     mission: {
       kicker: '02 / Mission',
-      title: 'Design an agentic observer',
+      title: 'Where should the telescope look next',
       lede: 'Your agent takes over the core decisions of a human lead observer.',
       cards: [
-        { title: 'Read the night sky', desc: 'Weather, forecast, tile progress, and legal candidates are packed into one compact state dictionary.' },
-        { title: 'Decide every 900 seconds', desc: 'At the end of each slot, choose a tile to observe or wait for a better moment.' },
-        { title: 'One transparent score', desc: 'Science yield, footprint uniformity, time efficiency, and rule compliance are all fixed and public.' },
+        { title: 'Read the state', desc: 'Weather, forecast, survey progress, and the tiles that are legal right now, packed into one compact state dictionary.' },
+        { title: 'Weigh the trade-offs', desc: 'Spend the good dark time on faint targets, or finish the tile that is one exposure from done? The forecast improves later — is another slot worth the wait?' },
+        { title: 'Make the call', desc: 'Observe a tile, or wait. One action every 900 seconds, and the reason for it.' },
       ],
       closing: 'No astronomy background required. Just an agent that reads state, weighs trade-offs, and makes decisions.',
     },

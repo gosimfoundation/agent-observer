@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import instrumentImage from '../../assets/images/cosmos-instrument.jpg'
+import observedUniverseImage from '../../assets/images/survey-observed-universe.jpg'
 
 const { t, pick } = useI18n()
 type Card = { title: string; desc: string }
@@ -21,13 +22,6 @@ const cards = computed(() => t('home.mission.cards') as Card[])
           <h2 class="section-title distressed-type mt-10">{{ t('home.mission.title') }}</h2>
           <p class="mt-7 max-w-xl text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.mission.lede') }}</p>
 
-          <div class="mission-900 mt-14 border-y poster-rule py-8">
-            <div class="text-[clamp(3rem,6.5vw,6.75rem)] font-semibold leading-[1.02] tracking-[-.055em] text-[#f0e9dd]">900</div>
-            <div class="mt-7 flex justify-between font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">
-              <span>{{ pick('seconds', '秒') }}</span>
-              <span>{{ pick('one decision', '一次决策') }}</span>
-            </div>
-          </div>
         </div>
 
         <div class="relative z-10">
@@ -42,6 +36,15 @@ const cards = computed(() => t('home.mission.cards') as Card[])
               <p class="mt-4 max-w-xl text-sm leading-relaxed text-text-secondary">{{ card.desc }}</p>
             </div>
           </article>
+
+          <figure class="survey-figure survey-figure--plate reveal mt-12">
+            <div class="survey-plate paper-sheet">
+              <img :src="observedUniverseImage" :alt="pick('Mock universe observed by a balanced agent observer', '均衡型观测智能体观测到的模拟宇宙')" loading="lazy">
+            </div>
+            <figcaption>
+              {{ pick('What a run actually produces: the mock galaxies and quasars your agent chose to observe. Different policies leave different cosmic structure visible.', '一次运行的真实产出：你的智能体选择观测到的模拟星系与类星体。不同的策略，会留下不同的宇宙结构。') }}
+            </figcaption>
+          </figure>
 
           <div class="reveal mt-12 paper-sheet p-7 md:p-10">
             <span class="font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">{{ pick('Entry requirement', '参赛要求') }}</span>
@@ -59,16 +62,4 @@ const cards = computed(() => t('home.mission.cards') as Card[])
 .mission-photo img { object-position: 58% center; }
 .mission-photo::after { background: linear-gradient(90deg, rgba(24,36,47,.48), transparent 48%), linear-gradient(0deg, rgba(24,36,47,.65), transparent 45%); }
 .mission-photo span { position: absolute; z-index: 3; right: 1rem; bottom: 1rem; color: rgba(240,233,221,.72); font-family: var(--font-mono); font-size: .875rem; letter-spacing: .1em; }
-.mission-900 { position: relative; }
-.mission-900::after {
-  position: absolute;
-  top: 27%;
-  right: 4%;
-  width: 7rem;
-  height: 7rem;
-  border: 1px solid rgba(237,178,139,.6);
-  border-radius: 50% !important;
-  content: '';
-  box-shadow: 0 0 0 1.4rem rgba(237,178,139,.1), 0 0 0 2.8rem rgba(237,178,139,.05);
-}
 </style>
