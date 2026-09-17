@@ -134,7 +134,7 @@ function onTouchEnd(e: TouchEvent) {
           type="button"
           role="tab"
           :aria-selected="i === index"
-          :aria-label="slide.stamp"
+          :aria-label="slide.stamp || slide.alt"
           class="carousel-dot"
           :class="{ 'is-active': i === index }"
           @click="go(i)"
