@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-type Slide = { src: string; alt: string; stamp: string; caption: string; credit?: string }
+type Slide = { src: string; alt: string; stamp?: string; caption: string; credit?: string }
 
-const props = withDefaults(defineProps<{ slides: Slide[]; interval?: number }>(), {
-  interval: 6000,
-})
+/**
+ * `sky` frames dark full-bleed photography; `plate` frames light-ground plots on
+ * the paper sheet the rest of the site uses for them. Same machinery either way —
+ * the autoplay gating, keyboard, swipe and pause rules are worth writing once.
+ */
+const props = withDefaults(
+  defineProps<{ slides: Slide[]; interval?: number; variant?: 'sky' | 'plate' }>(),
+  { interval: 6000, variant: 'sky' },
+)
 
 const index = ref(0)
 const paused = ref(false)
+const rootEl = ref<HTMLElement | null>(null)
+const inView = ref(false)
+const tabVisible = ref(true)
 let timer: number | undefined
+let observer: IntersectionObserver | undefined
 
 const count = computed(() => props.slides.length)
 
@@ -19,20 +29,39 @@ function go(to: number) {
 function next() { go(index.value + 1) }
 function prev() { go(index.value - 1) }
 
-// Auto-advance, unless the viewer is interacting or asked for less motion.
 const reducedMotion =
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-function tick() {
-  if (!paused.value) next()
-}
-onMounted(() => {
-  if (reducedMotion || count.value < 2) return
-  timer = window.setInterval(tick, props.interval)
+// Only advance while the strip is actually on screen and in a foreground tab.
+// Running it off screen would mean arriving mid-sequence and never seeing the
+// first slide, which is where the section's argument starts.
+const running = computed(
+  () => inView.value && tabVisible.value && !paused.value && !reducedMotion && count.value > 1,
+)
+
+watch(running, on => {
+  if (timer) { window.clearInterval(timer); timer = undefined }
+  if (on) timer = window.setInterval(next, props.interval)
 })
+
+function onTabChange() { tabVisible.value = !document.hidden }
+
+onMounted(() => {
+  if (rootEl.value) {
+    observer = new IntersectionObserver(
+      ([entry]) => { inView.value = entry.isIntersecting },
+      { threshold: 0.3 },
+    )
+    observer.observe(rootEl.value)
+  }
+  document.addEventListener('visibilitychange', onTabChange)
+})
+
 onBeforeUnmount(() => {
   if (timer) window.clearInterval(timer)
+  observer?.disconnect()
+  document.removeEventListener('visibilitychange', onTabChange)
 })
 
 // Touch swipe
@@ -46,6 +75,7 @@ function onTouchEnd(e: TouchEvent) {
 
 <template>
   <div
+    ref="rootEl"
     class="vision-carousel"
     role="group"
     aria-roledescription="carousel"
@@ -57,7 +87,8 @@ function onTouchEnd(e: TouchEvent) {
     @keydown.right.prevent="next"
   >
     <div
-      class="carousel-frame h-[340px] md:h-[540px]"
+      class="carousel-frame"
+      :class="variant === 'plate' ? 'is-plate paper-sheet' : 'is-sky h-[340px] md:h-[540px]'"
       @touchstart.passive="onTouchStart"
       @touchend.passive="onTouchEnd"
     >
@@ -71,8 +102,8 @@ function onTouchEnd(e: TouchEvent) {
         <img :src="slide.src" :alt="slide.alt" :loading="i === 0 ? 'eager' : 'lazy'">
       </div>
 
-      <div class="carousel-veil" aria-hidden="true"></div>
-      <span class="carousel-stamp">{{ slides[index].stamp }}</span>
+      <div v-if="variant === 'sky'" class="carousel-veil" aria-hidden="true"></div>
+      <span v-if="slides[index].stamp" class="carousel-stamp">{{ slides[index].stamp }}</span>
 
       <button
         v-if="count > 1"
@@ -117,10 +148,19 @@ function onTouchEnd(e: TouchEvent) {
 .carousel-frame {
   position: relative;
   overflow: hidden;
-  background: #101d29;
   box-shadow: 8px 8px 0 #edb28b;
   transform: rotate(-.2deg);
 }
+.carousel-frame.is-sky { background: #101d29; }
+
+/* Light-ground plots keep their own margins, so the frame takes their shape
+   instead of cropping them to fill it. */
+.carousel-frame.is-plate {
+  aspect-ratio: 1 / 1;
+  padding: .85rem;
+}
+.carousel-frame.is-plate .carousel-slide { inset: .85rem; }
+.carousel-frame.is-plate .carousel-slide img { object-fit: contain; }
 
 /* No grayscale here, unlike .photo-wash: two of these slides are figures whose
    colour carries the information. */

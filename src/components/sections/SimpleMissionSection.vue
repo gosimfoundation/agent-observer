@@ -2,11 +2,11 @@
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import MissionPanel from '../MissionPanel.vue'
-import observedUniverseImage from '../../assets/images/survey-observed-universe.jpg'
 
-const { t, pick } = useI18n()
+const { t } = useI18n()
 type Card = { title: string; desc: string }
 const cards = computed(() => t('home.mission.cards') as Card[])
+const cardItems = computed(() => t('home.mission.cardItems') as { term: string; desc: string }[])
 </script>
 
 <template>
@@ -17,7 +17,7 @@ const cards = computed(() => t('home.mission.cards') as Card[])
         <div class="reveal relative z-10 lg:sticky lg:top-28 lg:self-start">
           <div class="flex items-start justify-between">
             <span class="poster-kicker">{{ t('home.mission.kicker') }}</span>
-            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">02 / 04</span>
+            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">02 / 06</span>
           </div>
           <h2 class="section-title distressed-type mt-10">{{ t('home.mission.title') }}</h2>
           <p class="mt-7 max-w-xl text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.mission.lede') }}</p>
@@ -25,12 +25,29 @@ const cards = computed(() => t('home.mission.cards') as Card[])
         </div>
 
         <div class="relative z-10">
+          <!-- The card is what the challenge arrives as, so it arrives here as
+               a card too. -->
+          <div class="reveal paper-sheet p-7 md:p-10">
+            <span class="relative z-10 font-mono text-xs uppercase tracking-[.1em] text-[#9c5c38]">{{ t('home.mission.cardKicker') }}</span>
+            <h3 class="relative z-10 mt-4 text-2xl font-semibold tracking-[-.03em] md:text-3xl">{{ t('home.mission.cardTitle') }}</h3>
+            <p class="relative z-10 mt-4 max-w-2xl text-sm leading-relaxed text-[#101d29]/75">{{ t('home.mission.cardLede') }}</p>
+
+            <dl class="relative z-10 mt-8 grid gap-x-10 gap-y-5 sm:grid-cols-2">
+              <div v-for="item in cardItems" :key="item.term" class="border-t border-[#101d29]/20 pt-3">
+                <dt class="text-sm font-semibold">{{ item.term }}</dt>
+                <dd class="mt-1 text-sm leading-relaxed text-[#101d29]/70">{{ item.desc }}</dd>
+              </div>
+            </dl>
+
+            <p class="relative z-10 mt-8 border-t border-[#101d29]/20 pt-5 text-xs leading-relaxed text-[#101d29]/65">{{ t('home.mission.cardNote') }}</p>
+          </div>
+
           <!-- One decision in three beats: the same patch of sky, known better
                and with fewer options open, each step down the page. -->
           <article
             v-for="(card, index) in cards" :key="card.title"
             class="poster-card reveal py-9 md:grid md:grid-cols-[5rem_1fr_17rem] md:items-start md:gap-8 md:py-12"
-            :class="`reveal-delay-${index + 1}`"
+            :class="[`reveal-delay-${index + 1}`, index === 0 ? 'mt-14' : '']"
           >
             <span class="font-mono text-xs text-[#edb28b]">0{{ index + 1 }}</span>
             <div class="mt-5 md:mt-0">
@@ -40,19 +57,6 @@ const cards = computed(() => t('home.mission.cards') as Card[])
             <MissionPanel class="mt-7 md:mt-0" :panel="(index + 1) as 1 | 2 | 3" />
           </article>
 
-          <figure class="survey-figure survey-figure--plate reveal mt-12">
-            <div class="survey-plate paper-sheet">
-              <img :src="observedUniverseImage" :alt="pick('Mock universe observed by a balanced agent observer', '均衡型观测智能体观测到的模拟宇宙')" loading="lazy">
-            </div>
-            <figcaption>
-              {{ pick('What a run actually produces: the mock galaxies and quasars your agent chose to observe. Different policies leave different cosmic structure visible.', '一次运行的真实产出：你的智能体选择观测到的模拟星系与类星体。不同的策略，会留下不同的宇宙结构。') }}
-            </figcaption>
-          </figure>
-
-          <div class="reveal mt-12 paper-sheet p-7 md:p-10">
-            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#edb28b]">{{ pick('Entry requirement', '参赛要求') }}</span>
-            <p class="relative z-10 mt-5 max-w-[22ch] text-xl font-semibold leading-relaxed tracking-[-.02em] md:text-3xl">{{ t('home.mission.closing') }}</p>
-          </div>
         </div>
       </div>
     </div>

@@ -95,7 +95,7 @@ export default {
         kicker: '06 / Scoring',
         title: 'Scientific, reproducible, inspectable evaluation',
         paragraphs: [
-          'The platform uses challenge-score-v3: base science, program bonus and request reward, minus penalties. Multi-scenario phases use the mean score; standings use each team’s best scored submission. Follow the platform rules for details.',
+          'Base science, program bonus and request reward, minus penalties. Multi-scenario phases use the mean score; standings use each team’s best scored submission. The platform’s current scoring version, challenge-score-v3, is authoritative.',
           'Evaluation follows open-science principles: fixed data and fixed scoring let every submitted observation result be evaluated consistently; readable result artifacts make outcomes inspectable; separate development and final-evaluation weather compare generalization instead of tuning to a known scenario.',
           'Visualization turns completed tile fractions into an observed-target map — a 3D spatial sample and a 2D butterfly plot of sky position plus simulated redshift, in the style DESI uses — so different strategies produce visibly different maps.',
           'The same observer interface can support future mission cards for real survey-log replay, z > 5 quasar planning, LBG planning, and target-of-opportunity inserts; the community can propose new fixed datasets for follow-up tracks.',
@@ -172,10 +172,23 @@ export default {
         { title: 'Weigh the trade-offs', desc: 'Spend the good dark time on faint targets, or finish the tile that is one exposure from done? The forecast improves later — is another slot worth the wait?' },
         { title: 'Make the call', desc: 'Observe a tile, or wait. One action every 900 seconds, and the reason for it.' },
       ],
-      closing: 'No astronomy background required. Just an agent that reads state, weighs trade-offs, and makes decisions.',
+      cardKicker: 'How the challenge arrives',
+      cardTitle: 'One Survey Mission Card',
+      cardLede: 'Every round of the challenge starts from a mission card. Everything that round holds you to is written on it:',
+      cardItems: [
+        { term: 'Science goal', desc: 'What this survey is actually trying to answer.' },
+        { term: 'Footprint', desc: 'How much sky to cover, and how it divides into tiles.' },
+        { term: 'Time budget', desc: 'How many 900-second slots there are to spend.' },
+        { term: 'Telescope site', desc: 'Latitude, visibility limits, slot length, and the airmass constraint.' },
+        { term: 'Available programs', desc: 'Which of DARK, BRIGHT and BACKUP this round opens up.' },
+        { term: 'Target classes', desc: 'Which objects count toward yield, and what each is worth.' },
+        { term: 'Observing constraints', desc: 'What you may not do, and what crossing the line costs.' },
+        { term: 'Scoring rule', desc: 'How the score is computed and which penalties apply.' },
+      ],
+      cardNote: 'The authoritative input and output formats and the interface contract are defined by the mission card. The card and the public development data — tile catalogue, example weather scenarios, initial state and visual reports — are released before the hackathon begins.',
     },
     participate: {
-      kicker: '03 / How to participate',
+      kicker: '04 / How to participate',
       title: 'Three steps to compete',
       lede: 'From training to awards, the path is clear.',
       steps: [
@@ -191,7 +204,7 @@ export default {
       cta: 'Register now',
     },
     prizes: {
-      kicker: '04 / Awards',
+      kicker: '05 / Awards',
       title: '$5,500 in prizes',
       lede: 'Three award tiers recognize the strongest observing agents.',
       tiers: [
@@ -201,7 +214,7 @@ export default {
       ],
     },
     leaderboard: {
-      kicker: '05 / Leaderboard',
+      kicker: '06 / Leaderboard',
       title: 'Live standings',
       lede: 'The Agent Observer platform provides the online competition standings. Visit the full board for practice standings and phase status.',
     },
@@ -323,30 +336,35 @@ return {"action": "observe", "tile_id": best["tile_id"], "plan": "DARK",
     ],
   },
   scoring: {
-    kicker: '05 / Scoring',
-    title: 'How the score works',
+    kicker: '03 / Evaluation',
+    title: 'Where the score comes from, and why it holds up',
     intro:
-      'The platform uses challenge-score-v3: base science, program bonus and request reward, minus penalties. Multi-scenario phases use the mean score; standings use each team’s best scored submission. Follow the platform rules for details.',
+      'Base science, program bonus and request reward, minus penalties. Multi-scenario phases use the mean score; standings use each team’s best scored submission.',
     formula: `score = base_science + program_bonus + request_reward
   - penalty_total`,
-    principlesTitle: 'Open-science design principles',
+    formulaVersion: 'platform scoring version challenge-score-v3',
+    note:
+      'Any internal decision logic is fair game. But a good agent always ends up trading immediate yield against completion, uniformity, weather risk and operational discipline — which is exactly what these terms are there to force.',
+
+    stressTitle: 'Where the field separates: after the weather turns',
+    stress:
+      'The weather replay carries deterministic disruption blocks — rain, forest-fire smoke, a scheduled rocket launch. Everyone meets the same ones. The difference is what you do about them.',
+    stressWeak: 'The naive way',
+    stressWeakDesc: 'Sit and wait the time away, or spend your best dark-time targets on sky that cannot carry them.',
+    stressStrong: 'The strong way',
+    stressStrongDesc: 'Move on the forecast early, switch programs when the night calls for it, finish tiles that are nearly done, and hold the valuable dark-time targets until conditions come back.',
+
+    principlesTitle: 'Why the result can be trusted',
     principles: [
-      { term: 'Consistent benchmark', desc: 'Fixed data and scoring evaluate every submitted observation result under the same standard.' },
-      { term: 'Inspectable results', desc: 'Readable observation-result artifacts make each team’s outcome reviewable.' },
-      { term: 'Scientific but light evaluation', desc: 'Target yield, tile completion, weather response, footprint balance, and waste.' },
-      { term: 'Clearly bounded scoring', desc: 'Short-term planning is primary; middle-term planning may be enabled as mission cards evolve.' },
-      { term: 'Dev and eval weather separated', desc: 'Separate scenarios compare generalization instead of tuning to known weather.' },
+      { term: 'Reproducible', desc: 'Fixed seeds, fixed data, fixed scoring. Any submission can be re-run by a third party and land on the same number.' },
+      { term: 'Auditable turn by turn', desc: 'The state dictionary, the run history and the full per-turn trace logs are all readable, so every decision can be checked after the fact.' },
+      { term: 'Hard to overfit', desc: 'Development weather and final evaluation weather are kept apart, so the score compares generalization, not tuning to a known scenario.' },
+      { term: 'One variable only', desc: 'You control the agent policy and its reasoning. The simulator, data, weather replay, constraints and scoring are ours, and identical for everyone.' },
+      { term: 'Clearly bounded', desc: 'Short-term observation planning is the primary evaluation; middle-term planning is enabled at organizer discretion as mission cards evolve.' },
     ],
-    principlesClosing:
-      'Future mission cards can add real survey-log replay, z > 5 quasar planning, LBG planning, and target-of-opportunity inserts. The community can propose new fixed datasets for follow-up tracks.',
-    vizTitle: 'Seeing the result',
-    viz: [
-      'The test data includes a deterministic table of simulated target coordinates. Each tile’s target count is bound to fixed simulated coordinates through the random seed, the tile_id, and the target class.',
-      'After a run, the simulator converts completed tile fractions into an observed-target map — how many simulated galaxies and quasars the agent actually reached.',
-      'A 3D view keeps the observed simulated universe as a spatial sample; a 2D butterfly plot folds sky position and simulated redshift together, in the style DESI uses.',
-      'Different observing strategies produce visibly different maps of cosmic structure. The visualization helps a team explain its strategy, its footprint balance, and what it missed.',
-    ],
-    vizNote: 'The map is the benchmark’s visualization layer. The scored loop is still the planning task itself.',
+
+    vizTitle: 'What a finished run looks like',
+    vizNote: 'The map is the benchmark’s visualization layer. What actually gets scored is still the planning.',
   },
   glossary: {
     kicker: '06 / Glossary',
