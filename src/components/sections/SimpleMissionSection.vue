@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import instrumentImage from '../../assets/images/cosmos-instrument.jpg'
+import MissionPanel from '../MissionPanel.vue'
 import observedUniverseImage from '../../assets/images/survey-observed-universe.jpg'
 
 const { t, pick } = useI18n()
@@ -25,16 +25,19 @@ const cards = computed(() => t('home.mission.cards') as Card[])
         </div>
 
         <div class="relative z-10">
-          <div class="mission-photo photo-wash reveal mb-12 h-[300px] md:h-[440px]">
-            <img :src="instrumentImage" alt="" loading="lazy">
-            <span>{{ pick('INSTRUMENT CALIBRATION / HUMAN OVERSIGHT', '仪器标定 / 人类监督') }}</span>
-          </div>
-          <article v-for="(card, index) in cards" :key="card.title" class="poster-card reveal py-9 md:grid md:grid-cols-[5rem_1fr] md:gap-8 md:py-12" :class="`reveal-delay-${index + 1}`">
+          <!-- One decision in three beats: the same patch of sky, known better
+               and with fewer options open, each step down the page. -->
+          <article
+            v-for="(card, index) in cards" :key="card.title"
+            class="poster-card reveal py-9 md:grid md:grid-cols-[5rem_1fr_17rem] md:items-start md:gap-8 md:py-12"
+            :class="`reveal-delay-${index + 1}`"
+          >
             <span class="font-mono text-xs text-[#edb28b]">0{{ index + 1 }}</span>
             <div class="mt-5 md:mt-0">
               <h3 class="max-w-[18ch] text-xl font-semibold leading-tight tracking-[-.03em] text-[#f0e9dd] md:text-2xl">{{ card.title }}</h3>
               <p class="mt-4 max-w-xl text-sm leading-relaxed text-text-secondary">{{ card.desc }}</p>
             </div>
+            <MissionPanel class="mt-7 md:mt-0" :panel="(index + 1) as 1 | 2 | 3" />
           </article>
 
           <figure class="survey-figure survey-figure--plate reveal mt-12">
@@ -58,8 +61,4 @@ const cards = computed(() => t('home.mission.cards') as Card[])
 
 <style scoped>
 .mission-aura { top: 35%; left: -26rem; width: 55rem; opacity: .38; transform: rotate(72deg); }
-.mission-photo { box-shadow: 8px 8px 0 #edb28b; }
-.mission-photo img { object-position: 58% center; }
-.mission-photo::after { background: linear-gradient(90deg, rgba(24,36,47,.48), transparent 48%), linear-gradient(0deg, rgba(24,36,47,.65), transparent 45%); }
-.mission-photo span { position: absolute; z-index: 3; right: 1rem; bottom: 1rem; color: rgba(240,233,221,.72); font-family: var(--font-mono); font-size: .875rem; letter-spacing: .1em; }
 </style>
