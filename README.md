@@ -1,4 +1,4 @@
-> **Website repository:** `gosimfoundation/agent-observer` · [Maintenance and publishing](MAINTAINING.md) · [Live site](https://create.gosim.org/survey26/)
+> **Website repository:** `gosimfoundation/survey26` · [Maintenance and publishing](MAINTAINING.md) · [Live site](https://create.gosim.org/survey26/)
 
 # Agent Observer · 巡天智能体 — competition platform (challenge v3)
 
