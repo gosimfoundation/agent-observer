@@ -1,0 +1,69 @@
+name: Publish event site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: event-site-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            legacy-event/package-lock.json
+      - name: Install dependencies
+        run: |
+          npm ci --prefix web
+          npm ci --prefix legacy-event
+      - name: Build and package
+        run: node scripts/release-site.mjs
+        env:
+          # Public client settings are repository variables so fork PR builds work too.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: event-site
+          path: release/
+          retention-days: 14
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: event-site
+          path: release
+      - name: Publish complete release atomically
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          tag="site-${REVISION}-${RUN_ID}-${ATTEMPT}"
+          gh release create "$tag" release/site.tar.gz release/site.tar.gz.sha256 \
+            --draft --target "$REVISION" --title "Website ${REVISION:0:12}" \
+            --notes "Successful website build. The shared create.gosim.org publisher collects this release automatically."
+          gh release edit "$tag" --draft=false --latest
