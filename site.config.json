@@ -1,6 +1,6 @@
 {
   "slug": "survey26",
-  "repository": "gosimfoundation/agent-observer",
+  "repository": "gosimfoundation/survey26",
   "basePath": "/survey26/",
   "appDirectory": "web",
   "platform": true

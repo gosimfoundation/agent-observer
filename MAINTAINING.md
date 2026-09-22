@@ -1,7 +1,7 @@
 # Website maintenance / 网站维护
 
 Production: https://create.gosim.org/survey26/
-Source: https://github.com/gosimfoundation/agent-observer
+Source: https://github.com/gosimfoundation/survey26
 
 This repository owns this event. Make future changes and pull requests here.
 The former `gosimfoundation/hackathon` event directory is retired.
