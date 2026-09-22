@@ -52,6 +52,18 @@ const heroTitleLines = computed(() => locale.value === 'zh'
               </router-link>
             </div>
           </div>
+
+          <div class="hero-sponsors mt-7" :aria-label="pick('Sponsors', '赞助商')">
+            <span class="hero-sponsors-label">{{ pick('Sponsors', '赞助商') }}</span>
+            <div class="hero-sponsors-logos">
+              <a href="https://www.minimaxi.com/" target="_blank" rel="noopener noreferrer" aria-label="MiniMax">
+                <img :src="assetUrl('/sponsors/minimax.png')" alt="MiniMax" class="hero-sponsor-logo hero-sponsor-logo--minimax" />
+              </a>
+              <a href="https://www.kimi.com/" target="_blank" rel="noopener noreferrer" aria-label="Kimi">
+                <img :src="assetUrl('/sponsors/kimi.png')" alt="Kimi" class="hero-sponsor-logo hero-sponsor-logo--kimi" />
+              </a>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -156,6 +168,15 @@ const heroTitleLines = computed(() => locale.value === 'zh'
 .hero-action-primary { color: #18242f; border-color: #edb28b; background: #edb28b; }
 .hero-timeline > div { padding-left: clamp(.65rem, 2vw, 1.5rem); }
 
+.hero-sponsors { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem 1.25rem; }
+.hero-sponsors-label { color: rgba(240,233,221,.6); font-family: var(--font-mono); font-size: .7rem; letter-spacing: .13em; text-transform: uppercase; }
+.hero-sponsors-logos { display: flex; align-items: center; gap: 1.25rem; }
+.hero-sponsors-logos a { display: flex; align-items: center; opacity: .82; transition: opacity .2s ease, transform .2s ease; }
+.hero-sponsors-logos a:hover, .hero-sponsors-logos a:focus-visible { opacity: 1; outline: none; transform: translateY(-1px); }
+.hero-sponsor-logo { width: auto; object-fit: contain; }
+.hero-sponsor-logo--minimax { height: 2.25rem; filter: brightness(0) invert(1); }
+.hero-sponsor-logo--kimi { height: 2.4rem; }
+
 .hero-side-note {
   position: absolute;
   z-index: 3;
@@ -189,5 +210,6 @@ const heroTitleLines = computed(() => locale.value === 'zh'
   .hero-title-zh { font-size: clamp(3.15rem, 16vw, 4.75rem); line-height: 1.04; }
   .hero-intro { margin-top: 1.5rem; padding-top: 1.25rem; }
   .hero-action { min-width: calc(50% - .4rem); }
+  .hero-sponsors { margin-top: 1.5rem; }
 }
 </style>
