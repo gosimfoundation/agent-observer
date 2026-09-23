@@ -196,7 +196,7 @@ onMounted(async () => {
           </label>
           <div class="field"><span>{{ t('submit.kind') }}</span>
             <label class="check"><input data-testid="submit-kind-results" v-model="form.kind" type="radio" value="results" :disabled="phase ? !phase.allow_results : false"> <span><b>{{ t('kind.results') }}</b><br><small class="text3">{{ t('submit.help_results') }}</small></span></label>
-            <label class="check"><input data-testid="submit-kind-agent" v-model="form.kind" type="radio" value="agent" :disabled="phase ? !phase.allow_agents : false"> <span><b>{{ t('kind.agent') }}</b><br><small class="text3">{{ t('submit.help_agent') }}</small></span></label>
+            <label v-if="phase?.allow_agents" class="check"><input data-testid="submit-kind-agent" v-model="form.kind" type="radio" value="agent"> <span><b>{{ t('kind.agent') }}</b><br><small class="text3">{{ t('submit.help_agent') }}</small></span></label>
           </div>
           <label class="field"><span>{{ t('submit.scenario') }}</span>
             <select data-testid="submit-scenario" v-model="form.scenario" :disabled="form.kind !== 'results'">

@@ -36,12 +36,11 @@ last lines of `agent.log` for you.
 ## Step 3 · Upload
 
 1. Open the competition website → register → create a team (a team of one is fine).
-2. "Submit" page → choose **Agent run** → drop the single file `agent/my_strategy.py` into the upload box
-   (or drop the whole `agent` folder: the website packages it for you).
-3. The page shows your queue position and progress; a score normally arrives within a couple of minutes,
-   with the breakdown, the night-by-night replay and the logs.
+2. "Submit" page → pick the scenario you ran → drop `run_output/decisions.csv` into the upload box.
+3. The score arrives within seconds, with the breakdown and the night-by-night replay.
 
-The platform wraps your `my_strategy.py` with the kit's standard files: you never need to build a zip.
+The Playground and the online competition both take this file only. The competition scenarios' weather is
+published when the competition opens; download it then with `fetch_scenario.py`, run locally, and upload.
 
 ## Going further
 

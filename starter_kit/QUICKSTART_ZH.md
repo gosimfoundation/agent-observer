@@ -32,15 +32,15 @@
 ## 第 3 步 · 上传
 
 1. 打开比赛网站 → 注册 → 创建队伍（一个人也可以）。
-2. 「提交」页 → 选 **智能体运行** → 把 `agent/my_strategy.py` 这一个文件拖进上传框（也可以拖整个 `agent` 文件夹，网站会替你打包）。
-3. 页面会显示排队位置和评测进度，通常一两分钟出分；分数分解、每晚回放、日志都在提交页。
+2. 「提交」页 → 选你本地跑的那个场景 → 把 `run_output/decisions.csv` 拖进上传框。
+3. 几秒钟出分；分数分解、每晚回放都在提交页。
 
-平台会自动把你的 `my_strategy.py` 和入门包里其余标准文件组装成完整程序包，你不用打 zip。
+Playground 和正式比赛都只收这个文件。正式比赛场景的天气在开赛时公开，到时用 `fetch_scenario.py` 下载，在本地跑完再上传。
 
 ## 想更进一步
 
 - 想在本地试更多天气：`python3 make_scenario.py --out scenarios/mine --seed 7 --days 30`，再运行 `python3 local_runner.py --scenario scenarios/mine --agent agent/minimal_agent.py`。
-- 想让大模型参与决策：复制 `agent/.env.example` 为 `agent/.env`，填 `MODEL_PROVIDER` 与对应 API key（网站「控制台」页可领取赞助额度），上传时把整个 `agent` 文件夹拖进去即可。
+- 想让大模型参与决策：复制 `agent/.env.example` 为 `agent/.env`，填 `MODEL_PROVIDER` 与对应 API key（网站「控制台」页可领取赞助额度），在本地运行，照常上传生成的 `decisions.csv`。
 - 完整的数据格式、协议和评分公式见网站「文档」页；`README.md` 是给工程师看的详细版。
 
 > 练习场景仍按旧规则计分（无异常标签、不能重复观测、不接受上报）；想演练正式赛的新机制，跑 `run_finals_preview` 或 `scenarios/finals-preview`（基线约 **8214 分**，示例智能体会自己发现并上报那次仪器故障）。

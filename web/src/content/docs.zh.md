@@ -1,19 +1,16 @@
-> 本页按参赛的实际顺序组织：第 1–4 节从零跑通到完成提交，第 5–6 节讲分数从哪来、怎么提高，第 7–8 节是平台运行与协议合约，第 9 节是提交前自检，第 10 节是数据文件字典（备查）。
+> 本页按参赛的实际顺序组织：第 1–4 节从零跑通到完成提交，第 5–6 节讲分数从哪来、怎么提高，第 7–8 节是本地运行与协议合约，第 9 节是提交前自检，第 10 节是数据文件字典（备查）。
 
 ## 1. 概览
 
 你要构建的，是一个替天文台值夜班的程序。夜晚被切成 900 秒一格的时隙；每一格，你的智能体看一眼当前天况和一串候选天区，决定观测哪一块天，或者等一等。跑完一整场，它会留下一张按时隙排列的决策清单（`decisions.csv`）；一个冻结不变的评分器读这张清单，产出成绩单（`score_report.json`）。
 
-一个场景就是一道题，形式是一个文件夹：`config/` 下六个配置文件写明这一局的全部规则；`outputs/reference/` 下是参考数据——按真实太阳历生成的时隙日历，分 REQUIRED / FLEXIBLE 两类、各有可用时间窗的天区与目标目录，逐时隙的天气与影响特定天区的方向性干扰事件，每日修订、带不确定性的预报，以及中途插进来的临时观测请求。练习场景的天气全部公开；比赛场景把天气藏起来，并启用异常机制——隐藏的仪器故障与逐天区异常标签，`decisions.csv` 里的 `report_*` 行就是对它们的上报（开关写在各场景 `score_config.json` 的异常小节；入门包的 `finals-preview` 场景也启用，便于本地演练）。全部练习场景保持赛初合约逐字节不变（快照 `decision-snapshot-v2`，不接受上报）。这套合约的正式名字是 **challenge v3**（`challenge-score-v3`、`participant-agent-protocol-v2`）。
+一个场景就是一道题，形式是一个文件夹：`config/` 下六个配置文件写明这一局的全部规则；`outputs/reference/` 下是参考数据——按真实太阳历生成的时隙日历，分 REQUIRED / FLEXIBLE 两类、各有可用时间窗的天区与目标目录，逐时隙的天气与影响特定天区的方向性干扰事件，每日修订、带不确定性的预报，以及中途插进来的临时观测请求。练习场景的天气全部公开；比赛场景的天气、预报与事件在开赛时公开，并启用异常机制——隐藏的仪器故障与逐天区异常标签，`decisions.csv` 里的 `report_*` 行就是对它们的上报（开关写在各场景 `score_config.json` 的异常小节；入门包的 `finals-preview` 场景也启用，便于本地演练）。全部练习场景保持赛初合约逐字节不变（快照 `decision-snapshot-v2`，不接受上报）。这套合约的正式名字是 **challenge v3**（`challenge-score-v3`、`participant-agent-protocol-v2`）。
 
-获得分数有两条路径：
+提交方式只有一种：在自己电脑上运行智能体，上传它生成的 `decisions.csv`。Playground 与线上比赛都只收这种文件（2026 年 9 月 24 日起不再接受智能体程序包）。
 
-1. **结果文件。** 自行运行智能体，上传 `decisions.csv`。Playground 与线上比赛都接受。练习场景的天气是公开的，你本地算出的分数与平台一致；比赛场景的天气不公开，平台用自己手上的天气真值给同一份决策序列评分。
-2. **智能体程序包。** 以 `.zip` 上传智能体。平台在每个场景上启动一次，通过 JSON-Lines 协议逐条发送已发布的快照，对隐藏天气提交其动作，并对提交的轨迹评分。每个场景一个全局时钟，没有单次决策超时。
+平台和入门包使用同一份 `scoring_core.py`。入门包包含 workflow、评分器、最小智能体与公开的场景文件。
 
-两条路径使用同一份 `scoring_core.py`。入门包包含 workflow、评分器、最小智能体与公开的场景文件。
-
-赞助商 API 额度以兑换码形式发放：队伍注册后在控制台领取，每个服务商一个。平台运行允许联网，智能体可以在决策时调用模型 API；把密钥写进程序包的 `.env` 即可。
+赞助商 API 额度以兑换码形式发放：队伍注册后在控制台领取，每个服务商一个，用于在本地运行时调用模型 API。
 
 ## 2. Playground与线上比赛
 
@@ -21,18 +18,13 @@
 
 | | Playground | 线上比赛 |
 |---|---|---|
-| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | `eval-a`、`eval-b`（各 30 晚）；天气、预报、事件隐藏 |
-| 提交 | 结果文件或智能体程序包，每队每天 50 次 | 结果文件或智能体程序包，每队每天 10 次 |
+| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | `eval-a`、`eval-b`（各 30 晚）；天气、预报、事件在开赛时公开 |
+| 提交 | 结果文件（`decisions.csv`），每队每天 50 次 | 结果文件（`decisions.csv`），每队每天 10 次 |
 | 得分 | 榜单仅供参考 | 两个场景的平均值；决定奖项 |
 
-练习场景公开了 `weather_events.csv`，因此本地运行 `score_decisions.py` 能逐字节复现平台报告。比赛场景只能由平台评分，且只能通过协议。
+场景的天气与事件公开后，本地运行 `score_decisions.py` 能逐字节复现平台报告。唯一的例外是比赛场景的异常标签：答案不公开，只在平台评分时使用，所以比赛场景的本地分数不含这一部分。
 
-两种提交方式对应两种用途，平台都支持：
-
-- **结果文件（`decisions.csv`）**：你在本地跑完整场，把决策序列交给评分器。天气公开的练习场景上这条路最短，本地分数与平台分数一致；比赛场景的天气看不到，所以这份决策没法随天气应变，但平台照样收、照样评分。
-- **智能体程序包**：你上传程序和依赖，平台在隐藏天气的场景上运行它，每次只交给它当前时隙能看到的快照。程序能当场读到天气并改主意，这是结果文件做不到的，所以比赛里通常更占优。
-
-两种方式经过同一个评分器和同一份 `score_config.json`，报告格式相同，因此Playground调出来的策略可以直接进比赛。
+两个阶段用同一个评分器和同一份 `score_config.json`，报告格式相同，因此 Playground 调出来的策略可以直接用于比赛。
 
 ## 3. 入门包
 
@@ -40,7 +32,7 @@
 
 1. 在「资源」页下载[入门包 agent-observer-starter-kit.zip](/resources)并解压，双击 `run_baseline.command`（macOS）、`run_baseline.bat`（Windows，先从 python.org 安装 Python 3.12）或运行 `./run_baseline.sh`（Linux）。基线在自带场景上约 12287 分，回放会在浏览器里打开。想先快速看一遍，把文件名换成 `run_demo_week`：7 晚的演示场景，约 2 秒跑完，同一套流程和评分器，结果写在 `demo_week_output/`。
 2. 修改 `agent/my_strategy.py`：`choose_action(candidates, snapshot, memory)` 收到按估计收益排好序的合法候选，返回要观测的那个，或返回 `None` 等待。再双击一次比较分数。
-3. 在「提交」页选择「智能体运行」，把这一个文件拖进去即可，平台会自动补齐入门包其余文件；拖整个 `agent` 文件夹（浏览器内打包）或 `.zip` 也可以。
+3. 在「提交」页选择场景，把生成的 `run_output/decisions.csv` 拖进去即可。
 
 入门包里的 `QUICKSTART_ZH.md` / `QUICKSTART.md` 就是这三步。下面是给工程师看的完整版。
 
@@ -65,13 +57,13 @@ python3 fetch_scenario.py --list && python3 fetch_scenario.py dev-fortnight   # 
 
 ### 网站
 
-控制台 → 提交。选择阶段、提交类型、场景（仅结果文件需要选）与文件。页面显示场景的全局时钟以及队伍今日剩余次数。每次提交都有独立页面：得分分解、完成情况、请求、等待秒数、终止原因、智能体运行面板（已提交动作、已用时钟、`agent.log`、`workflow_result.json`）、交互式决策回放、已观测天图、动作时间线，以及可下载的 `score_report.json` / `decisions.csv`。
+控制台 → 提交。选择阶段、场景与文件，页面显示队伍今日剩余次数。每次提交都有独立页面：得分分解、完成情况、请求、等待秒数、终止原因、交互式决策回放、已观测天图、动作时间线，以及可下载的 `score_report.json` / `decisions.csv`。
 
 ### 命令行
 
 ```
 python3 sac_submit.py --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --phase online --kind agent --file my_agent.zip --wait
+python3 sac_submit.py --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 ```
 
 `sac_submit.py` 读取 `SAC_URL`、`SAC_KEY`、`SAC_EMAIL`、`SAC_PASSWORD`（见「资源」页），`--wait` 轮询直到评测结束。
@@ -120,29 +112,15 @@ bonus      = program == band 时 base · {DARK: 0.25, BRIGHT: 0.15, BACKUP: 0.08
 6. 时钟是全局的。几百次决策各调用一次模型可以承受，180 晚约 8,000 次决策则不行；把显而易见的等待交给确定性代码。
 7. 异常检测：把 `tile_last_finished.score` 和该曝光的公开公式估值对比——基线不含仪器效率，正常读数因抖动落在 ≈0.90–1.00；≈1.35–1.5 是 nova、≈0.72–0.80 是红化、持续低于 0.70 是仪器故障。这些区间只是发现异常的启发式参考，不是评分器执行的判据。预报中的 cold_wave 也会压效率，那段读数别算进异常证据。标签永久、天气抖动暂时，让同一 tile 的多次读数说话再上报；错报标签 −150（对了才 +100），故障误报超额每次 −100。故障确认后避开其作用区直到 `repair_complete_utc`。重复观测是合法的提分手段：完成后继续拍最高质量的天区，每场只按最高分入账。
 
-## 7. 平台运行与限制
+## 7. 本地运行
 
-本节与下一节只与**智能体程序包**相关：平台运行程序时的资源边界如下，打包前核对。
-
-| 项目 | 取值 |
-|---|---|
-| 解释器 | Python 3.12，`python -B <entry>`，工作目录为程序包目录 |
-| 入口脚本 | 程序包根目录（或唯一顶层文件夹）中的 `minimal_agent.py`、`agent.py` 或 `main.py` |
-| 依赖 | 可选 `requirements.txt`，在时钟开始前用 pip 装进每次运行独立的虚拟环境（最多 15 分钟） |
-| 密钥 | 可选 `.env`（`KEY=VALUE` 行），随程序包一起上传，只注入智能体环境、不写入日志；按规则保存至颁奖日后 90 天，提交队伍与主办方可见 |
-| 网络 | 允许（模型 API）；主办方可配置出口代理 |
-| 初始化 | 启动并读取 `initialize` 有 30 秒；失败记为 `agent_initialization_error` |
-| 时钟 | 场景的 `global_wallclock_seconds`；无单次决策限制 |
-| 内存 / CPU | 2 GB、一个 CPU、128 个进程、程序包 `scratch/` 目录下最多 256 MB 写入 |
-| 程序包 | `.zip`（不依赖其他文件时也接受单个 `.py`）≤ 20 MB、≤ 2,000 个文件、解压后 ≤ 50 MB、不含符号链接 |
-
-智能体可用的环境变量：`PARTICIPANT_PROTOCOL`（该场景的协议代际：练习 v1 / 正式赛 v2）、`SAC_SCENARIO`（slug）、`SAC_WALLCLOCK_SECONDS`、`HOME` 与 `TMPDIR`（scratch 目录），以及 `.env` 中的全部内容。场景目录不会挂载进智能体沙箱；你能看到的天气只有快照发布的内容。
+智能体在你自己的电脑上运行，语言、依赖与环境不限，可以联网调用模型 API。入门包的 `local_runner.py` 扮演平台的角色：在每个场景上启动一次你的入口脚本，按下一节的协议逐条发送快照，把动作写进 `run_output/decisions.csv`，再用公开评分器算出分数。上传的 `decisions.csv` 不超过 20 MB。
 
 ## 8. 参赛协议（participant-agent-protocol-v2；练习场景仍为 v1）
 
-平台和你的程序之间是一问一答的 JSON 对话：每个时隙，平台发来「现在的天况和候选天区」，你的程序回一句「拍这个」或「等待」。下面是每条消息的精确格式。（本页底部有可交互的协议消息演示。）
+本地运行时，下文的「平台」就是 `local_runner.py`。它和你的程序之间是一问一答的 JSON 对话：每个时隙，平台发来「现在的天况和候选天区」，你的程序回一句「拍这个」或「等待」。下面是每条消息的精确格式。（本页底部有可交互的协议消息演示。）
 
-平台在每个场景上启动一次你的入口脚本（程序包根目录或唯一顶层文件夹中的 `minimal_agent.py`、`agent.py` 或 `main.py`，按此顺序取第一个存在的），并在整个运行期间保持进程存活。消息通过标准输入输出传递，每行一个 JSON 对象；标准输出不要打印其他内容。标准错误被记录为 `agent.log`，可在提交页下载。每条消息都带 `protocol_version`、`message_type`，除 `initialize` 外还带 `decision_sequence`。
+平台在每个场景上启动一次你的入口脚本（用 `--agent` 指定），并在整个运行期间保持进程存活。消息通过标准输入输出传递，每行一个 JSON 对象；标准输出不要打印其他内容。标准错误记录在输出目录的 `agent.log` 里。每条消息都带 `protocol_version`、`message_type`，除 `initialize` 外还带 `decision_sequence`。
 
 ### `initialize`（平台 → 智能体，一次，不需回复）
 
@@ -186,8 +164,8 @@ payload 为 `decision-snapshot-v3`：
 
 1. `local_runner.py` 在 `scenarios/dev-reference`（以及 `make_scenario.py` 新生成的种子）上以 `termination_reason = survey_complete` 结束。
 2. `score_decisions.py` 对生成的 `decisions.csv` 输出与运行相同的 `score.total`。
-3. 程序包解压后入口脚本位于根目录，`requirements.txt` 能装进全新虚拟环境，`.env` 只含智能体需要的密钥。
-4. 智能体只写 `scratch/`，标准输出只打印协议行。
+3. 上传的是 `run_output/decisions.csv`，场景与本地运行的场景一致。
+4. 智能体的标准输出只打印协议行。
 ## 10. 数据格式
 
 以下是全部数据文件的逐列参考——用到哪个查哪个，不必通读。
@@ -208,9 +186,9 @@ payload 为 `decision-snapshot-v3`：
 | `outputs/reference/night_calendar.csv`、`slots.csv` | 共享时间轴（每晚 37–47 个时隙） | 公开 |
 | `outputs/reference/tiles.csv`、`targets.csv`、`tile_windows.csv` | 目录、逐目标科学权重、可见窗口示例 | 公开 |
 | `outputs/reference/observation_requests.csv`、`observation_request_tiles.csv` | 预生成的请求及其天区 | 公开 |
-| `outputs/reference/weather.csv` | 逐时隙站点基线天气 | 仅练习场景公开 |
-| `outputs/reference/weather_forecasts.csv` | 不确定、每日修订的预报 | 按场景标记 |
-| `outputs/reference/weather_events.csv` | 方向性干扰事件（`active_event_ids` 背后的真值；`instrument_fault` 故障事件永不进预报、不进快照） | 比赛场景隐藏 |
+| `outputs/reference/weather.csv` | 逐时隙站点基线天气 | 练习场景公开；比赛场景开赛时公开 |
+| `outputs/reference/weather_forecasts.csv` | 不确定、每日修订的预报 | 练习场景公开；比赛场景开赛时公开 |
+| `outputs/reference/weather_events.csv` | 方向性干扰事件（`active_event_ids` 背后的真值；`instrument_fault` 故障事件永不进预报、不进快照） | 练习场景公开；比赛场景开赛时公开 |
 | `outputs/reference/tile_anomalies.csv` | 隐藏 per-tile 真值标签（nova ×1.5 / reddening ×0.8，只作用于评分器） | 比赛场景隐藏，练习场景可审计 |
 | `outputs/reference/scenario_manifest.json`、`*_metadata.json` | 每个文件的行数与 SHA-256 | 公开 |
 
