@@ -5,7 +5,8 @@ export function describeError(error: unknown, i18n: I18n, namespaces: string[] =
   const message = extractMessage(error)
   if (!message) return i18n.t('errors.generic')
   const code = message.trim()
-  for (const ns of namespaces) {
+  // The page's own wording first, then the shared list, so no page ever shows a bare backend code.
+  for (const ns of [...namespaces, 'errors']) {
     const translated = i18n.t(`${ns}.${code}`)
     if (translated !== `${ns}.${code}`) return translated
   }
