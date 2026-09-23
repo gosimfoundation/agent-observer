@@ -45,6 +45,34 @@ const GAP_UNIT = 0.3
  * moves the sky most of the way round, and it needs room to do that at a speed the eye can follow.
  */
 const GAP_SWEEP_UNIT = 0.9
+/**
+ * How far the sky may travel across a gap before travelling stops being the right idea. A few degrees
+ * glide by unnoticed. Half a turn cannot: given a beat short enough to keep the replay moving, it
+ * crosses the whole map in under a second, and reads as a jolt rather than as time passing. Past this
+ * the cursor dissolves instead, and comes back where the night resumes.
+ */
+const SWEEP_MAX_DEG = 18
+/** Share a dissolving gap earns — enough for the cursor to fade out and back without feeling rushed. */
+const GAP_DISSOLVE_UNIT = 0.7
+/** Fraction of a dissolving gap spent fading at each end; the middle is held empty. */
+const DISSOLVE_EDGE = 0.34
+/**
+ * Above this many exposures, giving each one its own beat stops working: the loop is capped at under
+ * two minutes, so a run of several thousand exposures would hand each beat a frame or two, and every
+ * skip between them would land as a jump however it was dressed up. Past this the replay switches to
+ * running the clock at a steady rate instead — the sky turns evenly and tiles light as their moment
+ * arrives, which cannot jump because nothing is ever cut.
+ */
+const DENSE_EXPOSURES = 150
+/** Real time one turn of the sky is given in that steady mode: slow enough to read as motion. */
+const MS_PER_TURN = 3_000
+/**
+ * Fastest the sky may turn before the cursor marking "now" stops being worth drawing. The reference
+ * scenario runs half a year: a hundred and eighty turns will not fit inside a two-minute loop at any
+ * speed the eye can follow, and a cursor whipping round several times a second tells a viewer nothing
+ * it does not already know from the clock. Past this it is left out, and the tiles carry the replay.
+ */
+const MAX_CURSOR_DEG_PER_FRAME = 2.5
 /** Real time each unit of weight is worth, and the bounds a full loop is kept inside. */
 const MS_PER_UNIT = 760
 const LOOP_MIN_MS = 45_000
@@ -79,8 +107,14 @@ type Segment = {
   sweepFromSec: number
   /** This segment's share of the loop. */
   weight: number
+  /** Set on a gap too wide to travel: hold, fade out, cut, fade back in. */
+  dissolve?: boolean
 }
 let segments: Segment[] = []
+/** True while the replay is walking one steady beat rather than one beat per exposure. */
+let steady = false
+/** False when the sky turns too fast for a "now" cursor to mean anything; it is left undrawn then. */
+let steadyCursor = true
 let segCum: number[] = [0]
 let totalWeight = 1
 
@@ -97,7 +131,8 @@ function priceGap(seg: Segment, jumpFromSec: number): Segment {
   if (span > SIDEREAL_DAY) from = seg.toSec - (span % SIDEREAL_DAY)
   const turn = Math.min(1, Math.max(0, (seg.toSec - from) / SIDEREAL_DAY))
   seg.sweepFromSec = from
-  seg.weight = GAP_UNIT + turn * GAP_SWEEP_UNIT
+  seg.dissolve = turn * 360 > SWEEP_MAX_DEG
+  seg.weight = seg.dissolve ? GAP_DISSOLVE_UNIT : GAP_UNIT + turn * GAP_SWEEP_UNIT
   return seg
 }
 
@@ -120,7 +155,51 @@ function holeSegment(fromSec: number, toSec: number, actionIndex: number): Segme
   )
 }
 
+/** Index of the last action that had started by this replay time. */
+export function actionIndexAt(nowSec: number): number {
+  let lo = 0, hi = replayActions.length - 1
+  if (hi < 0) return 0
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (replayActions[mid]!.startSec <= nowSec) lo = mid; else hi = mid - 1
+  }
+  return lo
+}
+/** How many actions have finished by this replay time — what the score and the filled tiles are built from. */
+export function settledCountAt(nowSec: number): number {
+  let lo = 0, hi = replayActions.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (replayActions[mid]!.doneSec <= nowSec) lo = mid + 1; else hi = mid
+  }
+  return lo
+}
+
+/**
+ * One beat for the whole run, walked at a steady rate. Used when there are too many exposures to give
+ * each its own beat; nothing is skipped or cut, so the sky simply turns and the tiles fill in.
+ */
+function buildSteadySegment(): boolean {
+  steady = false
+  if (replayObserves.length <= DENSE_EXPOSURES) return false
+  steady = true
+  const first = replayActions[0]!, last = replayActions[replayActions.length - 1]!
+  const span = Math.max(1, last.doneSec - first.startSec)
+  segments = [{
+    kind: 'observe', actionIndex: 0,
+    fromSec: first.startSec, toSec: last.doneSec,
+    nights: 0, slots: 0, sweepFromSec: first.startSec, weight: 1,
+  }]
+  segCum = [0, 1]
+  totalWeight = 1
+  const turns = span / SIDEREAL_DAY
+  LOOP_MS = Math.min(LOOP_MAX_MS, Math.max(LOOP_MIN_MS, Math.round(turns * MS_PER_TURN)))
+  steadyCursor = (turns * 360) / (LOOP_MS / 16.7) <= MAX_CURSOR_DEG_PER_FRAME
+  return true
+}
+
 function buildSegments() {
+  if (buildSteadySegment()) return
   segments = []
   let i = 0
   while (i < replayActions.length) {
@@ -217,11 +296,12 @@ export interface ReplayFrame {
   slotIndex: number
   nowSec: number
   /**
-   * Time to draw the sky at. Equal to nowSec during an exposure. Across a collapsed gap it sweeps
-   * the whole skipped stretch instead, so the meridian and the visibility rings travel there rather
-   * than reappearing half a turn away.
+   * Time to draw the sky at. Equal to nowSec during an exposure. Across a narrow gap it glides through
+   * the skipped stretch; across a wide one it holds, cuts once out of sight, and resumes.
    */
   skySec: number
+  /** How solid the time cursor and its reach rings should be drawn: 1 normally, dipping to 0 over a cut. */
+  skyFade: number
   frac: number
   /** Set while a run of waiting is being shown, with how much of the run it stands for. */
   gap: { nights: number; slots: number } | null
@@ -238,19 +318,39 @@ export function replayTimeAt(progress: number): ReplayFrame {
   const span = Math.max(1e-6, segCum[lo + 1]! - segCum[lo]!)
   const frac = Math.max(0, Math.min(1, (v - segCum[lo]!) / span))
   const nowSec = seg.fromSec + frac * (seg.toSec - seg.fromSec)
-  // The readout skips to the quiet stretch before the next exposure; the sky travels the whole way.
-  // Whole turns of the sky are trimmed off first, so a gap of several nights still crosses once.
+  if (steady) {
+    // Nothing is skipped here, so the sky reads straight off the clock and can never cut.
+    const idx = actionIndexAt(nowSec)
+    return {
+      actionIndex: idx,
+      slotIndex: slotIndexAt(nowSec),
+      nowSec,
+      skySec: nowSec,
+      skyFade: steadyCursor ? 1 : 0,
+      frac,
+      gap: replayActions[idx]?.a === 'observe' ? null : { nights: 1, slots: 1 },
+    }
+  }
+  // The readout skips to the quiet stretch before the next exposure. A short gap lets the sky glide
+  // the rest of the way; a wide one holds still, dissolves, and comes back where the night resumes.
   let skySec = nowSec
+  let skyFade = 1
   if (seg.kind === 'gap') {
-    // Eased, so the sky pulls away and settles rather than snapping into and out of the sweep.
-    const e = frac * frac * (3 - 2 * frac)
-    skySec = seg.sweepFromSec + e * (seg.toSec - seg.sweepFromSec)
+    if (seg.dissolve) {
+      skySec = frac < 0.5 ? seg.sweepFromSec : seg.toSec
+      skyFade = Math.min(1, Math.abs(frac - 0.5) / DISSOLVE_EDGE)
+    } else {
+      // Eased, so the sky pulls away and settles rather than snapping into and out of the drift.
+      const e = frac * frac * (3 - 2 * frac)
+      skySec = seg.sweepFromSec + e * (seg.toSec - seg.sweepFromSec)
+    }
   }
   return {
     actionIndex: seg.actionIndex,
     slotIndex: slotIndexAt(nowSec),
     nowSec,
     skySec,
+    skyFade,
     frac,
     gap: seg.kind === 'gap' ? { nights: seg.nights, slots: seg.slots } : null,
   }

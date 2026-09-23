@@ -16,6 +16,12 @@ export interface SkyFrame {
   observed: Map<string, ObservedMark>
   /** Length (in replay seconds) of the glow after a tile fills in; 0 disables the pulse. */
   pulseSeconds?: number
+  /**
+   * How solid to draw the things that mark "now" — the meridian and the reach rings. Defaults to 1.
+   * The replay drops it to 0 while it cuts across skipped hours, so the cursor dissolves rather than
+   * appearing to leap to a new hour angle.
+   */
+  timeFade?: number
 }
 
 export const CLASS_COLORS: Record<SchedulingClass, string> = { R: '#f5f5f5', F: '#78a6ff' }
@@ -118,13 +124,14 @@ export function drawSkyMap(canvas: HTMLCanvasElement, tiles: SkyTile[], site: Sk
   ctx.strokeRect(PAD.left + .5, PAD.top + .5, pw - 1, ph - 1)
 
   // meridian ("now" position: ra = LST)
-  if (frame.nowSec != null) {
+  const timeFade = Math.max(0, Math.min(1, frame.timeFade ?? 1))
+  if (frame.nowSec != null && timeFade > 0.02) {
     const px = Math.round(x(lstDeg(site.lon, frame.nowSec))) + .5
-    ctx.strokeStyle = 'rgba(49,94,251,.75)'
+    ctx.strokeStyle = `rgba(49,94,251,${.75 * timeFade})`
     ctx.setLineDash([3, 3])
     ctx.beginPath(); ctx.moveTo(px, PAD.top); ctx.lineTo(px, PAD.top + ph); ctx.stroke()
     ctx.setLineDash([])
-    ctx.fillStyle = '#78a6ff'
+    ctx.fillStyle = `rgba(120,166,255,${timeFade})`
     ctx.textAlign = px > w - 40 ? 'right' : 'left'
     ctx.fillText('LST', px + (px > w - 40 ? -4 : 4), PAD.top + 8)
   }
@@ -137,8 +144,8 @@ export function drawSkyMap(canvas: HTMLCanvasElement, tiles: SkyTile[], site: Sk
     const outline = CLASS_COLORS[tile.cls]
     const mark = frame.observed.get(tile.id)
     ctx.globalAlpha = 1
-    if (frame.nowSec != null && isVisible(site, tile, frame.nowSec)) {
-      ctx.strokeStyle = 'rgba(255,255,255,.4)'
+    if (frame.nowSec != null && timeFade > 0.02 && isVisible(site, tile, frame.nowSec)) {
+      ctx.strokeStyle = `rgba(255,255,255,${.4 * timeFade})`
       ctx.lineWidth = 1
       ctx.beginPath(); ctx.arc(cx, cy, half + 4, 0, Math.PI * 2); ctx.stroke()
     }

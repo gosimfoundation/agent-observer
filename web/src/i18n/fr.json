@@ -608,6 +608,13 @@
     "quest": {
       "kicker": "Parcours de participation",
       "note": "Entièrement en ligne · participation solo possible"
+    },
+    "film": {
+      "kicker": "Film de l'événement",
+      "title": "Commencer par le film",
+      "lede": "Ce qu'est l'événement, les dates, les prix et le comité scientifique : tout y est.",
+      "note": "32 secondes · avec son · en chinois",
+      "play": "Lire"
     }
   },
   "teammates": {

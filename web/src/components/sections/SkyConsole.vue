@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, setReplayData, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
+import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, setReplayData, settledCountAt, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
 import { drawSkyMap, lstDeg, PAD, type ObservedMark } from '../../lib/skymap'
 import { OUTCOME_COLORS } from '../../lib/report'
 import { fmtUtc, num } from '../../lib/format'
@@ -45,10 +45,9 @@ function trackMeridian(nowSec: number) {
 }
 
 function frameAt(progress: number) {
-  const { slotIndex, nowSec, skySec, actionIndex, gap } = replayTimeAt(progress)
-  // Actions settled so far: everything before the current one, plus the current one once its exposure ends.
-  const current = replayActions[actionIndex]
-  const settled = current && current.doneSec <= nowSec ? actionIndex + 1 : actionIndex
+  const { slotIndex, nowSec, skySec, skyFade, actionIndex, gap } = replayTimeAt(progress)
+  // Everything finished by now, counted off the clock so it stays right however the beats are paced.
+  const settled = settledCountAt(nowSec)
   const score = replayNetPrefix[Math.max(0, Math.min(replayNetPrefix.length - 1, settled))] ?? 0
   const observed = new Map<string, ObservedMark>()
   for (const entry of replayObserves) {
@@ -61,7 +60,7 @@ function frameAt(progress: number) {
   // Distinct finished tiles, so a re-observation never inflates the count past the catalogue.
   let completed = 0
   for (const mark of observed.values()) if (mark.state === 'completed') completed++
-  return { slotIndex, nowSec, skySec, observed, score, completed, actionIndex, gap }
+  return { slotIndex, nowSec, skySec, skyFade, observed, score, completed, actionIndex, gap }
 }
 
 /** Pick the line of commentary for what the replay is showing: an exposure, or a collapsed quiet stretch. */
@@ -79,7 +78,7 @@ function beatFor(actionIndex: number, gap: { nights: number; slots: number } | n
 
 function render() {
   const progress = clock.replayProgress()
-  const { slotIndex, nowSec, skySec, observed, score, completed, actionIndex, gap } = frameAt(progress)
+  const { slotIndex, nowSec, skySec, skyFade, observed, score, completed, actionIndex, gap } = frameAt(progress)
   if (progress < lastProgress) shownScore = 0  // loop restarted
   lastProgress = progress
   if (!scrubbing.value) progressUI.value = progress
@@ -91,8 +90,9 @@ function render() {
   const nightNo = nightIds.value.indexOf(slot.night) + 1
   hud.value = { slot: slot.slot, night: slot.night, date: stamp.slice(0, 5), utc: stamp.slice(6), lst, seeing: slot.seeing, transp: slot.transp, sky: slot.sky, eff: slot.eff, open: slot.open, score: shownScore, completed, nightNo }
   beat.value = beatFor(actionIndex, gap, slot.open, nightNo)
+  cursorShown.value = skyFade > 0.5
   trackMeridian(skySec)
-  if (canvas.value) drawSkyMap(canvas.value, replayTiles, replaySite, { nowSec: skySec, observed, pulseSeconds: reduced.value ? 0 : PULSE })
+  if (canvas.value) drawSkyMap(canvas.value, replayTiles, replaySite, { nowSec: skySec, observed, timeFade: skyFade, pulseSeconds: reduced.value ? 0 : PULSE })
 }
 function loop() { render(); if (!reduced.value) raf = requestAnimationFrame(loop) }
 
@@ -100,10 +100,13 @@ function loop() { render(); if (!reduced.value) raf = requestAnimationFrame(loop
 // Four beats explaining the axes, the marks, the meridian (and its jump) and the readout. Shown once per
 // browser; the replay keeps running behind it, paused so nothing moves while reading.
 const TOUR_KEY = 'sac.sky-tour.seen'
-const TOUR_STEPS = ['axes', 'tiles', 'meridian', 'hud'] as const
+const ALL_TOUR_STEPS = ['axes', 'tiles', 'meridian', 'hud'] as const
+/** False on runs long enough that the time cursor is left out; the walkthrough then skips its step. */
+const cursorShown = ref(true)
+const TOUR_STEPS = computed(() => ALL_TOUR_STEPS.filter(step => step !== 'meridian' || cursorShown.value))
 const tourStep = ref(-1)
 const tourOpen = computed(() => tourStep.value >= 0)
-const currentStep = computed(() => TOUR_STEPS[tourStep.value] ?? null)
+const currentStep = computed(() => TOUR_STEPS.value[tourStep.value] ?? null)
 
 let championTimer: number | undefined
 let championSubmission = 0
@@ -124,7 +127,7 @@ async function refreshChampion() {
 
 function startTour() { tourStep.value = 0; clock.setPaused(true) }
 function nextStep() {
-  if (tourStep.value < TOUR_STEPS.length - 1) { tourStep.value += 1; return }
+  if (tourStep.value < TOUR_STEPS.value.length - 1) { tourStep.value += 1; return }
   endTour()
 }
 function endTour() {

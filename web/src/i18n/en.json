@@ -213,7 +213,7 @@
       "tour": {
         "axes": "The horizontal axis is right ascension — the sky's longitude — going all the way round from 0° to 360°. The vertical axis is declination, its latitude. R00–R07 across the top are the eight regions the sky is split into.",
         "tiles": "Each mark is a patch to image: ◇ must be finished (REQUIRED), □ is optional (FLEXIBLE). A ring means it is high enough to shoot right now; filled in means it is already done.",
-        "meridian": "The dashed blue line is where the telescope is pointing at this instant, drifting right as the Earth turns. When the replay moves to the next night the line jumps across: a whole daytime has been skipped.",
+        "meridian": "The dashed blue line is where the telescope is pointing right now. It drifts to the right as the Earth turns, and moves quicker around dawn, where a whole daytime is skipped.",
         "hud": "The row underneath is the current slot, the weather at that moment and the progress. The four weather figures are seeing, transparency, sky brightness and instrument efficiency — hover them for an explanation. The score climbs as patches light up, and that is the number competitors are trying to maximise."
       },
       "beat": {
@@ -552,6 +552,7 @@
     },
     "rail": {
       "top": "Top",
+      "film": "Film",
       "quest": "Main quest",
       "participants": "Participants",
       "vision": "Vision",
@@ -564,7 +565,14 @@
       "organizers": "Organizers",
       "cta": "Sign up"
     },
-    "rail_label": "Page map"
+    "rail_label": "Page map",
+    "film": {
+      "kicker": "Event film",
+      "title": "Watch the film first",
+      "lede": "What the event is, how the dates fall, the prizes and the scientific committee — it is all in there.",
+      "note": "32 seconds · has sound · narrated in Chinese",
+      "play": "Play"
+    }
   },
   "vision": {
     "pageTitle": "Agentic Observer",
