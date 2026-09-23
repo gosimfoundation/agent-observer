@@ -48,3 +48,19 @@ Set it back to `latest` to resume automatic updates.
 
 请重新克隆本仓库，并在编辑器或 AI 编程工具中打开它。旧仓库的本地副本不会
 自动切换。尚未提交的修改请先保留，再迁移到本仓库；不要继续修改旧活动目录。
+
+## Evaluation worker ownership
+
+Website publishing and submission evaluation are separate workflows. The evaluator
+in this repository is **off by default**: `EVALUATION_WORKER_ENABLED=false`.
+The production evaluator remains in `BH3GEI/agent-observer`; website changes must
+not silently start a second worker in this fork.
+
+To deliberately hand over evaluation, coordinate with the existing worker owner,
+configure the backend-only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` repository
+secrets, stop the previous worker, and then set `EVALUATION_WORKER_ENABLED=true`.
+The public `VITE_*` frontend variables cannot replace these backend credentials.
+
+The workflow only runs on `main` with that explicit opt-in. Missing credentials
+fail a preflight check. Only a successful evaluation run may dispatch its successor;
+a failed or cancelled run never starts an immediate restart loop.
