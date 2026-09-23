@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import { isSupabaseConfigured, supabase } from '../../lib/supabase'
-import { loadLeaderboard, loadPhases, mainPhase, type LeaderboardEntry, type Phase } from '../../lib/data'
+import { isSupabaseConfigured } from '../../lib/supabase'
+import { loadLeaderboard, loadParticipantsStats, loadPhases, mainPhase, type LeaderboardEntry, type Phase } from '../../lib/data'
 import { useAuth } from '../../stores/auth'
 import { fmtUtc, num } from '../../lib/format'
 import UserAvatar from '../UserAvatar.vue'
@@ -37,10 +37,10 @@ async function load() {
     updatedAt.value = new Date()
     error.value = false
     loading.value = false
-    const { count, error: countError } = await supabase.from('teams').select('id', { count: 'exact', head: true })
-    // Anonymous visitors cannot read the teams table (RLS), so count comes back as 0 rather than an error.
-    // Never show 0 for "registered teams"; fall back to the number of ranked teams instead.
-    teamCount.value = countError || !count ? null : count
+    // Visitors cannot read the teams table, so a direct count came back 0 for everyone not logged in.
+    // The public participant stats already count teams; if they fail, fall back to the ranked teams.
+    const stats = await loadParticipantsStats().catch(() => null)
+    teamCount.value = stats && stats.teams > 0 ? stats.teams : null
   } catch { error.value = true }
   finally { loading.value = false; refreshing.value = false }
 }
