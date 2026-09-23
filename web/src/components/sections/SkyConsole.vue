@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, setReplayData, settledCountAt, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
+import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, replayHasCursor, replayPulseSec, setReplayData, settledCountAt, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
 import { drawSkyMap, lstDeg, PAD, type ObservedMark } from '../../lib/skymap'
 import { OUTCOME_COLORS } from '../../lib/report'
 import { fmtUtc, num } from '../../lib/format'
@@ -30,6 +30,8 @@ const paused = computed(() => clock.state.paused)
 const reduced = computed(() => clock.state.reduced)
 let raf = 0, observer: ResizeObserver | undefined, shownScore = 0, lastProgress = 0
 const PULSE = SLOT_SECONDS * 2  // glow for two slots of replay time after a tile completes
+/** Stands in for the weather row when a run arrives without one, so the readout stays up instead of throwing. */
+const EMPTY_SLOT = { slot: '—', night: '', t: '', startSec: 0, open: true, seeing: 0, transp: 0, sky: 0, eff: 0 }
 const nightIds = computed(() => { void replayMeta.version; return replayNights })
 const tileById = computed(() => { void replayMeta.version; return new Map(replayTiles.map(tile => [tile.id, tile])) })
 
@@ -70,7 +72,8 @@ function beatFor(actionIndex: number, gap: { nights: number; slots: number } | n
     if (!open) return { key: 'dome_closed', region: '', nightNo, n: 0 }
     return { key: 'gap_short', region: '', nightNo, n: 0 }
   }
-  const action = replayActions[actionIndex]!
+  const action = replayActions[actionIndex]
+  if (!action) return { key: 'idle', region: '', nightNo, n: 0 }
   const tile = tileById.value.get(action.tile)
   const key = action.cls === 'completed' ? (tile?.cls === 'R' ? 'observe_required' : 'observe') : 'interrupted'
   return { key, region: tile?.region ?? '', nightNo, n: 0 }
@@ -83,16 +86,15 @@ function render() {
   lastProgress = progress
   if (!scrubbing.value) progressUI.value = progress
   shownScore = reduced.value ? score : shownScore + (score - shownScore) * 0.18
-  const slot = replaySlots[slotIndex]!
+  const slot = replaySlots[slotIndex] ?? EMPTY_SLOT
   const stamp = fmtUtc(new Date(nowSec * 1000).toISOString(), { seconds: true, short: true })
   const lstHours = lstDeg(replaySite.lon, nowSec) / 15
   const lst = `${String(Math.floor(lstHours)).padStart(2, '0')}:${String(Math.floor((lstHours % 1) * 60)).padStart(2, '0')}`
   const nightNo = nightIds.value.indexOf(slot.night) + 1
   hud.value = { slot: slot.slot, night: slot.night, date: stamp.slice(0, 5), utc: stamp.slice(6), lst, seeing: slot.seeing, transp: slot.transp, sky: slot.sky, eff: slot.eff, open: slot.open, score: shownScore, completed, nightNo }
   beat.value = beatFor(actionIndex, gap, slot.open, nightNo)
-  cursorShown.value = skyFade > 0.5
   trackMeridian(skySec)
-  if (canvas.value) drawSkyMap(canvas.value, replayTiles, replaySite, { nowSec: skySec, observed, timeFade: skyFade, pulseSeconds: reduced.value ? 0 : PULSE })
+  if (canvas.value) drawSkyMap(canvas.value, replayTiles, replaySite, { nowSec: skySec, observed, timeFade: skyFade, pulseSeconds: reduced.value ? 0 : Math.max(PULSE, replayPulseSec) })
 }
 function loop() { render(); if (!reduced.value) raf = requestAnimationFrame(loop) }
 
@@ -102,7 +104,7 @@ function loop() { render(); if (!reduced.value) raf = requestAnimationFrame(loop
 const TOUR_KEY = 'sac.sky-tour.seen'
 const ALL_TOUR_STEPS = ['axes', 'tiles', 'meridian', 'hud'] as const
 /** False on runs long enough that the time cursor is left out; the walkthrough then skips its step. */
-const cursorShown = ref(true)
+const cursorShown = computed(() => { void replayMeta.version; return replayHasCursor })
 const TOUR_STEPS = computed(() => ALL_TOUR_STEPS.filter(step => step !== 'meridian' || cursorShown.value))
 const tourStep = ref(-1)
 const tourOpen = computed(() => tourStep.value >= 0)
@@ -145,11 +147,20 @@ onMounted(() => {
   try { seen = window.localStorage.getItem(TOUR_KEY) === '1' } catch { /* private mode: do not nag */ }
   if (!seen && !clock.state.reduced) startTour()
 })
+// The frame loop does not run under reduced motion, so a newly loaded run has to be drawn on arrival.
+watch(() => replayMeta.version, () => render(), { flush: 'post' })
+// A run swapped in mid-walkthrough can drop the cursor step; keep the walkthrough on a step that exists.
+watch(() => TOUR_STEPS.value.length, n => { if (tourStep.value >= n) tourStep.value = n - 1 })
+function onHover(e: PointerEvent, inside: boolean) {
+  if (e.pointerType !== 'mouse' || tourOpen.value) return
+  clock.setPaused(inside)
+}
+
 onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect(); if (championTimer) window.clearInterval(championTimer) })
 </script>
 
 <template>
-  <div class="sky-console" data-testid="sky-console" :data-replay-source="replayMeta.source" @mouseenter="clock.setPaused(true)" @mouseleave="clock.setPaused(false)">
+  <div class="sky-console" data-testid="sky-console" :data-replay-source="replayMeta.source" @pointerenter="onHover($event, true)" @pointerleave="onHover($event, false)">
     <div class="sky-console-head">
       <span class="sky-live-title flex items-center gap-3"><span class="live-dot" :class="{ 'is-paused': paused || reduced }"></span><span>{{ t('hero.console.title') }}<b v-if="champion" class="sky-champ"><UserAvatar :name="champion" :github="championGithub" />@{{ champion }}</b></span></span>
       <span class="flex items-center gap-4">
@@ -164,8 +175,9 @@ onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect(); if (champ
     </p>
     <div class="sky-stage">
       <canvas ref="canvas" class="sky-canvas" role="img" :aria-label="t('hero.console.aria')"></canvas>
-      <div class="sky-meridian-hit" :style="{ left: meridianLeft }" aria-hidden="true" @mouseenter="lstOpen = true" @mouseleave="lstOpen = false"></div>
-      <div v-if="lstOpen" class="sky-lst" :style="{ left: meridianLeft }">{{ tf('hero.console.lst', { lst: hud.lst }) }}</div>
+      <!-- Hover label for the cursor: only when a cursor is drawn, and only for a mouse — a tap sends no "leave" and pinned it open. -->
+      <div v-if="cursorShown" class="sky-meridian-hit" :style="{ left: meridianLeft }" aria-hidden="true" @pointerenter="e => { if (e.pointerType === 'mouse') lstOpen = true }" @pointerleave="lstOpen = false"></div>
+      <div v-if="lstOpen && cursorShown" class="sky-lst" :style="{ left: meridianLeft }">{{ tf('hero.console.lst', { lst: hud.lst }) }}</div>
       <div v-if="tourOpen" class="sky-tour" role="dialog" aria-modal="false" :aria-label="t('hero.console.tour_title')">
         <div
           class="sky-tour-spot"
@@ -202,8 +214,8 @@ onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect(); if (champ
       <span><i style="border-color:#78a6ff"></i>{{ t('hero.console.legend_flexible') }}</span>
       <span><i :style="{ background: OUTCOME_COLORS.completed, borderColor: OUTCOME_COLORS.completed }"></i>{{ t('hero.console.legend_completed') }}</span>
       <span><i :style="{ borderColor: OUTCOME_COLORS.interrupted }"></i>{{ t('hero.console.legend_interrupted') }}</span>
-      <span><i class="ring"></i>{{ t('hero.console.legend_visible') }}</span>
-      <span><i class="meridian"></i>{{ t('hero.console.legend_meridian') }}</span>
+      <span v-if="cursorShown"><i class="ring"></i>{{ t('hero.console.legend_visible') }}</span>
+      <span v-if="cursorShown"><i class="meridian"></i>{{ t('hero.console.legend_meridian') }}</span>
     </div>
     <dl class="sky-hud" aria-live="off">
       <div class="sky-hud-slot"><dt>{{ t('hero.console.slot') }}</dt><dd data-testid="sky-slot">{{ hud.slot }}</dd></div>

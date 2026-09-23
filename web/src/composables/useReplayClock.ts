@@ -73,6 +73,17 @@ const MS_PER_TURN = 3_000
  * it does not already know from the clock. Past this it is left out, and the tiles carry the replay.
  */
 const MAX_CURSOR_DEG_PER_FRAME = 2.5
+/**
+ * How long the finished picture stays up before the loop starts over. Without it the last exposure
+ * never got a frame: the loop wrapped a hair before the final tile lit, so nobody saw the run complete.
+ */
+const END_HOLD_MS = 2_500
+/**
+ * How long, in real time, an exposure counts as "just happened" in the steady mode. On a half-year run an
+ * exposure lasts a few milliseconds on screen; the narration and the glow on a new tile need this long to
+ * register at all.
+ */
+const RECENT_MS = 600
 /** Real time each unit of weight is worth, and the bounds a full loop is kept inside. */
 const MS_PER_UNIT = 760
 const LOOP_MIN_MS = 45_000
@@ -95,6 +106,12 @@ export let replayObserves: { i: number; a: ReplayAction }[] = []
 /** Running net score: replayNetPrefix[k] covers actions 0…k-1, so the console never scans the run. */
 export let replayNetPrefix: number[] = [0]
 export let LOOP_MS = 75_000
+/** Whether this run draws a "now" cursor at all. A run-level fact, so the legend does not flicker with each fade. */
+export let replayHasCursor = true
+/** Replay seconds a freshly finished tile keeps glowing, stretched on long runs so the glow is visible at all. */
+export let replayPulseSec = SLOT_SECONDS * 2
+/** Replay seconds that pass in RECENT_MS of real time while the steady mode is running. */
+let recentSec = 0
 
 type Segment = {
   kind: 'observe' | 'gap'
@@ -165,6 +182,15 @@ export function actionIndexAt(nowSec: number): number {
   }
   return lo
 }
+/** The latest exposure that had started by this replay time, if any. */
+function lastObserveAt(nowSec: number): { i: number; a: ReplayAction } | null {
+  let lo = 0, hi = replayObserves.length - 1, found = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (replayObserves[mid]!.a.startSec <= nowSec) { found = mid; lo = mid + 1 } else hi = mid - 1
+  }
+  return found < 0 ? null : replayObserves[found]!
+}
 /** How many actions have finished by this replay time — what the score and the filled tiles are built from. */
 export function settledCountAt(nowSec: number): number {
   let lo = 0, hi = replayActions.length
@@ -193,13 +219,18 @@ function buildSteadySegment(): boolean {
   segCum = [0, 1]
   totalWeight = 1
   const turns = span / SIDEREAL_DAY
-  LOOP_MS = Math.min(LOOP_MAX_MS, Math.max(LOOP_MIN_MS, Math.round(turns * MS_PER_TURN)))
-  steadyCursor = (turns * 360) / (LOOP_MS / 16.7) <= MAX_CURSOR_DEG_PER_FRAME
+  LOOP_MS = Math.min(LOOP_MAX_MS, Math.max(LOOP_MIN_MS, Math.round(turns * MS_PER_TURN))) + END_HOLD_MS
+  steadyCursor = (turns * 360) / ((LOOP_MS - END_HOLD_MS) / 16.7) <= MAX_CURSOR_DEG_PER_FRAME
+  replayHasCursor = steadyCursor
+  recentSec = span * RECENT_MS / Math.max(1, LOOP_MS - END_HOLD_MS)
+  replayPulseSec = Math.max(SLOT_SECONDS * 2, recentSec * 1.5)
   return true
 }
 
 function buildSegments() {
   if (buildSteadySegment()) return
+  replayHasCursor = true
+  replayPulseSec = SLOT_SECONDS * 2
   segments = []
   let i = 0
   while (i < replayActions.length) {
@@ -243,7 +274,7 @@ function buildSegments() {
   segCum = [0]
   for (const seg of segments) segCum.push(segCum[segCum.length - 1]! + seg.weight)
   totalWeight = Math.max(1e-6, segCum[segCum.length - 1]!)
-  LOOP_MS = Math.min(LOOP_MAX_MS, Math.max(LOOP_MIN_MS, Math.round(totalWeight * MS_PER_UNIT)))
+  LOOP_MS = Math.min(LOOP_MAX_MS, Math.max(LOOP_MIN_MS, Math.round(totalWeight * MS_PER_UNIT))) + END_HOLD_MS
 }
 
 export function setReplayData(raw: RawReplay, source: 'demo' | 'champion' = 'demo', label = '') {
@@ -267,6 +298,9 @@ export function setReplayData(raw: RawReplay, source: 'demo' | 'champion' = 'dem
   replayMeta.source = source
   replayMeta.label = label
   replayMeta.version += 1
+  // A new run starts from its first night, not from wherever the previous run's loop had got to.
+  base = 0
+  if (runningSince != null) runningSince = performance.now()
   tick()
 }
 
@@ -308,27 +342,38 @@ export interface ReplayFrame {
 }
 /** Map loop progress onto the run: exposures get equal dwell, waiting runs collapse into short beats. */
 export function replayTimeAt(progress: number): ReplayFrame {
-  const v = Math.max(0, Math.min(totalWeight - 1e-9, Math.max(0, Math.min(0.999999, progress)) * totalWeight))
-  let lo = 0, hi = segments.length - 1
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1
-    if (segCum[mid]! <= v) lo = mid; else hi = mid - 1
+  // The last END_HOLD_MS of the loop shows the finished run, standing still.
+  const hold = Math.min(0.3, END_HOLD_MS / Math.max(1, LOOP_MS))
+  const played = Math.max(0, Math.min(1, progress / (1 - hold)))
+  const atEnd = played >= 1
+  const v = Math.max(0, Math.min(totalWeight - 1e-9, played * totalWeight))
+  let lo = segments.length - 1
+  if (!atEnd) {
+    lo = 0
+    let hi = segments.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (segCum[mid]! <= v) lo = mid; else hi = mid - 1
+    }
   }
   const seg = segments[lo]!
   const span = Math.max(1e-6, segCum[lo + 1]! - segCum[lo]!)
-  const frac = Math.max(0, Math.min(1, (v - segCum[lo]!) / span))
+  const frac = atEnd ? 1 : Math.max(0, Math.min(1, (v - segCum[lo]!) / span))
   const nowSec = seg.fromSec + frac * (seg.toSec - seg.fromSec)
   if (steady) {
     // Nothing is skipped here, so the sky reads straight off the clock and can never cut.
     const idx = actionIndexAt(nowSec)
+    const recent = lastObserveAt(nowSec)
+    const live = recent != null && nowSec <= recent.a.doneSec + recentSec
     return {
-      actionIndex: idx,
+      actionIndex: live ? recent.i : idx,
       slotIndex: slotIndexAt(nowSec),
       nowSec,
       skySec: nowSec,
       skyFade: steadyCursor ? 1 : 0,
       frac,
-      gap: replayActions[idx]?.a === 'observe' ? null : { nights: 1, slots: 1 },
+      // Between exposures — daytime included — the run is waiting, whatever row was logged last.
+      gap: live ? null : { nights: 1, slots: 1 },
     }
   }
   // The readout skips to the quiet stretch before the next exposure. A short gap lets the sky glide

@@ -22,8 +22,7 @@ function start() {
         <div class="reveal lg:sticky lg:top-28 lg:self-start">
           <span class="poster-kicker">{{ t('home.film.kicker') }}</span>
           <h2 class="section-title distressed-type mt-8">{{ t('home.film.title') }}</h2>
-          <p class="mt-7 max-w-md text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.film.lede') }}</p>
-          <p class="label mt-6">{{ t('home.film.note') }}</p>
+          <p class="label mt-7">{{ t('home.film.note') }}</p>
         </div>
 
         <div class="film-frame reveal reveal-delay-1">

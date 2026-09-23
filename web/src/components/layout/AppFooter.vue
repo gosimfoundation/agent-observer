@@ -32,7 +32,9 @@ function nextFact() {
   factTimer = window.setTimeout(() => { fact.value = '' }, 9000)
 }
 const { state } = useReplayClock()
-const slot = computed(() => { void replayMeta.version; return replaySlots[state.slotIndex] ?? replaySlots[0]! })
+// A run can in principle arrive without weather rows; the ticker falls back to dashes rather than throwing.
+const NO_SLOT = { slot: '—', night: '—', open: true }
+const slot = computed(() => { void replayMeta.version; return replaySlots[state.slotIndex] ?? replaySlots[0] ?? NO_SLOT })
 const progressPct = computed(() => `${(state.progress * 100).toFixed(1)}%`)
 </script>
 
