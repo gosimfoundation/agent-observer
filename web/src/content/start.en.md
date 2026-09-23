@@ -45,15 +45,9 @@ Save, double-click `run_baseline` again, and see whether the score went up. If i
 
 ## Step 5 · Upload
 
-Back on the site, open **Submit**. There are two routes depending on the phase:
+Back on the site, open **Submit**, pick the phase and the scenario, drag in the `run_output/decisions.csv` your local run produced, and press **Upload and queue →**. Scored within seconds.
 
-**Practice — upload a results file**
-Choose **Results file**, drag in the `decisions.csv` your local run produced, press **Upload and queue →**. Scored within seconds. Practice uses scenarios with public weather, so the platform can re-check what you computed locally.
-
-**Online competition — upload an agent**
-Choose **Agent run** and drag in `agent/my_strategy.py` — **that one file**. The site completes the package with the starter kit's standard files; you never have to build a zip. (Bring the whole `agent` folder instead if you are wiring up a model.)
-
-The platform runs your program against hidden weather, where you cannot see what is coming. That is the part that actually counts.
+The Playground and the online competition both take this file only. The two competition scenarios' weather is published when the competition opens on October 5: download it then, run locally, and upload the `decisions.csv`.
 
 ## Step 6 · Read the result
 
@@ -61,7 +55,6 @@ After uploading you see your queue position and evaluation progress; a score usu
 
 - **Score breakdown** — base science, program bonus, request reward, and each penalty separately
 - **Night-by-night replay** — what actually got observed, which tiles completed and which never made it
-- **Run log** — your program's real output on the platform
 
 The leaderboard lives under **Leaderboard** in the top navigation and updates live.
 
@@ -81,9 +74,9 @@ Details live in the Brief's finals-mechanics section and on the Rules page.
 |---|---|
 | Double-click does nothing / Python not found | On Windows install Python 3.12 with "Add to PATH" ticked; on macOS right-click → **Open** |
 | Submission sits in the queue | Normal — the evaluator works through submissions one at a time; large scenarios take a while |
-| Submission immediately goes `invalid` | Usually a packaging problem. Dragging the single `agent/my_strategy.py` file is the easy path |
+| Submission immediately goes `invalid` | Usually the wrong file. Upload the `run_output/decisions.csv` your local run produced, for the same scenario you ran |
 | Want more weather to test against locally | `python3 make_scenario.py --out scenarios/mine --seed 7 --days 30`, then `python3 local_runner.py --scenario scenarios/mine --agent agent/minimal_agent.py` |
-| Want an LLM in the loop | Copy `agent/.env.example` to `agent/.env`, fill in a key (sponsor credits are on your dashboard), and upload the whole `agent` folder |
+| Want an LLM in the loop | Copy `agent/.env.example` to `agent/.env`, fill in a key (sponsor credits are on your dashboard), run locally, and upload the `decisions.csv` as usual |
 
 Data formats, the protocol and the scoring formula are on the **Docs** page; `README.md` inside the kit is the full engineer's version.
 

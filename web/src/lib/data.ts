@@ -80,13 +80,13 @@ export function phaseCopy(
   const facts = locale === 'zh'
     ? [
         `结果文件 ${phase.allow_results ? '允许' : '不允许'}`,
-        `智能体程序包 ${phase.allow_agents ? '允许' : '不允许'}`,
+        ...(phase.allow_agents ? ['智能体程序包 允许'] : []),
         `每队每天 ${phase.daily_limit} 次`,
         `榜单 ${phase.leaderboard_mode}`,
       ]
     : [
         `results files ${phase.allow_results ? 'allowed' : 'not allowed'}`,
-        `agent packages ${phase.allow_agents ? 'allowed' : 'not allowed'}`,
+        ...(phase.allow_agents ? ['agent packages allowed'] : []),
         `${phase.daily_limit} submissions per team per day`,
         `leaderboard ${phase.leaderboard_mode}`,
       ]

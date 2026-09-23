@@ -70,7 +70,7 @@ def main(argv=None) -> int:
     rows = scenarios(args.url, args.key)
     if args.list or not args.slug:
         for s in rows:
-            vis = "weather public" if s["weather_public"] else "weather hidden (platform runs only)"
+            vis = "weather public" if s["weather_public"] else "weather published when the competition opens"
             print(f"{s['slug']:<16} {s.get('n_nights') or '?':>4} nights  {s.get('n_slots') or '?':>5} slots  wall clock {s.get('global_wallclock_seconds') or '?'} s  {vis}")
         return 0
     meta = next((s for s in rows if s["slug"] == args.slug), None)
@@ -93,7 +93,7 @@ def main(argv=None) -> int:
         raise SystemExit("checksum mismatch: " + ", ".join(bad))
     print(f"wrote {len(files)} files to {out} (checksums verified)")
     if skipped:
-        print("not published for this scenario: " + ", ".join(skipped) + "  -> it can only be scored by the platform (submit an agent package)")
+        print("not published yet for this scenario: " + ", ".join(skipped) + "  -> the competition weather is published when the competition opens; fetch again then")
     else:
         print(f"next: python3 local_runner.py --scenario {out} --agent agent/minimal_agent.py --out run_{args.slug}")
     return 0

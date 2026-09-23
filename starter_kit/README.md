@@ -36,7 +36,7 @@ repeat observation of a completed tile stays invalid there — local runs on the
 platform's practice scores exactly. The **online competition** scenarios enable the full mechanics described
 in this README (hidden tags, instrument faults, repeat observations banking the per-tile maximum, the
 `report` channel). `scenarios/finals-preview/` is the rehearsal copy of those rules; the kit's agent and
-runner speak both generations automatically, so one agent package works everywhere.
+runner speak both generations automatically, so one agent works everywhere.
 
 ## Quick start
 
@@ -217,16 +217,17 @@ policy scores far lower, mostly through missed REQUIRED tiles and invalid action
 
 ## Submit
 
+Every phase takes a results file only: the `decisions.csv` your local run produced. The competition scenarios'
+weather, forecasts and events are published when the competition opens (`fetch_scenario.py eval-a`).
+
 ```bash
-python3 pack_agent.py --agent agent --out my-agent.zip
 python3 sac_submit.py --url https://<ref>.supabase.co --key <anon key> --email you@x.org --password '...' \
-    --phase online --kind agent --file my-agent.zip --wait
-python3 sac_submit.py --url ... --key ... --email ... --password ... \
     --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
+python3 sac_submit.py --url ... --key ... --email ... --password ... \
+    --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 ```
 
-The URL and anon key are on the platform's Resources page. `pack_agent.py` includes `.env` (your keys are only
-exposed to your own agent process); pass `--no-env` to leave it out.
+The URL and anon key are on the platform's Resources page.
 
 ## 中文说明
 

@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
-"""Submit an agent package (zip) or a decisions.csv results file to the Agent Observer platform (Supabase backend,
-standard library only).
+"""Submit a decisions.csv results file to the Agent Observer platform (Supabase backend, standard library only).
+Every phase takes results files only; agent packages are no longer accepted.
 
-  # agent package built by pack_agent.py; the platform runs it on the phase's scenarios (hidden truth allowed)
+  # decisions.csv produced by local_runner.py, scored against the scenario you ran
   python3 sac_submit.py --url https://<ref>.supabase.co --key <anon key> --email you@x.org --password '...' \
-      --phase online --kind agent --file my-agent.zip --wait
-
-  # decisions.csv produced by local_runner.py, scored against a public scenario
-  python3 sac_submit.py --url ... --key ... --email ... --password ... \
       --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-
-The agent package is a zip with minimal_agent.py (or agent.py / main.py) at its root, plus any modules it imports,
-an optional requirements.txt (installed into a fresh virtualenv before the run) and an optional .env with your LLM
-provider keys (loaded into the agent process only; never shown in logs). Build it with `python3 pack_agent.py`.
-A bare .py entry script is accepted too.
+  python3 sac_submit.py --url ... --key ... --email ... --password ... \
+      --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 
 The URL and anon key are printed on the platform's Resources page. Environment variables SAC_URL, SAC_KEY,
 SAC_EMAIL, SAC_PASSWORD are used when the flags are omitted; SAC_SITE_URL adds a clickable submission link.

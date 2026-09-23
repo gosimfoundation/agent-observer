@@ -35,10 +35,9 @@ python3 local_runner.py --scenario scenarios/dev-reference --agent agent/minimal
 python3 score_decisions.py --scenario scenarios/dev-reference --decisions run_output/decisions.csv
 python3 make_scenario.py --out scenarios/mine --seed 7 --days 30      # more practice scenarios
 python3 fetch_scenario.py dev-fortnight                                # any published scenario -> scenarios/dev-fortnight/
-python3 pack_agent.py --agent agent --out my_agent.zip                 # the package you submit
-# submit: a results file for a public-weather practice scenario, or the agent package (zip) for platform runs
+# submit the decisions.csv your local run produced (the competition scenarios' weather is published at the start)
 python3 sac_submit.py --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --phase online --kind agent --file my_agent.zip --wait`
+python3 sac_submit.py --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait`
 
 const filesFor = (group: ScenarioFileGroup) => SCENARIO_FILES.filter(f => f.group === group)
 const groupVisible = (s: Scenario, group: ScenarioFileGroup) => filesFor(group).some(f => scenarioFileVisible(s, f))

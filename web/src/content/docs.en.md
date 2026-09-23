@@ -1,19 +1,16 @@
-> This page follows the order you actually play in: sections 1–4 take you from zero to a finished submission, 5–6 explain where the score comes from and how to raise it, 7–8 are the platform-run and protocol contract, 9 is the pre-submit checklist, and 10 is the data-file dictionary for reference.
+> This page follows the order you actually play in: sections 1–4 take you from zero to a finished submission, 5–6 explain where the score comes from and how to raise it, 7–8 are the local-run and protocol contract, 9 is the pre-submit checklist, and 10 is the data-file dictionary for reference.
 
 ## 1. Overview
 
 What you are building is a program that takes the night shift at an observatory. The night is cut into 900-second slots; in each one, your agent looks at the current sky conditions and a list of candidate tiles, then decides which patch of sky to observe — or waits. Over a full run it leaves behind a slot-by-slot decision list (`decisions.csv`); a frozen scorer reads that list and produces the report card (`score_report.json`).
 
-A scenario is one exercise, shipped as a folder: six configuration files under `config/` spell out every rule of that round, and the reference data under `outputs/reference/` holds the rest — a slot calendar built on a real solar calendar; a tile and target catalogue split into REQUIRED and FLEXIBLE classes, each tile with its own availability window; per-slot weather plus directional disruption events that hit specific parts of the sky; uncertain, daily-revised forecasts; and observation requests that arrive mid-run. Practice scenarios publish their weather in full; competition scenarios hide it and switch on the anomaly mechanics — hidden instrument faults and per-tile anomaly tags, reported through `report_*` rows in `decisions.csv` (the switch lives in each scenario's `score_config.json`; the kit's `finals-preview` scenario enables it too, for local rehearsal). Every practice scenario keeps the original contract byte for byte (`decision-snapshot-v2`, no reports). The formal name for all of this is the **challenge v3** contract (`challenge-score-v3`, `participant-agent-protocol-v2`).
+A scenario is one exercise, shipped as a folder: six configuration files under `config/` spell out every rule of that round, and the reference data under `outputs/reference/` holds the rest — a slot calendar built on a real solar calendar; a tile and target catalogue split into REQUIRED and FLEXIBLE classes, each tile with its own availability window; per-slot weather plus directional disruption events that hit specific parts of the sky; uncertain, daily-revised forecasts; and observation requests that arrive mid-run. Practice scenarios publish their weather in full; competition scenarios publish their weather, forecasts and events when the competition opens, and switch on the anomaly mechanics — hidden instrument faults and per-tile anomaly tags, reported through `report_*` rows in `decisions.csv` (the switch lives in each scenario's `score_config.json`; the kit's `finals-preview` scenario enables it too, for local rehearsal). Every practice scenario keeps the original contract byte for byte (`decision-snapshot-v2`, no reports). The formal name for all of this is the **challenge v3** contract (`challenge-score-v3`, `participant-agent-protocol-v2`).
 
-There are two ways to get a score:
+There is one way to submit: run your agent on your own machine and upload the `decisions.csv` it produces. The Playground and the online competition both take this file only (agent packages are no longer accepted from 24 September 2026).
 
-1. **Results file.** Run your agent yourself and upload `decisions.csv`. Accepted in both the Playground and the online competition. Practice weather is public, so your local score matches the platform's; competition weather is not published, and the platform scores the same decision sequence against the weather truth it holds.
-2. **Agent package.** Upload your agent as a `.zip`. The platform starts it once per scenario, streams the published snapshots to it through the JSON-Lines protocol, commits its actions against the hidden weather, and scores the committed trace. One global wall clock per scenario; no per-decision timeout.
+The platform and the starter kit use the same `scoring_core.py`. The starter kit contains the workflow, the scorer, the minimal agent and the public scenario files.
 
-Both paths use the same `scoring_core.py`. The starter kit contains the workflow, the scorer, the minimal agent and the public scenario files.
-
-Sponsor API credits are handed out as redeem codes: once your team is registered, open the dashboard and claim one code per provider. Platform runs have network access, so an agent may call a model API at decision time; put the key into the `.env` file of your package.
+Sponsor API credits are handed out as redeem codes: once your team is registered, open the dashboard and claim one code per provider, for calling model APIs while you run locally.
 
 ## 2. Practice versus online
 
@@ -21,18 +18,13 @@ Two arenas: **the Playground** is for practice — submit freely, scores land in
 
 | | Practice | Online competition |
 |---|---|---|
-| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); weather, forecasts and events hidden |
-| Submissions | results files or agent packages, 50 per team per day | results files or agent packages, 10 per team per day |
+| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); weather, forecasts and events published when the competition opens |
+| Submissions | results files (`decisions.csv`), 50 per team per day | results files (`decisions.csv`), 10 per team per day |
 | Score | informational board | mean over the two scenarios; decides the awards |
 
-Because the practice scenarios publish `weather_events.csv`, a local `score_decisions.py` run reproduces the platform report exactly. On the competition scenarios only the platform can score, and only through the protocol.
+Once a scenario's weather and events are published, a local `score_decisions.py` run reproduces the platform report exactly. The one exception is the competition scenarios' anomaly tags: their answer key is not published and is used only when the platform scores, so a local score on a competition scenario leaves that part out.
 
-The two submission types serve two different purposes and the platform supports both:
-
-- **Results file (`decisions.csv`)**: you run the whole survey locally and hand the decision sequence to the scorer. On public-weather practice scenarios this is the shortest loop and your local score equals the platform score; on competition scenarios you cannot see the weather, so the sequence cannot react to it, but the platform still accepts and scores it.
-- **Agent package**: you upload the program and its dependencies, and the platform runs it against hidden weather, handing it only the snapshot visible at the current slot. The program can read the weather as it goes and change its mind, which a results file cannot — usually the stronger option in the competition.
-
-Both go through the same scorer and the same `score_config.json` and produce the same report format, so a strategy tuned in practice carries over to the competition.
+Both phases use the same scorer and the same `score_config.json`, and the reports have the same format, so a strategy tuned in the Playground carries straight into the competition.
 
 ## 3. Starter kit
 
@@ -40,7 +32,7 @@ Both go through the same scorer and the same `score_config.json` and produce the
 
 1. Download the [starter kit agent-observer-starter-kit.zip](/resources), unzip it, and double-click `run_baseline.command` (macOS), `run_baseline.bat` (Windows, after installing Python 3.12 from python.org) or run `./run_baseline.sh` (Linux). The baseline scores about 12287 on the bundled scenario and the replay opens in your browser. For a faster first look use `run_demo_week` instead: a seven-night demo scenario, about two seconds, same pipeline and same scorer, results in `demo_week_output/`.
 2. Edit `agent/my_strategy.py`: its `choose_action(candidates, snapshot, memory)` receives the legal candidates ranked best-first and returns the one to observe, or `None` to wait. Run the launcher again to compare.
-3. On the Submit page choose *Agent run* and drop that single file. The platform wraps it with the rest of the starter agent; dropping the whole `agent` folder (packaged in the browser) or a `.zip` works too.
+3. On the Submit page pick the scenario and drop the `run_output/decisions.csv` the run produced.
 
 `QUICKSTART.md` and `QUICKSTART_ZH.md` in the kit repeat these three steps. Everything below is the engineer's version.
 
@@ -65,13 +57,13 @@ How to hand your work in once you have something: drag a file onto the website, 
 
 ### From the website
 
-Dashboard → Submit. Choose the phase, the submission type, the scenario (results files only) and the file. The page shows the scenario's global wall clock and how many submissions your team has left today. Each submission gets a page with the score breakdown, completion, requests, wait seconds, the termination reason, the agent-run panel (committed actions, wall clock used, `agent.log`, `workflow_result.json`), the interactive decision replay, the observed-sky map, the action timeline and the downloadable `score_report.json` / `decisions.csv`.
+Dashboard → Submit. Choose the phase, the scenario and the file; the page shows how many submissions your team has left today. Each submission gets a page with the score breakdown, completion, requests, wait seconds, the termination reason, the interactive decision replay, the observed-sky map, the action timeline and the downloadable `score_report.json` / `decisions.csv`.
 
 ### From the command line
 
 ```
 python3 sac_submit.py --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --phase online --kind agent --file my_agent.zip --wait
+python3 sac_submit.py --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 ```
 
 `sac_submit.py` reads `SAC_URL`, `SAC_KEY`, `SAC_EMAIL` and `SAC_PASSWORD` (see the Resources page) and `--wait` polls until the evaluation finishes.
@@ -120,29 +112,15 @@ Only completed exposures score. An exposure whose later segment meets closed wea
 6. The wall clock is global. A model call per decision is affordable for a few hundred decisions, not for the ~8,000 decisions of a 180-night scenario; let deterministic code answer the obvious waits.
 7. Anomaly detection: compare `tile_last_finished.score` with the public-formula estimate of that exposure — baselines are efficiency-free, so jitter alone puts reads at ≈0.90–1.00; ≈1.35–1.5 means nova, ≈0.72–0.80 reddening, persistently below 0.70 an instrument fault. These bands are a heuristic for spotting anomalies, not a criterion the scorer applies. A forecasted cold_wave also depresses efficiency — never count those reads as anomaly evidence. Tags are permanent and weather drift is transient: let several reads of the same tile speak before reporting; a wrong tag costs −150 (a correct one pays +100) and fault misreports beyond the free allowance cost 100 each. Once a fault is confirmed, avoid its scope until `repair_complete_utc`. Repeat observation is a legal way to improve scores: after completing everything, keep observing your best tiles — only the maximum counts.
 
-## 7. Platform runs and limits
+## 7. Running locally
 
-This section and the next apply only to **agent packages**: these are the resource limits of a platform run — check them before packing.
-
-| Item | Value |
-|---|---|
-| Interpreter | Python 3.12, `python -B <entry>`, `cwd` = your package directory |
-| Entry script | `minimal_agent.py`, `agent.py` or `main.py` at the package root (or in its single top-level folder) |
-| Dependencies | optional `requirements.txt`, installed with pip into a per-run virtual environment before the clock starts (15 minutes maximum) |
-| Secrets | optional `.env` (`KEY=VALUE` lines) uploaded with the package, injected into the agent's environment only and never written to logs; stored until 90 days after Awards Day, visible to the submitting team and to organizers |
-| Network | allowed (model APIs); an egress proxy may be configured by the organizers |
-| Initialization | 30 s to start and read `initialize`; failure is `agent_initialization_error` |
-| Wall clock | the scenario's `global_wallclock_seconds`; no per-decision limit |
-| Memory / CPU | 2 GB, one CPU, 128 processes, 256 MB of written files under the package's `scratch/` directory |
-| Package | `.zip` (a bare `.py` is accepted when it needs nothing else) ≤ 20 MB, ≤ 2,000 files, ≤ 50 MB uncompressed, no symlinks |
-
-Environment variables available to the agent: `PARTICIPANT_PROTOCOL` (the scenario's protocol generation: v1 on practice, v2 on the competition), `SAC_SCENARIO` (slug), `SAC_WALLCLOCK_SECONDS`, `HOME` and `TMPDIR` (the scratch directory), plus everything from your `.env`. The scenario directory is never mounted into the agent's sandbox; the only weather you see is what the snapshots publish.
+Your agent runs on your own machine, in any language, with any dependencies, and may call model APIs over the network. The starter kit's `local_runner.py` plays the platform's part: it starts your entry script once per scenario, streams the snapshots to it through the protocol in the next section, writes its actions to `run_output/decisions.csv`, and scores them with the public scorer. An uploaded `decisions.csv` is limited to 20 MB.
 
 ## 8. Participant protocol (participant-agent-protocol-v2; practice scenarios stay on v1)
 
-The platform and your program hold a question-and-answer JSON conversation: each slot, the platform sends “here is the sky and the candidates” and your program answers “observe this one” or “wait”. Below is the exact shape of every message. (An interactive protocol-message explorer sits at the bottom of this page.)
+When you run locally, “the platform” below is `local_runner.py`. It and your program hold a question-and-answer JSON conversation: each slot, the platform sends “here is the sky and the candidates” and your program answers “observe this one” or “wait”. Below is the exact shape of every message. (An interactive protocol-message explorer sits at the bottom of this page.)
 
-The platform starts your entry script once per scenario (`minimal_agent.py`, `agent.py` or `main.py`, whichever exists first, at the root of the package or in its single top-level folder) and keeps the process alive for the whole run. Messages are one JSON object per line on standard input and output; print nothing else to standard output. Standard error is captured into `agent.log`, which you can download from the submission page. Every message carries `protocol_version`, `message_type` and (except `initialize`) `decision_sequence`.
+The platform starts your entry script (given with `--agent`) once per scenario and keeps the process alive for the whole run. Messages are one JSON object per line on standard input and output; print nothing else to standard output. Standard error is captured into `agent.log` in the output directory. Every message carries `protocol_version`, `message_type` and (except `initialize`) `decision_sequence`.
 
 ### `initialize` (platform → agent, once, no reply)
 
@@ -186,8 +164,8 @@ One global wall clock per scenario (`global_wallclock_seconds`, shown on the Res
 
 1. `local_runner.py` finishes with `termination_reason = survey_complete` on `scenarios/dev-reference` (and on a fresh `make_scenario.py` seed).
 2. `score_decisions.py` on the produced `decisions.csv` prints the same `score.total` as the run.
-3. The package unzips to an entry script at its root, `requirements.txt` installs into a fresh virtual environment, `.env` holds only the keys the agent needs.
-4. The agent writes only to `scratch/` and prints only protocol lines to standard output.
+3. The file you upload is `run_output/decisions.csv`, for the same scenario you ran.
+4. The agent prints only protocol lines to standard output.
 ## 10. Data formats
 
 A column-by-column reference for every file — look things up as needed; there is no need to read it straight through.
@@ -208,9 +186,9 @@ Conventions: UTF-8 (a BOM is tolerated), comma-separated, the header must contai
 | `outputs/reference/night_calendar.csv`, `slots.csv` | the shared time axis (37–47 slots per night) | public |
 | `outputs/reference/tiles.csv`, `targets.csv`, `tile_windows.csv` | catalogue, per-target science weights, sample visibility windows | public |
 | `outputs/reference/observation_requests.csv`, `observation_request_tiles.csv` | pre-generated requests and their tiles | public |
-| `outputs/reference/weather.csv` | site baseline weather per slot | public on practice scenarios only |
-| `outputs/reference/weather_forecasts.csv` | uncertain, daily-revised forecasts | per scenario flag |
-| `outputs/reference/weather_events.csv` | directional disruption events (the truth behind `active_event_ids`; `instrument_fault` events never enter forecasts or snapshots) | hidden on competition scenarios |
+| `outputs/reference/weather.csv` | site baseline weather per slot | public on practice scenarios; published when the competition opens |
+| `outputs/reference/weather_forecasts.csv` | uncertain, daily-revised forecasts | public on practice scenarios; published when the competition opens |
+| `outputs/reference/weather_events.csv` | directional disruption events (the truth behind `active_event_ids`; `instrument_fault` events never enter forecasts or snapshots) | public on practice scenarios; published when the competition opens |
 | `outputs/reference/tile_anomalies.csv` | hidden per-tile truth tags (nova ×1.5 / reddening ×0.8, applied by the scorer only) | hidden on competition scenarios, auditable on practice ones |
 | `outputs/reference/scenario_manifest.json`, `*_metadata.json` | row counts and SHA-256 of every file | public |
 

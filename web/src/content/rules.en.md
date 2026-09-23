@@ -9,25 +9,23 @@
 
 | Phase | Dates (UTC) | Submissions | Board |
 |---|---|---|---|
-| Practice | from registration until Awards Day | decisions.csv or agent package, 50 per team per day | informational |
-| Online Competition | 2026-10-04 16:00 to 2026-10-07 15:59 (Oct 5–7 in UTC+8) | decisions.csv or agent package, 10 per team per day | decides the awards |
+| Practice | from registration until Awards Day | decisions.csv, 50 per team per day | informational |
+| Online Competition | 2026-10-04 16:00 to 2026-10-07 15:59 (Oct 5–7 in UTC+8) | decisions.csv, 10 per team per day | decides the awards |
 | Awards Day | 2026-10-17 at GOSIM Shenzhen | none | final results announced |
 
 The live phase configuration table above this document is authoritative if the two differ.
 
 ## 3. What you submit
 
-1. **Results file.** A `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, produced by running your agent locally. Accepted in both phases and scored immediately by the frozen scorer. Competition weather is not published; the platform scores your decision sequence against the weather truth it holds.
-2. **Agent package.** A `.zip` whose root (or single top-level folder) contains the entry script `minimal_agent.py`, `agent.py` or `main.py`, optionally `requirements.txt` and `.env`, and any other files the script imports. A bare `.py` file is accepted when it needs nothing else. The platform runs the package against every scenario of the phase through `participant-agent-protocol-v2` and scores the committed decisions. The competition weather, forecasts and events are never downloadable.
-3. Files are limited to 20 MB. Archives are limited to 2,000 files and 50 MB uncompressed. Symbolic links and paths outside the archive root are rejected.
+1. **Results file.** A `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, produced by running your agent locally and scored immediately by the frozen scorer. The Playground and the Online Competition both take this file only. The weather, forecasts and weather events of the two competition scenarios are published for download when the competition opens.
+2. **Agent packages are no longer accepted.** From 24 September 2026 every phase takes results files only; agent runs scored before then keep their place on the boards. Practice scenarios keep the launch contract `participant-agent-protocol-v1` (no anomaly tags, no repeat observations, no reports); the anomaly mechanics (`participant-agent-protocol-v2`) apply to the competition scenarios only. The starter kit handles both, and its `finals-preview` scenario lets you rehearse the new mechanics.
+3. Files are limited to 20 MB.
 
-## 4. Platform runs
+## 4. Running locally
 
-1. Runtime: Python 3.12 in a sandbox with the package directory as working directory. `requirements.txt` is installed into a per-run virtual environment before the clock starts; `.env` is loaded into the agent's environment only. Network access is allowed so that agents may call model APIs with their own keys or the sponsor credits.
-2. Timing: one global wall clock per scenario (`global_wallclock_seconds`, published per scenario) that starts after the initial publication and covers every decision; there is no per-decision timeout. Initialization has a separate 30-second budget. When the clock expires the process is terminated and the actions committed so far are scored, including the terminal penalties.
-3. A process that exits, answers with anything other than a `decision_response` whose `action` is `observe` or `wait`, or fails to initialize ends the run with `agent_error` / `agent_initialization_error`. The committed actions are still scored; a run with no committed actions carries the full terminal penalties.
-4. The agent receives only the published snapshots: the current slot's weather, the candidate tiles with their effective conditions, the issued forecasts and requests, and its own progress. It never receives future weather or the event list.
-5. Attempts to read other teams' data, to escape the sandbox, to reach the scenario files, to tamper with the scorer or with score files, or to exhaust platform resources deliberately lead to disqualification.
+1. Your agent runs on your own machine, in any language, with any dependencies, and may call model APIs over the network (with your own keys or the sponsor codes).
+2. The starter kit's `local_runner.py` hands the agent one slot's snapshot at a time and writes its actions to `run_output/decisions.csv` — the file you submit.
+3. Attempts to read other teams' data, to tamper with the scorer or with score files, or to exhaust platform resources deliberately lead to disqualification.
 
 ## 5. Scoring
 
@@ -50,7 +48,7 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 
 1. A team's best scored, non-excluded submission in the phase counts. Ranking is by score, descending; on an exact tie the earlier submission ranks first.
 2. The Online Competition board is live. Organizers may freeze the board during the final hours and publish the final standings after verification.
-3. Before awards are confirmed, organizers rerun the top submissions and may request the agent package and a short description of the approach from the top teams. Results that cannot be reproduced on the platform are removed. Because platform runs are wall-clock bound, reruns use the same wall clock and the same scenarios; small differences in the number of committed actions are expected and are not grounds for appeal.
+3. Before awards are confirmed, organizers may ask the top teams for their agent code and a short description of the approach, and regenerate the decisions.csv with it. Results that cannot be reproduced are removed.
 4. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.
 
 ## 7. Awards
@@ -73,7 +71,7 @@ Amounts are gross. Winning teams are invited to Awards Day at GOSIM Shenzhen on 
 ## 9. Data and privacy
 
 1. Registration data (name, email, affiliation, GitHub handle) is used only to run the event and to contact winners.
-2. Uploaded packages, `.env` files, run logs, and score reports are stored on the platform until 90 days after Awards Day and are visible to the submitting team and to organizers. Values from `.env` are never written to logs.
+2. Uploaded results files and score reports are stored on the platform until 90 days after Awards Day and are visible to the submitting team and to organizers.
 3. Team names, scores, and ranks are public.
 
 Contact: hackathon@gosim.org

@@ -163,8 +163,10 @@ def test_rls_blocks_other_team(hs, alice, mallory):
 
 
 def test_submission_validation_rules(hs, alice, mallory, fortnight_decisions):
+    hs.sql("update public.phases set allow_results = false where slug = 'online'")
     st, res = _submit(alice, phase="online", kind="results", scenario="eval-a", data=fortnight_decisions.read_bytes(), filename="decisions.csv")
     assert st == 400 and res["message"] == "results_not_allowed"
+    hs.sql("update public.phases set allow_results = true where slug = 'online'")
     st, res = _submit(alice, phase="practice", kind="results", scenario="eval-a", data=fortnight_decisions.read_bytes(), filename="decisions.csv")
     assert st == 400 and res["message"] == "bad_scenario"
     hs.sql("update public.phases set daily_limit = 0 where slug = 'practice'")
@@ -181,6 +183,9 @@ def test_submission_validation_rules(hs, alice, mallory, fortnight_decisions):
 
 
 def test_agent_submission_runs_on_hidden_weather(hs, alice):
+    # Agent packages are switched off for the event (results files only), but the evaluator keeps the
+    # capability in case organisers turn a phase back on; exercise it with the switch on.
+    hs.sql("update public.phases set allow_agents = true")
     from worker import main as wm
     st, sid = _submit(alice, phase="online", kind="agent", scenario=None, data=agent_zip(), filename="agent.zip")
     assert st == 200, sid
@@ -201,6 +206,7 @@ def test_agent_submission_runs_on_hidden_weather(hs, alice):
 
 
 def test_crashing_and_slow_agents(hs, alice):
+    hs.sql("update public.phases set allow_agents = true")
     from worker import main as wm
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
@@ -275,3 +281,28 @@ def test_redeem_codes_claim_flow(hs, alice, bob, mallory, service):
     assert [r["code"] for r in mallory.select("redeem_codes", "select=code")[1]] == [c3["code"]]
     st, stats = admin.rpc("admin_redeem_stats")
     assert next(s for s in stats if s["provider"] == "deepseek")["assigned"] == 2
+
+
+def test_results_only_refuses_agent_packages(hs, alice):
+    hs.sql("update public.phases set allow_agents = false")  # the event default; earlier tests switch it on
+    for phase in ("practice", "online"):
+        st, res = _submit(alice, phase=phase, kind="agent", scenario=None, data=agent_zip(), filename="agent.zip")
+        assert st == 400 and res["message"] == "agents_not_allowed", (phase, st, res)
+
+
+def test_competition_weather_published_when_the_phase_opens(hs, seeded):
+    anon = Client(hs.url)
+    hs.sql("update public.scenarios set weather_public = false, forecasts_public = false, events_public = false where slug like 'eval-%'")
+    try:
+        hs.sql("update public.phases set starts_at = now() + interval '1 day' where slug = 'online'")
+        hs.sql("select public.publish_open_phase_weather()")
+        assert anon.download("scenarios", "eval-a/outputs/reference/weather.csv")[0] == 400  # not open yet
+        hs.sql("update public.phases set starts_at = now() - interval '1 minute' where slug = 'online'")
+        hs.sql("select public.publish_open_phase_weather()")
+        for name in ("weather.csv", "weather_forecasts.csv", "weather_events.csv"):
+            assert anon.download("scenarios", f"eval-a/outputs/reference/{name}")[0] == 200, name
+        # the anomaly answer key is never downloadable
+        assert anon.download("scenarios", "eval-a/outputs/reference/tile_anomalies.csv")[0] == 400
+    finally:
+        hs.sql("update public.scenarios set weather_public = false, forecasts_public = false, events_public = false where slug like 'eval-%'")
+        hs.sql("update public.phases set starts_at = now() - interval '1 hour' where slug = 'online'")

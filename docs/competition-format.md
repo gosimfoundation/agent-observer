@@ -8,9 +8,9 @@ different phases rather than one replacing the other.
 
 | | Practice phase | Online competition phase |
 |---|---|---|
-| Submission | `decisions.csv` (results file) **or** an agent package | agent package only |
-| Weather | published in full, including `weather_events.csv` | hidden: weather, forecasts and events are not downloadable |
-| Who runs the survey | the participant, locally | the platform, one process per scenario |
+| Submission | `decisions.csv` (results file) only | `decisions.csv` (results file) only — agent packages are no longer accepted (2026-09-24) |
+| Weather | published in full, including `weather_events.csv` | weather, forecasts and events published automatically when the phase opens; `tile_anomalies.csv` stays hidden |
+| Who runs the survey | the participant, locally | the participant, locally |
 | Scenarios | `demo-week` (7 nights), `dev-fortnight` (14), `dev-reference` (180) | `eval-a`, `eval-b` (30 nights, 8 regions × 200 tiles each) |
 | Daily limit per team | 50 | 10 |
 | Counts for awards | no | yes, mean over both scenarios |

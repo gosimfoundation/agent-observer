@@ -39,7 +39,7 @@
       },
       "register": {
         "title": "Register",
-        "description": "Create an account or log in to submit agents and results."
+        "description": "Create an account or log in to submit results files."
       },
       "reset": {
         "title": "Reset password",
@@ -322,7 +322,7 @@
         {
           "n": "03",
           "title": "Submit for evaluation",
-          "desc": "Upload a decisions.csv, or upload your agent package and let the platform run it under one global wall clock. Both are accepted in the Playground and in the online competition, and every team is scored by the same frozen scorer."
+          "desc": "Run your agent on your own machine and upload the decisions.csv it produces. The Playground and the online competition both take this file only, and every team is scored by the same frozen scorer."
         }
       ],
       "timeline": [
@@ -543,8 +543,8 @@
         },
         {
           "title": "Enter the online competition",
-          "desc": "October 5–7: hidden weather and the anomaly mechanics. Rehearse fault reporting and tag identification with run_finals_preview first.",
-          "desc_gated": "October 5–7: hidden weather replays; the platform runs your package, mean of two scenarios.",
+          "desc": "October 5–7: weather published at the start, anomaly mechanics on. Rehearse fault reporting and tag identification with run_finals_preview first.",
+          "desc_gated": "October 5–7: the two competition scenarios' weather is published at the start; run locally and upload decisions.csv, mean of the two scenarios.",
           "time": "Oct 5",
           "to": "/brief#section-7"
         }
@@ -706,9 +706,9 @@
         "kicker": "05 / Participant Job",
         "title": "Build a reproducibly runnable observer project",
         "paragraphs": [
-          "Running locally is language-agnostic: run your agent and submit the generated decisions.csv — accepted in both phases. An agent package runs on the platform with a Python 3.12 entry script (minimal_agent.py, agent.py or main.py) exchanging JSON messages over participant-agent-protocol-v1/v2; the authoritative contract is on the Docs page.",
-          "The platform runs your agent against the evaluation scenarios and scores it with the same frozen scorer.",
-          "Download the starter kit, study the public development scenarios and visual reports, prototype against the protocol, evaluate on development scenarios, inspect the replays; the practice phase accepts decisions.csv, the online competition accepts agent packages.",
+          "Any language, on your own machine: run your agent and submit the decisions.csv it produces. The Playground and the online competition both take this file only. The file format and interface contract are on the Docs page.",
+          "You run your agent on the evaluation scenarios, published at the start, and the platform scores the decisions.csv with the same frozen scorer.",
+          "Download the starter kit, study the public development scenarios and visual reports, prototype, evaluate on development scenarios and inspect the replays; both the Playground and the online competition take decisions.csv.",
           "The platform keeps the full record of every evaluation — the decisions file, the run log, and a slot-by-slot replay — for organizer review, and for you to inspect why each step went the way it did."
         ],
         "actionCode": "return {\n    \"action\": \"observe\",\n    \"tile_id\": \"T00037\",\n    \"program\": \"DARK\",\n    \"request_id\": \"\",\n    \"reason\": \"highest preview estimate\",\n}"
@@ -731,7 +731,7 @@
           "The competition scenarios hide three kinds of anomaly. A few tiles carry hidden tags: a nova tile's realized score is 1.5× the public estimate, a reddening tile only 0.8×. Once during the survey an unannounced instrument fault drops the instrument efficiency of one region to 40–70% — no forecast will show it. Nightly instrument efficiency also jitters slightly on its own, so a single deviation proves nothing; a persistent one is the signal.",
           "You find anomalies by reconciliation. After every exposure the snapshot's tile_last_finished reports the realized score; estimate the same exposure with the public scoring formula and compare. A tile that keeps coming in high is probably a nova; consistently low, reddening; a whole region collapsing at once, an instrument fault. Any tile may be re-observed (the per-tile maximum is banked), so spending a slot on a confirmation repeat is a legitimate move.",
           "Once confirmed, report it. Attach a reports array to a decision response — reports never consume slot time. A correct tag report is +100, a wrong one −150. A correct fault report gets the affected region published in the night bulletin one day later and repaired after two — the only way a fault ends early; excess false alarms cost −100 each. Reading your own data and daring to call it is exactly where the finals separate the field.",
-          "Practice is untouched: practice scenarios contain no anomalies, their rules and scores are exactly what they were at launch, and previously uploaded packages keep running. To rehearse, download the starter kit and double-click run_finals_preview — seven nights with the full mechanics on, where the sample agent performs the complete find-fault → report → publication loop in front of you, at a baseline around 8214."
+          "Practice is untouched: practice scenarios contain no anomalies, their rules and scores are exactly what they were at launch. To rehearse, download the starter kit and double-click run_finals_preview — seven nights with the full mechanics on, where the sample agent performs the complete find-fault → report → publication loop in front of you, at a baseline around 8214."
         ],
         "highlight": "The new mechanics run only on the competition scenarios; practice rules and scores are unchanged, byte for byte.",
         "gated": true
@@ -751,7 +751,7 @@
         "title": "Three stages from training to awards",
         "paragraphs": [
           "The event has three stages: online training from October 1–4, online competition from October 5–7, and Awards Day at GOSIM Shenzhen on October 17.",
-          "Training introduces CosmosBench, the shared simulator and the participant protocol (details will be announced and emailed). During the online competition, registered teams submit agent packages; CosmosBench powers evaluation and live standings."
+          "Training introduces CosmosBench, the shared simulator and the participant protocol (details will be announced and emailed). When the online competition opens, the weather of its two scenarios is published; registered teams download it, run locally and submit decisions.csv. CosmosBench powers evaluation and live standings."
         ],
         "rounds": [
           {
@@ -767,7 +767,7 @@
             "name": "Online Competition",
             "dates": "Oct 5–7",
             "format": "Online",
-            "challenge": "Submit an agent package; the platform runs it, scores it, and publishes the standings.",
+            "challenge": "The competition scenarios' weather is published at the start; run locally, submit decisions.csv, and the platform scores it and publishes the standings.",
             "participants": "All registered teams."
           },
           {
@@ -1161,7 +1161,7 @@
         "name": "Online Competition",
         "dates": "Oct 5–7",
         "format": "Online",
-        "challenge": "Submit an agent package; the platform runs it, scores it, and publishes the standings.",
+        "challenge": "The competition scenarios' weather is published at the start; run locally, submit decisions.csv, and the platform scores it and publishes the standings.",
         "participants": "All registered teams."
       },
       {
@@ -1385,7 +1385,7 @@
     "steps": [
       "Create your account (no e-mail confirmation needed)",
       "Create a team or join one with an invite code",
-      "Upload a results file or an agent package"
+      "Upload a results file (decisions.csv)"
     ],
     "about_you": "Participant profile",
     "about_you_note": "Your tiers appear on your participant card, helping entrants from different backgrounds find each other and form teams.",
@@ -1551,9 +1551,9 @@
       "phase_closed": "This phase is not open for submissions.",
       "bad_kind": "Unknown submission type.",
       "results_not_allowed": "This phase does not accept results files.",
-      "agents_not_allowed": "This phase does not accept agent packages.",
+      "agents_not_allowed": "Only results files (decisions.csv) are accepted now; agent packages are no longer taken.",
       "bad_scenario": "Choose a scenario of this phase.",
-      "scenario_hidden": "This scenario's weather is hidden; submit an agent instead.",
+      "scenario_hidden": "This scenario's weather is not published yet; submissions open when the competition starts.",
       "daily_limit": "Daily limit of {n} submissions reached for this phase.",
       "file_required": "Choose a file.",
       "results_csv": "Results must be a .csv file.",
@@ -1575,7 +1575,7 @@
       "For a fully self-written agent: a .zip with minimal_agent.py, agent.py or main.py at the root, speaking participant-agent-protocol-v1/v2 over stdin/stdout.",
       "Limits: 20 MB per upload, 2,000 files, 50 MB uncompressed, no symlinks. Caches, scratch/ and run_output/ are left out automatically."
     ],
-    "results_public_only": "Practice weather is public, so your local score matches the platform's; competition weather is not published and the platform scores against the weather truth it holds.",
+    "results_public_only": "Once a scenario's weather is published, your local score matches the platform's. The competition scenarios' weather is published when the competition opens.",
     "wallclock": "Time budget",
     "wallclock_note": "Each scenario gives you one time budget, counting down from the initialize message; no per-step timeout. Anything committed before it runs out still scores.",
     "wallclock_results_note": "A results file is replayed offline and costs no budget; the budget only applies to agents running on the platform.",
@@ -1741,20 +1741,20 @@
     "skill": "SKILL.md",
     "skill_desc": "One-file instructions an AI coding agent can follow to build, test and submit.",
     "scenarios": "Scenarios",
-    "hidden": "hidden (platform runs only)",
+    "hidden": "published at the start",
     "nights": "nights",
     "slots": "slots",
     "tiles_n": "tiles",
     "seed": "seed",
-    "seed_hidden": "seed not published (prevents reconstructing hidden weather)",
+    "seed_hidden": "seed not published",
     "checksum_label": "checksum",
     "cli": "Command line",
     "kit_file": "agent-observer-starter-kit.zip",
     "docs": "Documentation",
     "docs_desc": "Data formats with exact columns, the three protocol envelopes, the scoring formula and every penalty, packaging rules and limits.",
-    "scenarios_note": "A scenario is a directory: config/*.json plus outputs/reference/*.csv. Configuration, calendar, catalogue and requests are always downloadable; weather, forecasts and events follow the scenario's visibility flags. Hidden files are shown crossed out. Competition seeds are not published, so hidden weather cannot be reconstructed from the public configuration.",
+    "scenarios_note": "A scenario is a directory: config/*.json plus outputs/reference/*.csv. Configuration, calendar, catalogue and requests are always downloadable; weather, forecasts and events follow the scenario's visibility flags, and files not yet published are shown crossed out. The competition scenarios' weather, forecasts and events are published when the competition opens.",
     "weather_public": "weather public",
-    "weather_hidden": "weather hidden",
+    "weather_hidden": "weather published at the start",
     "wallclock": "Time budget",
     "targets": "targets",
     "requests": "requests",
@@ -1780,7 +1780,7 @@
     "flow2": "Step 2 · Write your own strategy",
     "flow2_hint": "Editing one function gets you on the board; these are the reference and the manual.",
     "flow3": "Step 3 · Fetch data when you need it",
-    "flow3_hint": "What each scenario publishes or hides, at a glance; competition material is never public."
+    "flow3_hint": "What each scenario has published, at a glance; the competition weather is published at the start."
   },
   "faq": {
     "kicker": "FAQ",
@@ -1788,7 +1788,7 @@
     "items": [
       {
         "q": "I am not a strong programmer. What is the minimum?",
-        "a": "Download the kit, double-click run_baseline, and edit one function in agent/my_strategy.py: it receives the candidates that can be observed right now, already ranked, and returns the one to observe or None to wait. Upload that single file on the Submit page; the platform adds the rest of the starter agent. macOS's built-in Python is enough; Windows needs Python 3.12 from python.org."
+        "a": "Download the kit, double-click run_baseline, and edit one function in agent/my_strategy.py: it receives the candidates that can be observed right now, already ranked, and returns the one to observe or None to wait. Double-click run_baseline again and drop the run_output/decisions.csv it writes onto the Submit page. macOS's built-in Python is enough; Windows needs Python 3.12 from python.org."
       },
       {
         "q": "Do I need an astronomy background?",
@@ -1800,11 +1800,11 @@
       },
       {
         "q": "Which languages can I use?",
-        "a": "Locally, any language: run your agent yourself and upload decisions.csv — accepted in both phases. For platform runs the entry script is Python 3.12 (minimal_agent.py, agent.py or main.py) speaking participant-agent-protocol-v1/v2 over stdin/stdout; it may install packages from requirements.txt and spawn whatever it needs inside the sandbox."
+        "a": "Locally, any language: run your agent yourself and upload the decisions.csv it produces — both phases take this file only. The kit's local_runner.py talks to the agent over stdin/stdout with participant-agent-protocol-v1/v2; to write the agent in another language, exchange JSON by that protocol."
       },
       {
         "q": "Can I use an LLM or a commercial API?",
-        "a": "Yes, at decision time too. Platform runs have network access: put the provider key into the .env of your package (MODEL_PROVIDER, MODEL_NAME, <PROVIDER>_API_KEY) and the minimal agent calls the model through LangChain. Keep the global wall clock in mind — a model call for every one of the ~8,000 decisions of a 180-night scenario does not fit; let deterministic code answer the obvious waits."
+        "a": "Yes. Your agent runs on your own machine and may call a model at decision time too, with your own key or a sponsor code from the dashboard. A 180-night scenario has about 8,000 decisions, and a model call for each is slow; let deterministic code answer the obvious waits."
       },
       {
         "q": "What is the global wall clock?",
@@ -1828,11 +1828,11 @@
       },
       {
         "q": "Is the platform free?",
-        "a": "Yes. Registration, data, the starter kit and platform runs are free."
+        "a": "Yes. Registration, data, the starter kit and scoring are free."
       },
       {
         "q": "Must I open-source my agent?",
-        "a": "Not required. Organizers may ask top teams for their agent package to reproduce the result before awards are confirmed."
+        "a": "Not required. Before awards are confirmed, organizers may ask top teams for their agent code and regenerate the decisions.csv with it to reproduce the result."
       },
       {
         "q": "What happens if my agent crashes or times out?",
@@ -1844,7 +1844,7 @@
       },
       {
         "q": "Are there API credits for development?",
-        "a": "Registered teams can claim sponsor API codes from the dashboard, one code per provider per team. Platform runs have network access, so the same key works in the .env of your package for hidden-weather runs as well as for local development."
+        "a": "Registered teams can claim sponsor API codes from the dashboard, one code per provider per team, for calling models while running the agent locally."
       },
       {
         "q": "What is anomaly reporting? What if I get one wrong?",
@@ -2133,7 +2133,7 @@
     "bad_phase": "There is no such phase.",
     "phase_closed": "This phase is not taking submissions right now.",
     "results_not_allowed": "This phase does not accept results files.",
-    "agents_not_allowed": "This phase does not accept agent packages.",
+    "agents_not_allowed": "Only results files (decisions.csv) are accepted now; agent packages are no longer taken.",
     "bad_scenario": "Choose a scenario from this phase.",
     "bad_storage_path": "The file did not upload to the right place. Reload the page and submit again.",
     "daily_limit": "Today's submissions are used up.",

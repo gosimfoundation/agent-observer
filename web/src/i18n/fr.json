@@ -227,7 +227,7 @@
     "steps": [
       "Créez votre compte (sans confirmation par e-mail)",
       "Créez une équipe ou rejoignez-en une avec un code d'invitation",
-      "Téléversez un fichier de résultats ou un paquet d'agent"
+      "Téléversez un fichier de résultats (decisions.csv)"
     ],
     "about_you": "Profil de participant",
     "about_you_note": "Les niveaux figurent sur votre carte de participant et aident des profils complémentaires à se trouver pour former une équipe.",
@@ -439,7 +439,7 @@
         {
           "n": "03",
           "title": "Soumettre pour évaluation",
-          "desc": "Téléversez un decisions.csv, ou votre paquet d'agent que la plateforme exécute sous une horloge globale unique. Les deux sont acceptés au Playground comme en compétition en ligne, et toutes les équipes sont notées par le même correcteur figé."
+          "desc": "Exécutez votre agent sur votre machine et téléversez le decisions.csv qu'il produit. Le Playground et la compétition en ligne n'acceptent que ce fichier, et chaque équipe est notée par le même évaluateur figé."
         }
       ],
       "timeline": [
@@ -725,7 +725,7 @@
     "bad_phase": "Cette phase n'existe pas.",
     "phase_closed": "Cette phase n'accepte pas de soumissions en ce moment.",
     "results_not_allowed": "Cette phase n'accepte pas de fichiers de résultats.",
-    "agents_not_allowed": "Cette phase n'accepte pas de paquets d'agent.",
+    "agents_not_allowed": "Seuls les fichiers de résultats (decisions.csv) sont acceptés désormais ; les paquets d'agent ne le sont plus.",
     "bad_scenario": "Choisissez un scénario de cette phase.",
     "bad_storage_path": "Le fichier n'a pas été envoyé au bon endroit. Rechargez la page et soumettez à nouveau.",
     "daily_limit": "Les soumissions du jour sont épuisées.",

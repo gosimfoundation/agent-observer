@@ -135,18 +135,17 @@ and at least one long (≥ 90-night) scenario before submitting.
 4. Re-run step 2 after every change and compare `total`, `required_missing`, `penalties` and `wall_seconds`.
    `run_output/decision_replay.html` shows each night's choices next to weather and windows.
 
-## 6. Pack and submit
+## 6. Submit
 
-1. `python3 pack_agent.py --agent agent --out my-agent.zip` — validates the entry script and `requirements.txt`,
-   excludes caches, includes `.env` (add `--no-env` to leave keys out).
+Every phase takes a results file only (the `decisions.csv` from a local run); agent packages are not accepted.
+The competition scenarios' weather is published when the competition opens — fetch it with `fetch_scenario.py`.
+
+1. Run locally on the scenario you will submit for, so `run_output/decisions.csv` exists.
 2. Ask the user for the email and password of their platform account (the account must already be on a team)
    and the phase slug (`practice` for public scenarios, `online` for the competition).
-3. Agent package, evaluated by the platform on the phase's scenarios (a bare `agent/my_strategy.py` may be sent
-   instead of the zip when nothing else changed):
-   `python3 sac_submit.py --url {{SUPABASE_URL}} --key {{SUPABASE_ANON_KEY}} --email EMAIL --password PASSWORD --phase PHASE --kind agent --file my-agent.zip --wait`
-4. Results file, scored against a public scenario:
-   `python3 sac_submit.py --url {{SUPABASE_URL}} --key {{SUPABASE_ANON_KEY}} --email EMAIL --password PASSWORD --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait`
-5. The command prints the submission id and, with `--wait`, the final status, score and per-scenario results.
+3. Results file, scored against the scenario you ran:
+   `python3 sac_submit.py --url {{SUPABASE_URL}} --key {{SUPABASE_ANON_KEY}} --email EMAIL --password PASSWORD --phase PHASE --kind results --scenario SCENARIO --file run_output/decisions.csv --wait`
+4. The command prints the submission id and, with `--wait`, the final status, score and per-scenario results.
    Report them to the user together with the local `total` for comparison.
 
 ## 7. Read the score report
