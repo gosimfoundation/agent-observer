@@ -85,7 +85,7 @@ def main() -> int:
     rp = rows[0]["evaluations"][0]["report_path"]
     check(call("GET", f"/storage/v1/object/results/{urllib.parse.quote(rp)}", token=tok)[0] == 200, "team can download its report")
     check(call("GET", f"/storage/v1/object/results/{urllib.parse.quote(rp)}")[0] != 200, "anon cannot download reports")
-    st, board = call("POST", "/rest/v1/rpc/leaderboard", {"p_phase_slug": "practice", "p_limit": 50})
+    st, board = call("POST", "/rest/v1/rpc/leaderboard", {"p_phase_slug": "practice", "p_limit": 50, "p_scenario_slug": "dev-fortnight"})
     check(any(e["best_submission_id"] == sid for e in board), "submission appears on the practice board")
     # cleanup with the service role
     def svc(method, p, body=None):

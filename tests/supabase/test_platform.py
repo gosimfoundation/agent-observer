@@ -147,8 +147,12 @@ def test_results_submission_scored_by_worker(hs, alice, bob, fortnight_decisions
     if ev.get("replay_path"):
         st, html = alice.download("results", ev["replay_path"])
         assert st == 200 and b"<canvas" in html
-    st, board = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "practice", "p_limit": 10})
+    # the practice board ranks one scenario at a time
+    st, board = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "practice", "p_limit": 10, "p_scenario_slug": "dev-fortnight"})
     assert st == 200 and board[0]["team_name"] == "Night Owls" and board[0]["base_science"] > 0 and board[0]["required_missing"] is not None
+    assert board[0]["scenario_slug"] == "dev-fortnight" and board[0]["best_submission_id"] == sid
+    st, other = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "practice", "p_limit": 10, "p_scenario_slug": "dev-reference"})
+    assert st == 200 and all(e["best_submission_id"] != sid for e in other)
 
 
 def test_rls_blocks_other_team(hs, alice, mallory):
@@ -306,3 +310,34 @@ def test_competition_weather_published_when_the_phase_opens(hs, seeded):
     finally:
         hs.sql("update public.scenarios set weather_public = false, forecasts_public = false, events_public = false where slug like 'eval-%'")
         hs.sql("update public.phases set starts_at = now() - interval '1 hour' where slug = 'online'")
+
+
+def test_final_board_averages_the_best_score_on_each_scenario(hs, mallory):
+    """Results files cover one scenario each: the final board takes a team's best score on A and on B,
+    averages them, and lists the team only once both are scored."""
+    uid = hs.sql("select id from public.profiles where email = 'mallory@test.org'")[0][0]
+    phase = hs.sql("select id from public.phases where slug = 'online'")[0][0]
+
+    def scored(scenario: str, score: float) -> int:
+        scn = hs.sql("select id from public.scenarios where slug = %s", (scenario,))[0][0]
+        sid = hs.sql("insert into public.submissions (team_id, user_id, phase_id, scenario_id, kind, storage_path, status, score, base_science, penalty_total) "
+                     "values (%s, %s, %s, %s, 'results', 'x', 'scored', %s, %s, 0) returning id", (mallory.team_id, uid, phase, scn, score, score))[0][0]
+        hs.sql("insert into public.evaluations (submission_id, scenario_id, status, score, base_science, penalty_total, completed_tiles) "
+               "values (%s, %s, 'scored', %s, %s, 0, 10)", (sid, scn, score, score))
+        return sid
+
+    def mine():
+        st, board = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "online", "p_limit": 100})
+        assert st == 200
+        return next((e for e in board if e["team_id"] == mallory.team_id), None)
+
+    scored("eval-a", 90000.0)
+    assert mine() is None  # scenario B not scored yet
+    scored("eval-a", 1000.0)  # a worse A never lowers the best
+    scored("eval-b", 3000.0)
+    row = mine()
+    assert row is not None and row["total_score"] == pytest.approx(46500.0) and row["scenario_slug"] is None
+    assert row["submission_count"] == 3 and row["completed_tiles"] == 10
+    st, only_a = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "online", "p_limit": 100, "p_scenario_slug": "eval-a"})
+    assert next(e for e in only_a if e["team_id"] == mallory.team_id)["total_score"] == pytest.approx(90000.0)
+    hs.sql("delete from public.submissions where team_id = %s and phase_id = %s", (mallory.team_id, phase))

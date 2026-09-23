@@ -1,24 +1,28 @@
 <script setup lang="ts">
 import UserAvatar from '../components/UserAvatar.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../composables/useI18n'
 import { usePhases } from '../composables/usePhases'
-import { loadLeaderboard, phaseCopy, type LeaderboardEntry, type Phase } from '../lib/data'
+import { boardScenarios, loadLeaderboard, phaseCopy, type LeaderboardEntry, type Phase } from '../lib/data'
 import { useAuth } from '../stores/auth'
 import { fmtUtc, num } from '../lib/format'
 import PageHead from '../components/layout/PageHead.vue'
 import StatusPill from '../components/layout/StatusPill.vue'
 import ScoreBars from '../components/leaderboard/ScoreBars.vue'
 import SkeletonRows from '../components/layout/SkeletonRows.vue'
+import BoardScenarioTabs from '../components/leaderboard/BoardScenarioTabs.vue'
+import TeamDetailDialog from '../components/leaderboard/TeamDetailDialog.vue'
 
 const { t, tf, pick, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const { team } = useAuth()
 const { phases, loading: phasesLoading, reload } = usePhases(false)
 const entries = ref<LeaderboardEntry[]>([])
 const boardLoading = ref(false)
 const updatedAt = ref<Date | null>(null)
+const selected = ref<LeaderboardEntry | null>(null)
 let timer: number | undefined
 
 const phase = computed<Phase | null>(() => {
@@ -27,18 +31,25 @@ const phase = computed<Phase | null>(() => {
   return phases.value.find(p => p.counts_for_final && (p.status === 'open' || p.status === 'closed')) ?? phases.value.find(p => p.status === 'open') ?? phases.value[0] ?? null
 })
 const visible = computed(() => phase.value != null && phase.value.leaderboard_mode !== 'hidden')
+// Practice boards rank one scenario at a time (?scenario=…); the final board averages every scenario.
+const scenarioTabs = computed(() => boardScenarios(phase.value))
+const scenarioSlug = computed<string | null>(() => {
+  const wanted = route.query.scenario
+  return scenarioTabs.value.find(s => s.slug === wanted)?.slug ?? scenarioTabs.value[0]?.slug ?? null
+})
+function pickScenario(slug: string) { void router.replace({ query: { ...route.query, scenario: slug } }) }
 // The coverage term only exists where the scenario's score_config sets a weight, so keep the column out of practice phases.
 const showCoverage = computed(() => entries.value.some(e => (e.coverage_bonus ?? 0) !== 0))
 
 async function loadBoard() {
   if (!phase.value || !visible.value) { entries.value = []; return }
   boardLoading.value = true
-  try { entries.value = await loadLeaderboard(phase.value.slug, 500); updatedAt.value = new Date() }
+  try { entries.value = await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value); updatedAt.value = new Date() }
   catch { entries.value = [] }
   finally { boardLoading.value = false }
 }
 
-watch(() => phase.value?.slug, () => { void loadBoard() })
+watch(() => [phase.value?.slug, scenarioSlug.value], () => { void loadBoard() })
 onMounted(async () => {
   await reload()
   await loadBoard()
@@ -70,10 +81,11 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
             <dd class="flex flex-wrap gap-2"><span v-for="s in phase.scenarios" :key="s.id" class="pill" :title="s.name">{{ s.slug }} · {{ s.n_nights ?? '?' }}n · {{ s.global_wallclock_seconds ?? '?' }}s<template v-if="!s.weather_public"> · {{ t('common.hidden') }}</template></span><span v-if="!phase.scenarios.length" class="text3">—</span></dd>
             <dt>{{ t('common.updated') }}</dt><dd class="m text-sm">{{ updatedAt ? fmtUtc(updatedAt.toISOString(), { seconds: true }) : '—' }} UTC</dd>
           </dl>
-          <p class="text3 mt-8 text-sm">{{ t('leaderboard.tie') }} <template v-if="phase.scenarios.length > 1">{{ t('leaderboard.mean_note') }}</template></p>
+          <p class="text3 mt-8 text-sm">{{ t('leaderboard.tie') }} <template v-if="scenarioTabs.length">{{ t('leaderboard.per_scenario_note') }}</template><template v-else-if="phase.scenarios.length > 1">{{ t('leaderboard.mean_note') }}</template></p>
           <p class="mt-6"><button type="button" class="btn sm" :disabled="boardLoading" @click="loadBoard">↻ {{ t('leaderboard.refresh') }}</button></p>
         </div>
         <div class="min-w-0">
+          <BoardScenarioTabs v-if="visible" class="mb-6" :scenarios="scenarioTabs" :model-value="scenarioSlug" @update:model-value="pickScenario" />
           <p v-if="!visible" class="text2 py-12">{{ t('leaderboard.hidden') }}</p>
           <SkeletonRows v-else-if="boardLoading && !entries.length" :rows="8" :cols="6" :label="t('common.loading')" />
           <div v-else-if="!entries.length" class="py-16 text-center">
@@ -84,12 +96,12 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
             <p v-if="phase.leaderboard_mode === 'frozen'" class="notice">{{ t('leaderboard.frozen') }}</p>
             <p v-else-if="phase.leaderboard_mode === 'published'" class="notice">{{ t('leaderboard.published') }}</p>
             <p class="label mb-4">{{ tf('leaderboard.n_entries', { n: entries.length }) }}</p>
-            <ScoreBars class="mb-8" :entries="entries" :team-id="team?.id ?? null" :updated-at="updatedAt" />
+            <ScoreBars class="mb-8" :entries="entries" :team-id="team?.id ?? null" :updated-at="updatedAt" @select="selected = $event" />
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>{{ t('leaderboard.rank') }}</th><th>{{ t('leaderboard.team') }}</th><th class="r">{{ t('leaderboard.score') }}</th><th class="r">{{ t('leaderboard.base_science') }}</th><th class="r">{{ t('leaderboard.bonus') }}</th><th class="r">{{ t('leaderboard.requests') }}</th><th v-if="showCoverage" class="r">{{ t('leaderboard.coverage') }}</th><th class="r">{{ t('leaderboard.penalties') }}</th><th class="r">{{ t('leaderboard.tiles') }}</th><th class="r">{{ t('leaderboard.required_missing') }}</th><th class="r">{{ t('leaderboard.submissions') }}</th></tr></thead>
                 <tbody>
-                  <tr v-for="row in entries" :key="row.team_id" data-testid="lb-row" :class="{ me: team && team.id === row.team_id }">
+                  <tr v-for="row in entries" :key="row.team_id" data-testid="lb-row" class="lb-click" :class="{ me: team && team.id === row.team_id }" tabindex="0" @click="selected = row" @keydown.enter.prevent="selected = row">
                     <td class="m rank-cell" :class="row.rank <= 3 ? `rank-${row.rank}` : ''">{{ row.rank }}</td>
                     <td><span class="team-cell"><UserAvatar :name="row.team_name" :github="row.leader_github" /><i v-if="row.rank === 1" class="champ-star" aria-hidden="true">✦</i><span class="team-name">{{ row.team_name }}</span></span><span v-if="team && team.id === row.team_id" class="label accent ml-2">{{ t('leaderboard.me') }}</span></td>
                     <td class="r m" :class="{ 'text-[#ff6b6b]': row.total_score < 0 }">{{ num(row.total_score) }}</td>
@@ -109,5 +121,12 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
         </div>
       </div>
     </div></section>
+    <TeamDetailDialog :entry="selected" :mine="!!selected && team?.id === selected.team_id" @close="selected = null" />
   </main>
 </template>
+
+<style scoped>
+.lb-click { cursor: pointer; transition: background-color .2s ease; }
+.lb-click:hover { background: rgba(49,94,251,.08); }
+.lb-click:focus-visible { outline: 2px solid #78a6ff; outline-offset: -2px; }
+</style>

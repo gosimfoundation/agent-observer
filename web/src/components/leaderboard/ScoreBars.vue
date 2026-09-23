@@ -6,6 +6,7 @@ import type { LeaderboardEntry } from '../../lib/data'
 import { fmtUtc, num } from '../../lib/format'
 
 const props = defineProps<{ entries: LeaderboardEntry[]; teamId: string | null; updatedAt: Date | null }>()
+const emit = defineEmits<{ select: [entry: LeaderboardEntry] }>()
 const { t, tf } = useI18n()
 const top = computed(() => props.entries.slice(0, 10))
 const mine = computed(() => props.teamId ? props.entries.find(e => e.team_id === props.teamId) ?? null : null)
@@ -28,7 +29,7 @@ const tooltip = (e: LeaderboardEntry) => tf('leaderboard.chart.tooltip', { score
       <span class="score-bars-legend" aria-hidden="true"><i class="base"></i>{{ t('leaderboard.chart.legend_base') }} <i class="bonus"></i>{{ t('leaderboard.chart.legend_bonus') }} <i class="request"></i>{{ t('leaderboard.chart.legend_request') }} <i class="penalty"></i>{{ t('leaderboard.chart.penalty') }}</span>
     </div>
     <ol class="score-bars-list">
-      <li v-for="row in top" :key="row.team_id" class="score-bar-row" :class="{ me: isMe(row) }" data-testid="score-bar">
+      <li v-for="row in top" :key="row.team_id" class="score-bar-row" :class="{ me: isMe(row) }" data-testid="score-bar" role="button" tabindex="0" @click="emit('select', row)" @keydown.enter.prevent="emit('select', row)" @keydown.space.prevent="emit('select', row)">
         <span class="rank" :class="row.rank <= 3 ? `rank-${row.rank}` : ''">{{ row.rank }}</span>
         <span class="name"><UserAvatar :name="row.team_name" :github="row.leader_github" /><i v-if="row.rank === 1" class="champ-star" aria-hidden="true">✦</i><span class="truncate">{{ row.team_name }}</span><span v-if="isMe(row)" class="tag">{{ t('leaderboard.chart.your_team') }}</span></span>
         <span class="track" :title="tooltip(row)">
@@ -44,7 +45,7 @@ const tooltip = (e: LeaderboardEntry) => tf('leaderboard.chart.tooltip', { score
     <div v-if="outside" class="score-bars-outside">
       <span class="label">{{ t('leaderboard.chart.your_position') }}</span>
       <ol class="score-bars-list">
-        <li class="score-bar-row me" data-testid="score-bar-me">
+        <li class="score-bar-row me" data-testid="score-bar-me" role="button" tabindex="0" @click="emit('select', outside)" @keydown.enter.prevent="emit('select', outside)" @keydown.space.prevent="emit('select', outside)">
           <span class="rank" :class="outside.rank <= 3 ? `rank-${outside.rank}` : ''">{{ outside.rank }}</span>
           <span class="name"><UserAvatar :name="outside.team_name" :github="outside.leader_github" /><span class="truncate">{{ outside.team_name }}</span><span class="tag">{{ t('leaderboard.chart.your_team') }}</span></span>
           <span class="track" :title="tooltip(outside)">
@@ -93,7 +94,9 @@ const tooltip = (e: LeaderboardEntry) => tf('leaderboard.chart.tooltip', { score
 }
 @keyframes bar-sheen { 0% { transform: translateX(-100%); } 55%, 100% { transform: translateX(100%); } }
 .score-bar-row { transition: background-color .25s ease; }
+.score-bar-row { cursor: pointer; }
 .score-bar-row:hover { background: rgba(255,255,255,.04); }
+.score-bar-row:focus-visible { outline: 2px solid #78a6ff; outline-offset: -2px; }
 @media (prefers-reduced-motion: reduce) {
   .track i { transition: none; }
   .score-bar-row:first-child .track i.base::after { animation: none; display: none; }

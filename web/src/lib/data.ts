@@ -54,6 +54,8 @@ export interface LeaderboardEntry {
   completion_rate: number; uniformity_score: number
   base_science: number; program_bonus: number; request_reward: number; coverage_bonus: number | null; coverage_evenness: number | null; penalty_total: number; completed_tiles: number | null; required_missing: number | null
   submission_count: number; best_submission_id: number | null; kind: string | null; scored_at: string | null; leader_github: string | null
+  /** The scenario this board ranks; null on the final board, which averages every scenario of the phase. */
+  scenario_slug: string | null
 }
 
 export interface PhaseCopy {
@@ -167,8 +169,18 @@ export async function loadRegistrationOpen(): Promise<boolean> {
   return (await loadPublicSettings()).registrationOpen
 }
 
-export async function loadLeaderboard(phaseSlug: string | null, limit = 500): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase.rpc('leaderboard', { p_phase_slug: phaseSlug, p_limit: limit })
+/**
+ * Scenarios a phase's board can be switched between. Results files cover one scenario each, so a practice
+ * board ranks one scenario at a time (longest first, the database's default); the final board averages
+ * every scenario and has no switch.
+ */
+export function boardScenarios(phase: Pick<Phase, 'counts_for_final' | 'scenarios'> | null): Scenario[] {
+  if (!phase || phase.counts_for_final || phase.scenarios.length < 2) return []
+  return [...phase.scenarios].sort((a, b) => (b.n_nights ?? 0) - (a.n_nights ?? 0) || a.slug.localeCompare(b.slug))
+}
+
+export async function loadLeaderboard(phaseSlug: string | null, limit = 500, scenarioSlug: string | null = null): Promise<LeaderboardEntry[]> {
+  const { data, error } = await supabase.rpc('leaderboard', { p_phase_slug: phaseSlug, p_limit: limit, p_scenario_slug: scenarioSlug })
   if (error) throw error
   return ((data ?? []) as any[]).map((row, index) => ({
     rank: Number(row.rank ?? index + 1),
@@ -192,6 +204,7 @@ export async function loadLeaderboard(phaseSlug: string | null, limit = 500): Pr
     best_submission_id: row.best_submission_id == null ? null : Number(row.best_submission_id),
     kind: row.kind ?? null,
     scored_at: row.scored_at ?? null,
+    scenario_slug: row.scenario_slug ? String(row.scenario_slug) : null,
   }))
 }
 

@@ -20,7 +20,7 @@ Two arenas: **the Playground** is for practice — submit freely, scores land in
 |---|---|---|
 | Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); weather, forecasts and events published when the competition opens |
 | Submissions | results files (`decisions.csv`), 50 per team per day | results files (`decisions.csv`), 10 per team per day |
-| Score | informational board | mean over the two scenarios; decides the awards |
+| Score | ranked per scenario; informational | mean of the best score on each of the two scenarios; decides the awards |
 
 Once a scenario's weather and events are published, a local `score_decisions.py` run reproduces the platform report exactly. The one exception is the competition scenarios' anomaly tags: their answer key is not published and is used only when the platform scores, so a local score on a competition scenario leaves that part out.
 
