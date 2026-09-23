@@ -2,13 +2,15 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { isSupabaseConfigured } from '../../lib/supabase'
-import { loadLeaderboard, loadParticipantsStats, loadPhases, mainPhase, type LeaderboardEntry, type Phase } from '../../lib/data'
+import { boardScenarios, loadLeaderboard, loadParticipantsStats, loadPhases, mainPhase, type LeaderboardEntry, type Phase } from '../../lib/data'
 import { useAuth } from '../../stores/auth'
 import { fmtUtc, num } from '../../lib/format'
 import UserAvatar from '../UserAvatar.vue'
 import ScoreBars from '../leaderboard/ScoreBars.vue'
 import SkeletonRows from '../layout/SkeletonRows.vue'
 import CountUp from '../layout/CountUp.vue'
+import BoardScenarioTabs from '../leaderboard/BoardScenarioTabs.vue'
+import TeamDetailDialog from '../leaderboard/TeamDetailDialog.vue'
 
 const { t, pick } = useI18n()
 const { team } = useAuth()
@@ -20,11 +22,15 @@ const refreshing = ref(false)
 const error = ref(false)
 const teamCount = ref<number | null>(null)
 const updatedAt = ref<Date | null>(null)
+const selected = ref<LeaderboardEntry | null>(null)
+// Practice boards rank one scenario at a time; null on the final board, which averages its scenarios.
+const scenarioSlug = ref<string | null>(null)
+const scenarioTabs = computed(() => boardScenarios(phase.value))
 let timer: number | undefined
 
 const top = computed(() => entries.value.slice(0, 10))
 const scoredRuns = computed(() => entries.value.reduce((sum, row) => sum + row.submission_count, 0))
-const boardLink = computed(() => phase.value ? `/leaderboard/${phase.value.slug}` : '/leaderboard')
+const boardLink = computed(() => phase.value ? { path: `/leaderboard/${phase.value.slug}`, query: scenarioSlug.value ? { scenario: scenarioSlug.value } : {} } : '/leaderboard')
 
 async function load() {
   if (!isSupabaseConfigured) { loading.value = false; error.value = true; return }
@@ -33,7 +39,8 @@ async function load() {
     const phases = await loadPhases()
     phase.value = mainPhase(phases)
     hidden.value = phase.value?.leaderboard_mode === 'hidden'
-    entries.value = phase.value && !hidden.value ? await loadLeaderboard(phase.value.slug, 500) : []
+    if (!scenarioTabs.value.some(s => s.slug === scenarioSlug.value)) scenarioSlug.value = scenarioTabs.value[0]?.slug ?? null
+    entries.value = phase.value && !hidden.value ? await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value) : []
     updatedAt.value = new Date()
     error.value = false
     loading.value = false
@@ -44,6 +51,8 @@ async function load() {
   } catch { error.value = true }
   finally { loading.value = false; refreshing.value = false }
 }
+
+function pickScenario(slug: string) { scenarioSlug.value = slug; void load() }
 
 onMounted(() => { load(); timer = window.setInterval(load, 60_000) })
 onUnmounted(() => { if (timer) window.clearInterval(timer) })
@@ -82,6 +91,7 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
             </div>
           </div>
 
+          <BoardScenarioTabs v-if="!hidden" class="pt-5" :scenarios="scenarioTabs" :model-value="scenarioSlug" @update:model-value="pickScenario" />
           <div v-if="loading" class="py-6"><SkeletonRows :rows="6" :cols="5" :label="t('leaderboard.loading')" /></div>
           <div v-else-if="!entries.length" class="grid min-h-80 place-items-center py-16 text-center">
             <div>
@@ -93,12 +103,12 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
           </div>
 
           <template v-else>
-            <div class="py-6"><ScoreBars :entries="entries" :team-id="team?.id ?? null" :updated-at="updatedAt" /></div>
+            <div class="py-6"><ScoreBars :entries="entries" :team-id="team?.id ?? null" :updated-at="updatedAt" @select="selected = $event" /></div>
             <div class="table-wrap">
               <table class="data-table min-w-[900px]">
                 <thead><tr><th>#</th><th>{{ t('leaderboard.team') }}</th><th class="r">{{ t('leaderboard.score') }}</th><th class="r">{{ t('leaderboard.base_science') }}</th><th class="r">{{ t('leaderboard.bonus') }}</th><th class="r">{{ t('leaderboard.requests') }}</th><th class="r">{{ t('leaderboard.penalties') }}</th><th class="r">{{ t('leaderboard.tiles') }}</th><th class="r">{{ t('leaderboard.required_missing') }}</th><th class="r">{{ t('leaderboard.submissions') }}</th></tr></thead>
                 <tbody>
-                  <tr v-for="row in top" :key="row.team_id" data-testid="lb-row" class="lb-row" :class="{ me: team && team.id === row.team_id }">
+                  <tr v-for="row in top" :key="row.team_id" data-testid="lb-row" class="lb-row" :class="{ me: team && team.id === row.team_id }" tabindex="0" @click="selected = row" @keydown.enter.prevent="selected = row">
                     <td class="m rank-cell" :class="row.rank <= 3 ? `rank-${row.rank}` : ''">{{ row.rank }}</td>
                     <td class="font-medium text-text-primary"><span class="team-cell"><UserAvatar :name="row.team_name" :github="row.leader_github" /><i v-if="row.rank === 1" class="champ-star" aria-hidden="true">✦</i><span class="team-name">{{ row.team_name }}</span></span></td>
                     <td class="r m" :class="{ 'text-[#ff6b6b]': row.total_score < 0 }">{{ num(row.total_score) }}</td>
@@ -117,12 +127,14 @@ onUnmounted(() => { if (timer) window.clearInterval(timer) })
         </div>
       </div>
     </div>
+    <TeamDetailDialog :entry="selected" :mine="!!selected && team?.id === selected.team_id" @close="selected = null" />
   </section>
 </template>
 
 <style scoped>
 /* rows brighten and shift a hair under the pointer, so scanning a long board stays anchored */
-.lb-row { transition: background-color .2s ease, transform .2s ease; }
+.lb-row { cursor: pointer; transition: background-color .2s ease, transform .2s ease; }
+.lb-row:focus-visible { outline: 2px solid #78a6ff; outline-offset: -2px; }
 .lb-row:hover { background: rgba(49,94,251,.08); transform: translateX(2px); }
 @media (prefers-reduced-motion: reduce) { .lb-row:hover { transform: none; } }
 .leaderboard-panel { position: relative; background: linear-gradient(180deg, rgba(49,94,251,.04), transparent 30%); }

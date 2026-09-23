@@ -42,11 +42,11 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 6. Only completed exposures score. An exposure interrupted by closed weather earns nothing and is not penalised; an exposure interrupted by geometry or the end of the night earns nothing and is an invalid action.
 7. Terminal penalties are applied to every run, including runs cut short by the wall clock or an agent error. An expired request with fewer feasible opportunities than required tiles is excused.
 8. Completion (completed tiles ÷ tiles) and the FLEXIBLE shortfall per region are reported on the board; they are part of the score through the terminal penalties.
-9. When a phase has several scenarios, a submission's score is the arithmetic mean of its per-scenario scores. A submission counts only if every scenario scored.
+9. Each results file covers one scenario. In the Online Competition a team's score is the arithmetic mean of its best score on each of the two competition scenarios; a team ranks once both scenarios have a scored result. The Playground board ranks each practice scenario separately, with a team's best score on that scenario.
 
 ## 6. Ranking, ties, and verification
 
-1. A team's best scored, non-excluded submission in the phase counts. Ranking is by score, descending; on an exact tie the earlier submission ranks first.
+1. Only scored, non-excluded submissions count, taking a team's best score on each scenario (combined as in section 5, item 9). Ranking is by score, descending; on an exact tie the earlier submission ranks first.
 2. The Online Competition board is live. Organizers may freeze the board during the final hours and publish the final standings after verification.
 3. Before awards are confirmed, organizers may ask the top teams for their agent code and a short description of the approach, and regenerate the decisions.csv with it. Results that cannot be reproduced are removed.
 4. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.

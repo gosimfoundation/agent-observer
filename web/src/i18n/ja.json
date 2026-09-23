@@ -126,7 +126,7 @@
   "cta": {
     "title": "次の観測は、あなたとエージェントが決める",
     "tagline": "同じサーベイ計画、天気リプレイ、追加リクエスト、シミュレーター、採点ルール。変数は戦略だけ。",
-    "location": "オンライン開発と CosmosBench による統一評価 · 10 月 17 日 GOSIM 深圳",
+    "location": "オンライン開発と統一評価 · 10 月 17 日 GOSIM 深圳",
     "button": "今すぐ登録",
     "tag": "2026 / GOSIM / AGENT OBSERVER"
   },
@@ -484,7 +484,7 @@
       "kicker": "05 / ランキング",
       "title": "リアルタイム順位",
       "lede": "採点が終わり次第、ランキングは即時更新されます。練習の順位は参考値、オンライン大会の順位が賞を決めます。",
-      "signal_live": "CosmosBench 信号オンライン",
+      "signal_live": "ランキング稼働中",
       "signal_waiting": "ベンチマーク信号を待機中",
       "feed": "リアルタイム評価データ"
     },
@@ -647,9 +647,9 @@
     "refresh": "更新",
     "full": "全順位",
     "updated": "更新時刻",
-    "loading": "CosmosBench を読み込み中…",
+    "loading": "ランキングを読み込み中…",
     "empty": "このフェーズにはまだ採点済みの提出がありません。",
-    "unavailable": "CosmosBench ランキングは一時的に利用できません。しばらくしてからお試しください。",
+    "unavailable": "ランキングは一時的に利用できません。しばらくしてからお試しください。",
     "team": "チーム / エージェント",
     "score": "総合",
     "science": "科学成果",
@@ -665,8 +665,8 @@
     "frozen": "ランキングは凍結されました。新しい提出は採点されますが、順位は更新されません。",
     "published": "最終結果が公表されました。",
     "live": "リアルタイム更新",
-    "tie": "同点は先に提出したチームが上位。各チームのベスト採点結果を採用。",
-    "mean_note": "フェーズに複数シナリオがある場合、各列はシナリオ平均です。",
+    "tie": "同点は先に提出したチームが上位。",
+    "mean_note": "決勝スコア = 2 つの本番シナリオそれぞれの最高スコアの平均。両方に結果があるチームのみ掲載。各列も同様に平均です。",
     "download_csv": "CSV をダウンロード",
     "json": "JSON",
     "n_entries": "{n} チーム",
@@ -699,7 +699,18 @@
     "coverage": "カバレッジ",
     "penalties": "減点",
     "tiles": "タイル",
-    "required_missing": "REQ 未完了"
+    "required_missing": "REQ 未完了",
+    "nights": "{n} 夜",
+    "per_scenario_note": "練習ランキングはシナリオごとに分けて順位付けします。各チームのそのシナリオでの最高スコアを比較します。",
+    "detail": {
+      "board_scenario": "ランキング：{scenario}",
+      "board_mean": "ランキング：本番 2 シナリオの平均",
+      "close": "閉じる",
+      "evenness": "カバレッジ均一度",
+      "scored_at": "採点時刻",
+      "github": "リーダーの GitHub @{handle}",
+      "view_submission": "この提出を開く"
+    }
   },
   "browser_notice": {
     "title": "Chrome で開いてください",

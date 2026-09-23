@@ -367,7 +367,7 @@
       "kicker": "05 / Leaderboard",
       "title": "Live standings",
       "lede": "The board updates as soon as a submission is scored. Practice standings are informational; the online competition board decides the awards.",
-      "signal_live": "CosmosBench signal live",
+      "signal_live": "Board live",
       "signal_waiting": "Awaiting benchmark signal",
       "feed": "Live evaluation feed"
     },
@@ -751,7 +751,7 @@
         "title": "Three stages from training to awards",
         "paragraphs": [
           "The event has three stages: online training from October 1–4, online competition from October 5–7, and Awards Day at GOSIM Shenzhen on October 17.",
-          "Training introduces CosmosBench, the shared simulator and the participant protocol (details will be announced and emailed). When the online competition opens, the weather of its two scenarios is published; registered teams download it, run locally and submit decisions.csv. CosmosBench powers evaluation and live standings."
+          "Training introduces the shared simulator and the participant protocol (details will be announced and emailed). When the online competition opens, the weather of its two scenarios is published; registered teams download it, run locally and submit decisions.csv, which the platform scores at once for the live standings."
         ],
         "rounds": [
           {
@@ -759,7 +759,7 @@
             "name": "Online Training",
             "dates": "Oct 1–4",
             "format": "Online",
-            "challenge": "Learn CosmosBench, the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
+            "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
             "participants": "Open worldwide to individuals and teams."
           },
           {
@@ -1144,7 +1144,7 @@
   "schedule": {
     "kicker": "07 / Timeline",
     "title": "Schedule",
-    "intro": "Online training runs October 1–4, the CosmosBench-powered online competition runs October 5–7, and Awards Day is October 17.",
+    "intro": "Online training runs October 1–4, the online competition runs October 5–7, and Awards Day is October 17.",
     "challengeLabel": "Survey task",
     "participantsLabel": "Who participates",
     "rounds": [
@@ -1153,7 +1153,7 @@
         "name": "Online Training",
         "dates": "Oct 1–4",
         "format": "Online",
-        "challenge": "Learn CosmosBench, the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
+        "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
         "participants": "Open worldwide to individuals and teams."
       },
       {
@@ -1181,9 +1181,9 @@
     "refresh": "Refresh",
     "full": "Full board",
     "updated": "Updated",
-    "loading": "Loading CosmosBench…",
+    "loading": "Loading the leaderboard…",
     "empty": "No scored submission yet in this phase.",
-    "unavailable": "The CosmosBench leaderboard is temporarily unavailable. Please try again shortly.",
+    "unavailable": "The leaderboard is temporarily unavailable. Please try again shortly.",
     "team": "Team / Agent",
     "score": "Score",
     "science": "Science",
@@ -1199,8 +1199,8 @@
     "frozen": "This board is frozen. New submissions are still scored but the board is not updated.",
     "published": "Final results published.",
     "live": "Live",
-    "tie": "Ties keep the earlier submission ahead. A team's best scored submission counts.",
-    "mean_note": "With several scenarios in a phase, every column is the mean over scenarios.",
+    "tie": "Ties keep the earlier submission ahead.",
+    "mean_note": "Final score = the mean of a team's best score on each competition scenario; a team ranks once both are scored. Every column is averaged the same way.",
     "download_csv": "Download CSV",
     "json": "JSON",
     "n_entries": "{n} teams",
@@ -1233,12 +1233,23 @@
     "coverage": "Coverage",
     "penalties": "Penalties",
     "tiles": "Tiles",
-    "required_missing": "REQ missing"
+    "required_missing": "REQ missing",
+    "nights": "{n} nights",
+    "per_scenario_note": "The practice board ranks each scenario separately: each board compares scores on that scenario only, with a team's best score there.",
+    "detail": {
+      "board_scenario": "Board: {scenario}",
+      "board_mean": "Board: mean of the two competition scenarios",
+      "close": "Close",
+      "evenness": "Coverage evenness",
+      "scored_at": "Scored at",
+      "github": "Leader on GitHub @{handle}",
+      "view_submission": "Open this submission"
+    }
   },
   "cta": {
     "title": "The next observation, decided by you and your agent",
     "tagline": "Same survey plan, weather replay, inserted requests, simulator, and scoring rule. The only variable is strategy.",
-    "location": "Online development and CosmosBench evaluation · October 17 at GOSIM Shenzhen",
+    "location": "Online development and evaluation · October 17 at GOSIM Shenzhen",
     "button": "Register now",
     "tag": "2026 / GOSIM / AGENT OBSERVER"
   },
@@ -1816,7 +1827,7 @@
       },
       {
         "q": "How many submissions can I make?",
-        "a": "Practice: 50 per team per day. Online competition: 10 per team per day. A team's best scored submission counts."
+        "a": "Practice: 50 per team per day. Online competition: 10 per team per day. The Online Competition averages a team's best score on each of its two scenarios; the practice board ranks each scenario separately."
       },
       {
         "q": "Is the leaderboard score the final result?",

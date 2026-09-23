@@ -126,7 +126,7 @@
   "cta": {
     "title": "La prochaine observation, c'est vous et votre agent qui la décidez",
     "tagline": "Même plan de relevé, même rejeu météo, mêmes requêtes, même simulateur, même barème. La seule variable, c'est la stratégie.",
-    "location": "Développement en ligne, évaluation unifiée par CosmosBench · 17 octobre, GOSIM Shenzhen",
+    "location": "Développement en ligne, évaluation unifiée · 17 octobre, GOSIM Shenzhen",
     "button": "S'inscrire",
     "tag": "2026 / GOSIM / AGENT OBSERVER"
   },
@@ -484,7 +484,7 @@
       "kicker": "05 / Classement",
       "title": "Classement en direct",
       "lede": "Le classement se met à jour dès qu'une soumission est notée. Le tableau d'entraînement est indicatif ; celui de la compétition en ligne décide des prix.",
-      "signal_live": "Signal CosmosBench en ligne",
+      "signal_live": "Classement en direct",
       "signal_waiting": "En attente du signal",
       "feed": "Données d'évaluation en direct"
     },
@@ -647,9 +647,9 @@
     "refresh": "Actualiser",
     "full": "Classement complet",
     "updated": "Mis à jour",
-    "loading": "Lecture de CosmosBench…",
+    "loading": "Chargement du classement…",
     "empty": "Aucune soumission notée dans cette phase pour l'instant.",
-    "unavailable": "Le classement CosmosBench est momentanément indisponible. Réessayez plus tard.",
+    "unavailable": "Le classement est momentanément indisponible. Réessayez plus tard.",
     "team": "Équipe / agent",
     "score": "Total",
     "science": "Production scientifique",
@@ -665,8 +665,8 @@
     "frozen": "Classement gelé. Les nouvelles soumissions sont notées mais le tableau ne bouge plus.",
     "published": "Résultats finaux publiés.",
     "live": "Mise à jour en direct",
-    "tie": "À égalité, la soumission la plus ancienne passe devant. Chaque équipe compte sa meilleure soumission notée.",
-    "mean_note": "Quand une phase comporte plusieurs scénarios, chaque colonne est la moyenne des scénarios.",
+    "tie": "À égalité, la soumission la plus ancienne passe devant.",
+    "mean_note": "Score final = moyenne du meilleur score de l'équipe sur chaque scénario de compétition ; une équipe est classée dès que les deux sont notés. Chaque colonne est moyennée de la même façon.",
     "download_csv": "Télécharger le CSV",
     "json": "JSON",
     "n_entries": "{n} équipes",
@@ -699,7 +699,18 @@
     "coverage": "Couverture",
     "penalties": "Pénalités",
     "tiles": "Tuiles",
-    "required_missing": "REQ manquantes"
+    "required_missing": "REQ manquantes",
+    "nights": "{n} nuits",
+    "per_scenario_note": "Le classement d'entraînement est établi scénario par scénario : chaque tableau compare le meilleur score de chaque équipe sur ce scénario.",
+    "detail": {
+      "board_scenario": "Classement : {scenario}",
+      "board_mean": "Classement : moyenne des deux scénarios de compétition",
+      "close": "Fermer",
+      "evenness": "Uniformité de couverture",
+      "scored_at": "Noté le",
+      "github": "Chef d'équipe sur GitHub @{handle}",
+      "view_submission": "Ouvrir cette soumission"
+    }
   },
   "browser_notice": {
     "title": "Ouvrez ce site dans Chrome",

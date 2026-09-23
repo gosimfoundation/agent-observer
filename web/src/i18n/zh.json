@@ -367,7 +367,7 @@
       "kicker": "05 / 排行榜",
       "title": "实时排名",
       "lede": "提交评分完成后榜单即时更新。练习榜仅供参考，线上比赛榜决定奖项。",
-      "signal_live": "CosmosBench 信号在线",
+      "signal_live": "榜单在线",
       "signal_waiting": "等待基准信号",
       "feed": "实时评测数据"
     },
@@ -751,7 +751,7 @@
         "title": "从培训到颁奖的三阶段",
         "paragraphs": [
           "赛事分为三个阶段：10 月 1–4 日线上培训、10 月 5–7 日线上比赛，以及 10 月 17 日 GOSIM 深圳大会颁奖。",
-          "培训将介绍 CosmosBench、统一模拟器与参赛协议（具体安排将通过公告与邮件通知）。线上比赛开赛时公开两个比赛场景的天气，已报名队伍下载后在本地运行，提交 decisions.csv；测评与实时排名由 CosmosBench 支撑。"
+          "培训将介绍统一模拟器与参赛协议（具体安排将通过公告与邮件通知）。线上比赛开赛时公开两个比赛场景的天气，已报名队伍下载后在本地运行，提交 decisions.csv，平台即时评分并更新排名。"
         ],
         "rounds": [
           {
@@ -759,7 +759,7 @@
             "name": "线上培训",
             "dates": "10 月 1–4 日",
             "format": "线上",
-            "challenge": "熟悉 CosmosBench、统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。",
+            "challenge": "熟悉统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。",
             "participants": "面向全球开放，个人与团队均可参加。"
           },
           {
@@ -1144,7 +1144,7 @@
   "schedule": {
     "kicker": "07 / 时间线",
     "title": "赛程",
-    "intro": "10 月 1–4 日线上培训，10 月 5–7 日参加 CosmosBench 支撑的线上比赛，10 月 17 日大会颁奖。",
+    "intro": "10 月 1–4 日线上培训，10 月 5–7 日参加线上比赛，10 月 17 日大会颁奖。",
     "challengeLabel": "巡天任务",
     "participantsLabel": "参与范围",
     "rounds": [
@@ -1153,7 +1153,7 @@
         "name": "线上培训",
         "dates": "10 月 1–4 日",
         "format": "线上",
-        "challenge": "熟悉 CosmosBench、统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。",
+        "challenge": "熟悉统一模拟器、任务卡和观测员接口，并使用公开开发场景完成准备。",
         "participants": "面向全球开放，个人与团队均可参加。"
       },
       {
@@ -1181,9 +1181,9 @@
     "refresh": "刷新",
     "full": "完整榜单",
     "updated": "更新时间",
-    "loading": "正在读取 CosmosBench…",
+    "loading": "正在读取排行榜…",
     "empty": "本阶段尚无已评分的提交。",
-    "unavailable": "CosmosBench 排行榜暂时不可用，请稍后重试。",
+    "unavailable": "排行榜暂时不可用，请稍后重试。",
     "team": "队伍 / 智能体",
     "score": "总分",
     "science": "科学产出",
@@ -1199,8 +1199,8 @@
     "frozen": "榜单已封榜。新提交仍会评分，但榜单不再更新。",
     "published": "最终结果已公布。",
     "live": "实时更新",
-    "tie": "同分时先提交者在前。每队取最佳已评分成绩。",
-    "mean_note": "阶段含多个场景时，各列均为各场景的平均值。",
+    "tie": "同分时先提交者在前。",
+    "mean_note": "决赛成绩 = 每队在两个比赛场景上各自最高分的平均值，两个场景都有成绩才上榜；表中各列同样取平均。",
     "download_csv": "下载 CSV",
     "json": "JSON",
     "n_entries": "{n} 支队伍",
@@ -1233,12 +1233,23 @@
     "coverage": "覆盖",
     "penalties": "惩罚",
     "tiles": "天区",
-    "required_missing": "REQ 缺失"
+    "required_missing": "REQ 缺失",
+    "nights": "{n} 夜",
+    "per_scenario_note": "练习榜按场景分开排名：每个场景的榜单只比这个场景的分数，每队取该场景的最高分。",
+    "detail": {
+      "board_scenario": "榜单：{scenario}",
+      "board_mean": "榜单：两个比赛场景的平均",
+      "close": "关闭",
+      "evenness": "覆盖均匀度",
+      "scored_at": "评分时间",
+      "github": "队长 GitHub @{handle}",
+      "view_submission": "查看这次提交"
+    }
   },
   "cta": {
     "title": "下一次观测，由你和智能体决定",
     "tagline": "同一巡天计划、天气回放、新增请求、模拟器与计分规则；唯一的变量是策略。",
-    "location": "线上开发与 CosmosBench 统一评测 · 10 月 17 日 GOSIM 深圳",
+    "location": "线上开发与统一评测 · 10 月 17 日 GOSIM 深圳",
     "button": "立即报名",
     "tag": "2026 / GOSIM / AGENT OBSERVER"
   },
@@ -1816,7 +1827,7 @@
       },
       {
         "q": "可以提交多少次？",
-        "a": "Playground每队每天 50 次；线上比赛每队每天 10 次。每队取最佳已评分成绩。"
+        "a": "Playground每队每天 50 次；线上比赛每队每天 10 次。线上比赛取每队在两个场景上各自最高分的平均；练习榜按场景分开排名。"
       },
       {
         "q": "排行榜分数就是最终成绩吗？",
