@@ -24,6 +24,13 @@ begin
 end $$;
 revoke all on function public.publish_open_phase_weather() from public, anon, authenticated;
 
-create extension if not exists pg_cron;
-select cron.unschedule(jobid) from cron.job where jobname = 'publish-open-phase-weather';
-select cron.schedule('publish-open-phase-weather', '* * * * *', 'select public.publish_open_phase_weather()');
+-- The schedule needs pg_cron, which the hosted database has. Plain Postgres (the migration tests) does
+-- not; there the function is installed and simply never called on a timer.
+do $cron$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    create extension if not exists pg_cron;
+    perform cron.unschedule(jobid) from cron.job where jobname = 'publish-open-phase-weather';
+    perform cron.schedule('publish-open-phase-weather', '* * * * *', 'select public.publish_open_phase_weather()');
+  end if;
+end $cron$;

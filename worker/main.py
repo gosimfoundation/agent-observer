@@ -442,11 +442,11 @@ def seed(sb: Supa) -> None:
         {"slug": "practice", "name_en": "Practice", "name_zh": "练习赛", "sort_order": 1,
          "description_en": "Open now. Practice with public development scenarios; practice standings are informational.",
          "description_zh": "现已开放。可使用公开开发场景练习；练习榜仅供参考。",
-         "allow_results": True, "allow_agents": True, "daily_limit": 50, "leaderboard_mode": "live", "counts_for_final": False, "is_active": True, "_scn": ["demo-week", "dev-fortnight", "dev-reference"]},
+         "allow_results": True, "allow_agents": False, "daily_limit": 50, "leaderboard_mode": "live", "counts_for_final": False, "is_active": True, "_scn": ["demo-week", "dev-fortnight", "dev-reference"]},
         {"slug": "online", "name_en": "Online Competition", "name_zh": "线上比赛", "sort_order": 2,
-         "description_en": "October 5–7. Agents run on the platform against hidden weather replays A and B (one global wall clock per scenario); the score is the mean over both.",
-         "description_zh": "10 月 5–7 日。智能体在平台上对隐藏天气回放 A、B 运行（每个场景一个全局时钟），得分为两个场景的平均值。",
-         "allow_results": False, "allow_agents": True, "daily_limit": 10, "leaderboard_mode": "live", "counts_for_final": True, "is_active": True,
+         "description_en": "October 5–7. Run your agent locally on competition scenarios A and B (their weather is published when the competition opens) and submit each decisions.csv; the score is the mean over both.",
+         "description_zh": "10 月 5–7 日。在本地对比赛场景 A、B 运行智能体（天气在开赛时公开），分别提交 decisions.csv，得分为两个场景的平均值。",
+         "allow_results": True, "allow_agents": False, "daily_limit": 10, "leaderboard_mode": "live", "counts_for_final": True, "is_active": True,
          "starts_at": "2026-10-04T16:00:00Z", "ends_at": "2026-10-07T15:59:59Z", "_scn": ["eval-a", "eval-b"]},
     ]
     for d in defaults:
