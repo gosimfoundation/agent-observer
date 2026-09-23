@@ -19,6 +19,8 @@ window.addEventListener('load', () => sessionStorage.removeItem('sac-chunk-reloa
 
 void initAuth()
 createApp(App).directive('tilt', vTilt).directive('countup', vCountup).use(router).mount('#app')
+// The app started, so the one-shot retry in index.html for missing asset files has done its job.
+try { sessionStorage.removeItem('sac-asset-retry') } catch { /* private mode */ }
 
 installFreshnessCheck()
 installClickSparks()
