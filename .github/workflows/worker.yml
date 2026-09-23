@@ -1,10 +1,8 @@
 name: Evaluation worker
 
-# Runs the Python evaluation worker on a GitHub-hosted runner: claims queued submissions from Supabase,
-# executes agent packages in a sandbox against the scenarios, scores them and writes results back.
-# The job stays alive polling the queue (near-instant evaluation) and, before it ends, dispatches its
-# successor with the workflow's own token, so there is always a worker without any extra credentials.
-# The cron is only a safety net in case the chain breaks; the concurrency group keeps a single worker.
+# Website forks must explicitly opt in before running a production evaluator.
+# The existing production worker remains upstream until a coordinated handover.
+# Successful runs may schedule a successor; failures never start a retry loop.
 on:
   schedule:
     - cron: "*/30 * * * *"
@@ -23,14 +21,21 @@ env:
 
 jobs:
   evaluate:
-    runs-on: ubuntu-latest
+    if: ${{ vars.EVALUATION_WORKER_ENABLED == 'true' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 350
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Validate worker configuration
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: bash scripts/worker-preflight.sh
       - name: Poll the queue and evaluate submissions
+        id: evaluate
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -46,7 +51,7 @@ jobs:
           SAC_DATA_DIR: ${{ runner.temp }}/sac
         run: python -m worker.main run --max-seconds "$WORKER_RUN_SECONDS"
       - name: Dispatch the next worker run
-        if: always()
+        if: ${{ success() && steps.evaluate.outcome == 'success' && vars.EVALUATION_WORKER_ENABLED == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run worker.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
