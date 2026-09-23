@@ -18,14 +18,10 @@ function start() {
 <template>
   <section id="film" class="poster-section poster-canvas py-16 md:py-24" data-testid="film-section">
     <div class="mx-auto max-w-[1600px] px-5 md:px-10 xl:px-14">
-      <div class="grid gap-10 lg:grid-cols-[.54fr_1.46fr] lg:gap-14">
-        <div class="reveal lg:sticky lg:top-28 lg:self-start">
-          <span class="poster-kicker">{{ t('home.film.kicker') }}</span>
-          <h2 class="section-title distressed-type mt-8">{{ t('home.film.title') }}</h2>
-          <p class="label mt-7">{{ t('home.film.note') }}</p>
-        </div>
+      <div class="mx-auto max-w-[1100px]">
+        <span class="poster-kicker reveal">{{ t('home.film.kicker') }}</span>
 
-        <div class="film-frame reveal reveal-delay-1">
+        <div class="film-frame reveal reveal-delay-1 mt-8">
           <video
             ref="player"
             class="film-video"
