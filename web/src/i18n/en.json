@@ -2200,9 +2200,9 @@
     "empty_desc": "Loosen the filters, or display your own card first."
   },
   "browser_notice": {
-    "title": "Chrome works better here",
-    "body": "Safari caches an old copy of this site for a long time and renders parts of it incorrectly. Chrome or Edge will not.",
+    "title": "Please open this site in Chrome",
+    "body": "Safari keeps showing an old version of this site and displays parts of it incorrectly. Copy the address and open it in Chrome.",
     "copy": "Copy the address",
-    "stay": "Stay in Safari"
+    "stay": "Use Safari anyway"
   }
 }

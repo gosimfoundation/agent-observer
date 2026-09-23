@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { isSafari } from '../../lib/freshness'
 
-// Safari keeps serving stale builds and renders parts of this site differently; say so once.
+// Safari keeps serving stale builds and renders parts of this site differently. The warning covers the
+// whole screen and comes back on every visit; "stay" only clears it for the page currently open.
 const { t } = useI18n()
-const KEY = 'sac-browser-notice'
 const open = ref(false)
 const copied = ref(false)
 
+function lock(on: boolean) { document.documentElement.style.overflow = on ? 'hidden' : '' }
+
 onMounted(() => {
-  let seen = false
-  try { seen = localStorage.getItem(KEY) === '1' } catch { /* private mode: show it */ }
-  if (!seen && isSafari()) open.value = true
+  if (!isSafari()) return
+  open.value = true
+  lock(true)
 })
+onUnmounted(() => lock(false))
 
 function dismiss() {
   open.value = false
-  try { localStorage.setItem(KEY, '1') } catch { /* private mode */ }
+  lock(false)
 }
 async function copyLink() {
   try {
@@ -29,38 +32,56 @@ async function copyLink() {
 </script>
 
 <template>
-  <div v-if="open" class="browser-notice" role="dialog" aria-modal="true" :aria-label="t('browser_notice.title')">
-    <div class="browser-notice-card">
+  <div v-if="open" class="browser-notice" role="alertdialog" aria-modal="true" :aria-label="t('browser_notice.title')" data-testid="browser-notice">
+    <div class="browser-notice-inner">
+      <div class="browser-notice-mark" aria-hidden="true">!</div>
       <h2>{{ t('browser_notice.title') }}</h2>
       <p>{{ t('browser_notice.body') }}</p>
-      <div class="browser-notice-actions">
-        <button type="button" class="btn primary sm" @click="copyLink">{{ copied ? t('common.copied') : t('browser_notice.copy') }}</button>
-        <button type="button" class="btn sm" data-testid="browser-notice-dismiss" @click="dismiss">{{ t('browser_notice.stay') }}</button>
-      </div>
+      <button type="button" class="browser-notice-copy" @click="copyLink">{{ copied ? t('common.copied') : t('browser_notice.copy') }}</button>
+      <button type="button" class="browser-notice-stay" data-testid="browser-notice-dismiss" @click="dismiss">{{ t('browser_notice.stay') }}</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .browser-notice {
-  position: fixed; inset: 0; z-index: 120;
+  position: fixed; inset: 0; z-index: 200;
   display: flex; align-items: center; justify-content: center;
-  padding: 1.5rem;
-  background: rgba(2, 5, 12, .72);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  color: #fff;
+  background:
+    radial-gradient(900px 600px at 50% 0%, rgba(255, 90, 60, .32), transparent 70%),
+    rgba(10, 4, 6, .97);
 }
-.browser-notice-card {
-  max-width: 30rem; width: 100%;
-  border: 1px solid rgba(158, 173, 255, .3);
-  background: linear-gradient(180deg, rgba(28, 36, 66, .96), rgba(10, 14, 28, .98));
-  padding: 1.9rem 1.8rem 1.6rem;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+.browser-notice-inner { width: 100%; max-width: 44rem; text-align: center; }
+.browser-notice-mark {
+  display: flex; align-items: center; justify-content: center;
+  width: clamp(5rem, 16vw, 8rem); height: clamp(5rem, 16vw, 8rem); margin: 0 auto;
+  border: 4px solid #ff5a3c; border-radius: 50%;
+  color: #ff5a3c; font-size: clamp(3rem, 10vw, 5rem); font-weight: 800; line-height: 1;
+  box-shadow: 0 0 60px rgba(255, 90, 60, .45);
 }
-.browser-notice-card h2 {
-  font-size: 1.3rem; font-weight: 650; letter-spacing: -.02em; color: #f5f7ff;
+.browser-notice h2 {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  font-size: clamp(2.4rem, 8vw, 4.8rem); font-weight: 800; line-height: 1.1; letter-spacing: -.03em;
+  text-wrap: balance;
 }
-.browser-notice-card p {
-  margin-top: .8rem; font-size: .93rem; line-height: 1.75; color: #c7d2ea;
+.browser-notice p {
+  margin: clamp(1rem, 3vw, 1.6rem) auto 0; max-width: 34rem;
+  font-size: clamp(1.05rem, 2.6vw, 1.35rem); line-height: 1.65; color: rgba(255, 235, 230, .88);
 }
-.browser-notice-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem; }
+.browser-notice-copy {
+  display: block; width: 100%; max-width: 26rem; margin: clamp(2rem, 5vw, 2.8rem) auto 0;
+  padding: 1.15rem 1.5rem; border: 0; cursor: pointer;
+  background: #ff5a3c; color: #fff;
+  font-size: clamp(1.1rem, 3vw, 1.35rem); font-weight: 700;
+}
+.browser-notice-copy:hover { background: #ff7458; }
+.browser-notice-stay {
+  margin-top: 1.4rem; border: 0; background: none; cursor: pointer;
+  color: rgba(255, 255, 255, .5); font-size: .9rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.browser-notice-stay:hover { color: rgba(255, 255, 255, .8); }
+.browser-notice button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 </style>

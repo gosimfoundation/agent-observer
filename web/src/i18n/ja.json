@@ -704,8 +704,8 @@
     "required_missing": "REQ 未完了"
   },
   "browser_notice": {
-    "title": "Chrome での表示を推奨します",
-    "body": "Safari はこのサイトの古い版を長くキャッシュし、一部が正しく表示されないことがあります。Chrome か Edge なら起きません。",
+    "title": "Chrome で開いてください",
+    "body": "Safari ではこのサイトの古い版が表示され続け、一部が正しく表示されません。URL をコピーして Chrome で開いてください。",
     "copy": "URL をコピー",
     "stay": "Safari のまま使う"
   }

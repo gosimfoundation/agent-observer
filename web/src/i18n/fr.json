@@ -704,9 +704,9 @@
     "required_missing": "REQ manquantes"
   },
   "browser_notice": {
-    "title": "Chrome fonctionne mieux ici",
-    "body": "Safari garde longtemps une ancienne copie de ce site et en affiche mal certaines parties. Chrome ou Edge, non.",
+    "title": "Ouvrez ce site dans Chrome",
+    "body": "Safari continue d'afficher une ancienne version de ce site et en affiche mal certaines parties. Copiez l'adresse et ouvrez-la dans Chrome.",
     "copy": "Copier l'adresse",
-    "stay": "Rester sur Safari"
+    "stay": "Continuer avec Safari"
   }
 }
