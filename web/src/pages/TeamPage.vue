@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UserAvatar from '../components/UserAvatar.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../composables/useI18n'
 import { supabase } from '../lib/supabase'
 import { describeError } from '../lib/errors'
@@ -16,13 +17,21 @@ const { t, tf } = useI18n()
 const i18n = useI18n()
 const flash = useFlash()
 const { me, team, refreshMe } = useAuth()
+const route = useRoute()
+const router = useRouter()
 const members = ref<Member[]>([])
 const openTeams = ref<OpenTeam[]>([])
 const busy = ref(false)
 const loading = ref(true)
 const copied = ref(false)
+const linkCopied = ref(false)
 const createForm = ref({ name: '', max_size: 3, github_repo: '', project_idea: '' })
 const joinForm = ref({ code: '' })
+watch(() => route.query.invite, value => {
+  if (typeof value === 'string' && /^[A-Za-z0-9]{4,64}$/.test(value)) joinForm.value.code = value.toUpperCase()
+}, { immediate: true })
+const inviteLink = computed(() => team.value
+  ? new URL(router.resolve({ path: '/team', query: { invite: team.value.invite_code } }).href, window.location.origin).href : '')
 const editForm = ref({ max_size: 3, github_repo: '', project_idea: '', is_locked: false })
 const isLeader = computed(() => Boolean(team.value && me.value && team.value.leader_id === me.value.id))
 
@@ -33,14 +42,22 @@ async function load() {
   try {
     await refreshMe()
     if (team.value) {
-      const { data } = await supabase.rpc('team_members', { p_team_id: team.value.id })
+      const { data, error } = await supabase.rpc('team_members', { p_team_id: team.value.id })
+      if (error) throw error
       members.value = (data ?? []) as Member[]
       editForm.value = { max_size: team.value.max_size, github_repo: team.value.github_repo ?? '', project_idea: team.value.project_idea ?? '', is_locked: team.value.is_locked }
     } else {
-      const { data } = await supabase.rpc('open_teams')
+      const { data, error } = await supabase.rpc('open_teams')
+      if (error) throw error
       openTeams.value = (data ?? []) as OpenTeam[]
     }
-  } finally { loading.value = false }
+  } catch (e) { flash.error(errorText(e)) }
+  finally {
+    loading.value = false
+    await nextTick()
+    const section = joinForm.value.code && !team.value ? 'join' : route.hash.slice(1)
+    if (['create', 'join', 'invite'].includes(section)) document.getElementById(section)?.scrollIntoView({ block: 'center' })
+  }
 }
 
 async function run(action: () => Promise<unknown>, success?: string) {
@@ -73,7 +90,13 @@ const disband = () => { if (window.confirm(t('team.disband_confirm'))) void run(
 
 async function copyCode() {
   if (!team.value) return
-  try { await navigator.clipboard.writeText(team.value.invite_code); copied.value = true; window.setTimeout(() => { copied.value = false }, 2000) } catch { /* clipboard unavailable */ }
+  try { await navigator.clipboard.writeText(team.value.invite_code); copied.value = true; window.setTimeout(() => { copied.value = false }, 2000) }
+  catch { flash.error(t('team.copy_fallback')) }
+}
+async function copyLink() {
+  if (!inviteLink.value) return
+  try { await navigator.clipboard.writeText(inviteLink.value); linkCopied.value = true; window.setTimeout(() => { linkCopied.value = false }, 2000) }
+  catch { flash.error(t('team.copy_fallback')) }
 }
 
 onMounted(load)
@@ -86,6 +109,7 @@ onMounted(load)
     <div v-else-if="team" class="dash-grid">
       <div class="panel">
         <div class="hd"><h2>{{ team.name }}</h2><span class="label">{{ members.length }} / {{ team.max_size }}<template v-if="team.is_locked"> · {{ t('team.locked') }}</template></span></div>
+        <p class="text2 text-sm mb-5">{{ t('team.manage_hint') }}</p>
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr><th>{{ t('common.name') }}</th><th>{{ t('auth.github') }}</th><th>{{ t('auth.affiliation') }}</th><th></th></tr></thead>
@@ -126,12 +150,14 @@ onMounted(load)
       </div>
 
       <div>
-        <div class="panel">
+        <div id="invite" class="panel">
           <div class="hd"><h2>{{ t('team.invite_code') }}</h2></div>
           <p class="text2 text-sm">{{ t('team.invite_lede') }}</p>
           <div class="token mt-4 text-[1.4rem] tracking-[.2em]" data-testid="team-invite-code">{{ team.invite_code }}</div>
+          <label class="field mt-4"><span>{{ t('team.invite_link') }}</span><input :value="inviteLink" readonly data-testid="team-invite-link" @focus="($event.target as HTMLInputElement).select()"></label>
           <div class="actions-inline mt-4">
             <button type="button" class="copy-btn" @click="copyCode">{{ copied ? t('common.copied') : t('common.copy') }}</button>
+            <button type="button" class="copy-btn" @click="copyLink">{{ linkCopied ? t('common.copied') : t('team.copy_link') }}</button>
             <button v-if="isLeader" type="button" class="copy-btn" :disabled="busy" @click="regenerate">{{ t('team.regenerate') }}</button>
           </div>
         </div>
@@ -146,7 +172,7 @@ onMounted(load)
     </div>
 
     <div v-else class="dash-grid">
-      <div class="panel">
+      <div id="create" class="panel">
         <div class="hd"><h2>{{ t('team.create_title') }}</h2></div>
         <p class="text2 mb-5 text-sm">{{ t('team.solo_hint') }}</p>
         <form @submit.prevent="createTeam">
@@ -160,7 +186,7 @@ onMounted(load)
         </form>
       </div>
       <div>
-        <div class="panel">
+        <div id="join" class="panel">
           <div class="hd"><h2>{{ t('team.join_title') }}</h2></div>
           <form @submit.prevent="joinTeam">
             <label class="field"><span>{{ t('team.invite_code') }}</span><input data-testid="team-join-code" v-model="joinForm.code" type="text" required class="mono uppercase tracking-[.15em]" autocomplete="off"></label>

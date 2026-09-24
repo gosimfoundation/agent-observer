@@ -1541,7 +1541,13 @@
     "saved": "Team updated.",
     "not_in_team": "You are not on a team.",
     "leader_only": "Only the team leader can do this.",
-    "bad_size": "Team size must be between the current member count and 3."
+    "bad_size": "Team size must be between the current member count and 3.",
+    "entry_hint": "Create a team or join with an invite code. You will be asked to log in first if needed.",
+    "manage_hint": "You already belong to a team. Invite teammates here; each person can belong to one team.",
+    "invite_people": "Invite teammates",
+    "invite_link": "Invite link",
+    "copy_link": "Copy invite link",
+    "copy_fallback": "Copy failed. Select the invite code or link and copy it manually."
   },
   "submit": {
     "title": "New submission",

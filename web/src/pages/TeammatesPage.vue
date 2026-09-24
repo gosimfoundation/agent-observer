@@ -12,7 +12,7 @@ import UserAvatar from '../components/UserAvatar.vue'
 const { t, tf } = useI18n()
 const i18n = useI18n()
 const flash = useFlash()
-const { me, isLoggedIn } = useAuth()
+const { me, team, isLoggedIn } = useAuth()
 
 const entries = ref<WallEntry[]>([])
 const loading = ref(true)
@@ -112,6 +112,21 @@ const tierNames = (kind: 'astro' | 'ai') => t(`tiers.${kind}`) as string[]
       <span class="poster-kicker kicker-amber">{{ t('teammates.kicker') }}</span>
       <h1 class="section-title distressed-type mt-6">{{ t('teammates.title') }}</h1>
       <p class="lede mt-6 max-w-3xl">{{ t('teammates.lede') }}</p>
+
+      <div class="panel mt-8" data-testid="team-actions">
+        <div class="hd"><h2>{{ t('team.title') }}</h2></div>
+        <p class="text2 text-sm">{{ team ? t('team.manage_hint') : t('team.entry_hint') }}</p>
+        <div class="actions-inline mt-4">
+          <template v-if="team">
+            <router-link class="btn primary sm" to="/team#invite">{{ t('team.invite_people') }} →</router-link>
+            <router-link class="btn sm" to="/team">{{ t('nav.team') }} →</router-link>
+          </template>
+          <template v-else>
+            <router-link class="btn primary sm" to="/team#create">{{ t('team.create') }} →</router-link>
+            <router-link class="btn sm" to="/team#join">{{ t('team.join') }} →</router-link>
+          </template>
+        </div>
+      </div>
 
       <div v-if="isLoggedIn" class="wall-self panel mt-10" data-testid="wall-self">
         <div class="hd"><h2>{{ t('teammates.self_title') }}</h2>
