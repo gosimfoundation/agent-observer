@@ -55,3 +55,10 @@ reload empties the field. The opt-in integration/personal-broadcast_test.ts also
 Broadcast transport for success and failure, using synthetic credentials and a
 stub provider without account creation or billing. Live HTTPS-provider acceptance
 is still required before declaring the entire deployment complete.
+
+`integration/deployed-personal-model.ts` additionally exercises the deployed
+proxy, team-authenticated portal and real Broadcast against a disposable active
+run. A synthetic invalid provider credential must produce a redacted failure
+without organizer fallback. Its privileged test configuration is supplied only
+over stdin; it does not write configuration, change decisions or incur model
+charges. A passing negative check is not evidence of a successful real model call.
