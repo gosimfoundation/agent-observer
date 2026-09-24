@@ -195,5 +195,8 @@ def test_online_board_shows_same_batch_mean_and_keeps_private_artifacts_hidden(p
         page.keyboard.press('Escape')
         page.goto(portal_site+'/?lang=en')
         expect(page.locator('#board').get_by_test_id('lb-row').filter(has_text=team_name)).to_be_visible(timeout=15000)
+        page.goto(portal_site+'/rules?lang=en')
+        phase_row=page.locator('[data-testid="phase-row"][data-phase="'+slug+'"]')
+        expect(phase_row).to_contain_text('Complete project / Local-session CSV',timeout=15000)
         assert not errors,errors
         browser.close()

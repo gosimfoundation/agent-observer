@@ -37,7 +37,7 @@ const words = computed(() => pick({
   testPassed: 'Public scenario test passed', testResult: 'Download public test result', projectDownload: 'Download this project version', phase: 'Evaluation phase', evaluate: 'Evaluate confirmed version',
   batches: 'Evaluations', local: 'Start local CSV session', localHelp: 'Run locally with the same step-by-step information. Upload the resulting decisions.csv after the session.',
   download: 'Download private result', uploadCsv: 'Upload matching CSV', average: 'Combined score',
-  api: 'Model APIs', apiHelp: 'Model use is optional. Team keys stay on the server. Each run and each provider have separate limits.',
+  api: 'Model APIs', apiHelp: 'Model use is optional. Team keys stay on the server. Set the model parameter to the call name below; OPENAI_BASE_URL and OPENAI_API_KEY are provided for each run. Each run and provider has separate limits.', callName: 'Model call name',
   shared: 'Organizer API', own: 'Team API', modelNames: 'Model names, separated by commas', endpoint: 'API endpoint', key: 'API key',
   apiName: 'API name', edit: 'Edit', limit: 'Daily token limit', saveKey: 'Save encrypted key', disable: 'Disable', enabled: 'Enabled', disabled: 'Disabled',
   evidence: 'Design award evidence', evidenceHelp: 'Describe the architecture and reproducible steps. This does not change performance scores.',
@@ -59,7 +59,7 @@ const words = computed(() => pick({
   check: '我已检查运行设置和适配代码，确认使用这个版本。', approve: '确认版本', testPassed: '公开场景测试通过', testResult: '下载公开测试结果', projectDownload: '下载此版本项目',
   phase: '评测赛程', evaluate: '评测已确认版本', batches: '评测记录', local: '启动本地 CSV 会话',
   localHelp: '在本机运行，按步骤获得相同信息；运行结束后上传生成的 decisions.csv。', download: '下载私有结果',
-  uploadCsv: '上传匹配的 CSV', average: '综合成绩', api: '模型 API', apiHelp: '可以不使用模型；队伍密钥保存在服务器，每次运行和每个接口分别限额。',
+  uploadCsv: '上传匹配的 CSV', average: '综合成绩', api: '模型 API', apiHelp: '模型调用可选，队伍密钥保存在服务器。model 参数使用下方调用名；每次运行会提供 OPENAI_BASE_URL 和 OPENAI_API_KEY。运行与接口均有独立额度。', callName: '模型调用名',
   shared: '主办方接口', own: '队伍接口', modelNames: '模型名称，用逗号分隔', endpoint: 'API 地址', key: 'API 密钥',
   apiName: '接口名称', edit: '修改', limit: '每天最多使用的 token 数', saveKey: '加密保存密钥', disable: '停用', enabled: '已启用', disabled: '已停用',
   evidence: '设计奖材料', evidenceHelp: '说明项目架构和复现步骤；这里不影响实际成绩。', codeUrl: '代码或文档链接（选填）',
@@ -245,6 +245,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       <section class="panel"><h2>{{ words.api }}</h2><p class="help">{{ words.apiHelp }}</p>
         <article v-for="p in data?.providers" :key="p.id" class="project-row"><b>{{ p.name }}</b> · {{ p.shared ? words.shared : words.own }} · {{ p.enabled ? words.enabled : words.disabled }}
           <p class="help">{{ p.models.join(', ') }} · {{ words.limit }}: {{ p.daily_token_limit.toLocaleString() }}</p>
+          <p v-for="model in p.models" :key="model" class="help break-all">{{ words.callName }}: <code>{{ p.shared ? model : p.id + '::' + model }}</code></p>
           <button v-if="!p.shared" class="btn sm mt-2 mr-3" :disabled="busy" @click="provider = { id: p.id, name: p.name, base_url: p.base_url, models: p.models.join(', '), key: '', daily_token_limit: p.daily_token_limit }">{{ words.edit }}</button>
           <button v-if="!p.shared && p.enabled" class="btn sm mt-2" :disabled="busy" @click="action(async () => { await portal('disable_provider', { id: p.id }) })">{{ words.disable }}</button>
         </article>

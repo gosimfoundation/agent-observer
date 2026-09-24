@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--node-bin',required=True)
     parser.add_argument('--browser-channel',default='chrome')
     parser.add_argument('--case',default='python-v2')
+    parser.add_argument('--live-site',action='store_true',help='Test the official published website instead of building locally')
     args=parser.parse_args()
     state=json.loads(subprocess.check_output(['security','find-generic-password','-s','agentic-observer26-backend',
       '-a',os.environ['SUPABASE_PROJECT_REF'],'-w'],text=True))
@@ -34,10 +35,14 @@ def main():
     env={k:v for k,v in os.environ.items() if k in ('PATH','HOME','TMPDIR','LANG')}
     env.update({'PATH':args.node_bin+':'+env['PATH'],'VITE_SUPABASE_URL':os.environ['SUPABASE_URL'],
       'VITE_SUPABASE_ANON_KEY':os.environ['SUPABASE_ANON_KEY'],'VITE_BASE_PATH':'/','VITE_SITE_URL':base})
-    build=subprocess.run(['npm','run','build'],cwd=ROOT/'web',env=env,capture_output=True,text=True,timeout=180)
-    if build.returncode:raise RuntimeError('Local production build failed')
-    process=subprocess.Popen(['npm','exec','vite','--','preview','--host','127.0.0.1','--port',str(port),'--strictPort'],
-      cwd=ROOT/'web',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    process=None
+    if args.live_site:
+        base='https://create.gosim.org/survey26/platform'
+    else:
+        build=subprocess.run(['npm','run','build'],cwd=ROOT/'web',env=env,capture_output=True,text=True,timeout=180)
+        if build.returncode:raise RuntimeError('Local production build failed')
+        process=subprocess.Popen(['npm','exec','vite','--','preview','--host','127.0.0.1','--port',str(port),'--strictPort'],
+          cwd=ROOT/'web',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     try:
         for _ in range(100):
             try:urllib.request.urlopen(base,timeout=1).close();break
@@ -79,12 +84,13 @@ def main():
             expect(page.get_by_test_id('submit-kind-results')).to_be_visible(timeout=30000)
             assert not errors,'Browser script errors occurred'
             context.close();browser.close()
-        print(json.dumps({'backend':'deployed','frontend':'local production build','login':'passed',
+        print(json.dumps({'backend':'deployed','frontend':'production site' if args.live_site else 'local production build','login':'passed',
           'private_logs':'passed','public_test_download':'passed','mobile_zh':'passed','legacy_csv':'passed','browser_errors':0}))
     finally:
-        process.terminate()
-        try:process.wait(timeout=5)
-        except subprocess.TimeoutExpired:process.kill();process.wait()
+        if process is not None:
+            process.terminate()
+            try:process.wait(timeout=5)
+            except subprocess.TimeoutExpired:process.kill();process.wait()
 
 
 if __name__=='__main__':main()

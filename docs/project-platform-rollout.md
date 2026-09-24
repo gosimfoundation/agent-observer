@@ -366,3 +366,28 @@ On macOS with Colima, container tests need a pytest --basetemp directory under
 the Docker-shared home directory, such as a fresh path under ~/.cache. The default
 /var/folders path is not mounted into this VM; do not relax runtime permissions to
 work around that host mount setting.
+
+## Competition activation
+
+`configure-observer-competition.py --prepare` copies the existing formal scenario
+files into immutable, hash-verified private bundles without changing public data.
+`--activate --revision <published-commit>` requires that exact frontend revision
+to be live, then enables project and local-session submission together. It keeps
+the existing dates, scenario runtime and daily batch limit, refuses a phase with
+legacy results, and does not raise the shared provider's budget. The existing
+300-second public-preview limit remains in force.
+
+The model configuration now offers organizer-approved personal providers, with
+OpenRouter and DeepSeek in addition to the authorized organizer test API.
+Their chat endpoints follow the official
+[OpenRouter quickstart](https://openrouter.ai/docs/quickstart) and
+[DeepSeek chat API](https://api-docs.deepseek.com/api/create-chat-completion/).
+An organizer can add a supported HTTPS chat-completions base with
+`configure-observer-secrets.py --model-base <base>`; project users cannot turn
+the proxy into an arbitrary request destination. A team's model call name is
+`<provider-id>::<model>`, displayed on the project page. Shared models use their
+unprefixed model names. Both use the scoped runtime environment credentials.
+
+`test-observer-live-browser.py --live-site` repeats the participant journey on the
+official published site, using only the hidden acceptance account. Its default
+mode still builds locally against the deployed backend.

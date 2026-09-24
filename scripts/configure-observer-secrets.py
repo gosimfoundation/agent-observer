@@ -8,10 +8,23 @@ from pathlib import Path
 import secrets
 import subprocess
 import urllib.request
+from urllib.parse import urlsplit
 import uuid
 
 ROOT=Path(__file__).resolve().parents[1]
 SERVICE='agentic-observer26-backend'
+DEFAULT_TEAM_BASES=('https://openrouter.ai/api/v1','https://api.deepseek.com')
+
+
+def approved_bases(extra):
+    result=list(DEFAULT_TEAM_BASES)
+    for value in extra:
+        parsed=urlsplit(value)
+        if parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or ',' in value or any(c.isspace() for c in value):
+            raise ValueError('Additional model endpoints must be HTTPS base URLs without credentials or query strings')
+        value=value.rstrip('/')
+        if value not in result:result.append(value)
+    return result
 
 
 def keychain(service,account):
@@ -36,7 +49,9 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--deno',required=True)
     parser.add_argument('--apply',action='store_true')
+    parser.add_argument('--model-base',action='append',default=[],help='Additional organizer-approved HTTPS chat-completions API base')
     args=parser.parse_args()
+    team_bases=approved_bases(args.model_base)
     if not args.apply:
         print('Will configure Observer app, encryption, dispatch and the authorized test provider; no change made.')
         return
@@ -56,7 +71,7 @@ def main():
     base='http://office.liyao.space:40101/v1'
     values={'OBSERVER_GITHUB_APP_ID':str(app['id']),'OBSERVER_GITHUB_APP_PEM':app['pem'],
       'OBSERVER_KEY_ENCRYPTION_KEY':state['master'],'OBSERVER_DISPATCH_SECRET':state['dispatch'],
-      'OBSERVER_DEFAULT_MODEL_PROVIDER':state['provider_id'],'OBSERVER_MODEL_BASES':base,'OBSERVER_MODEL_HTTP_BASES':base}
+      'OBSERVER_DEFAULT_MODEL_PROVIDER':state['provider_id'],'OBSERVER_MODEL_BASES':','.join([base,*team_bases]),'OBSERVER_MODEL_HTTP_BASES':base}
     request('/secrets',[{'name':name,'value':value} for name,value in values.items()])
     code='''import {encryptCredential} from './_shared/observer-model.ts';
 const d=await new Response(Deno.stdin.readable).json();
