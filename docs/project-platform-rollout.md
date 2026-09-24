@@ -391,3 +391,9 @@ unprefixed model names. Both use the scoped runtime environment credentials.
 `test-observer-live-browser.py --live-site` repeats the participant journey on the
 official published site, using only the hidden acceptance account. Its default
 mode still builds locally against the deployed backend.
+
+### Large public catalogs
+
+Initial publications over 1 MiB use a deterministic gzip/base64 envelope in the session API and database, capped at 15 MiB encoded and 96 MiB expanded with a SHA-256 integrity check. `SessionClient` transparently encodes initialization and decodes participant polls; custom session clients must support `observer-publication-gzip-v1`. The language-neutral project JSONL protocol is unchanged and receives the entire catalog, with a 128 MiB initialization limit. Ordinary decision requests retain their 16 MiB bound. No private scenario inputs enter this envelope.
+
+The two catalog RPCs have a function-scoped 60-second SQL budget because the hosted API inherits an 8-second timeout. Catalog HTTP transfers allow 120 seconds within the existing startup deadline; ordinary decision requests retain 30 seconds and the participant decision clock is unchanged. Initialization errors stop the job with their original safe error code instead of publishing an empty score.

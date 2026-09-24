@@ -15,6 +15,7 @@ from challenge.contracts import PARTICIPANT_PROTOCOL_VERSION
 
 MAX_RESPONSE_BYTES = 512 * 1024
 MAX_REQUEST_BYTES = 16 * 1024 * 1024
+MAX_INITIALIZATION_BYTES = 128 * 1024 * 1024
 MAX_LOG_BYTES = 64 * 1024
 
 
@@ -81,10 +82,10 @@ class JsonlTransport:
             raise GlobalDeadlineExpired()
         return remaining
 
-    def send(self, message: Mapping, deadline: float) -> None:
+    def send(self, message: Mapping, deadline: float, *, limit: int = MAX_REQUEST_BYTES) -> None:
         self.start()
         data = json.dumps(message, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode() + b"\n"
-        if len(data) > MAX_REQUEST_BYTES:
+        if len(data) > limit:
             raise ExecutionError("Public protocol request exceeds the size limit.")
         pending = memoryview(data)
         stream = self.process.stdin
@@ -131,7 +132,7 @@ class JsonlTransport:
     def publish_initial(self, publication: Mapping) -> None:
         self.send({"protocol_version": PARTICIPANT_PROTOCOL_VERSION,
                    "message_type": "initialize", "payload": publication},
-                  time.monotonic() + self.initialization_seconds)
+                  time.monotonic() + self.initialization_seconds, limit=MAX_INITIALIZATION_BYTES)
 
     def __call__(self, snapshot: Mapping, deadline_monotonic: float) -> dict:
         sequence = snapshot["decision_sequence"]

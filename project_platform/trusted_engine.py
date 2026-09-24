@@ -44,8 +44,16 @@ class RemoteProvider:
         self.flushed_sequence = 0
         self.flushed_rows = 0
         self.evaluation = evaluation
+        self.initialization_error: Exception | None = None
 
     def publish_initial(self, publication):
+        try:
+            self._publish_initial(publication)
+        except Exception as error:
+            self.initialization_error = error
+            raise
+
+    def _publish_initial(self, publication):
         if self.evaluation is not None:
             publication = {**publication, "evaluation": self.evaluation}
         startup = time.monotonic()+self.startup_seconds
@@ -83,6 +91,10 @@ def run_session(scenario: Path, output: Path, client: SessionClient, *, wallcloc
     }
     provider=RemoteProvider(workflow,client,evaluation=evaluation)
     result=workflow.run(provider,wallclock_seconds=wallclock_seconds)
+    if provider.initialization_error is not None:
+        # A failed startup has no scored trace. Preserve the safe transport code
+        # instead of uploading an empty result and later reporting run_not_running.
+        raise provider.initialization_error
     provider.flush()
     if instance_record is not None:
         difficulty = instance_record["difficulty"]

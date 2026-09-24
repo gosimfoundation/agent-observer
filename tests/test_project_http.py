@@ -187,6 +187,23 @@ def test_real_edge_does_not_expose_privileged_methods(run_setup):
         client.call("finish",summary={"score":{"total":99999}},decisions_digest="a"*64,result_path="forged")
 
 
+def test_large_public_catalog_crosses_real_edge_and_database_losslessly(run_setup):
+    s = run_setup
+    url = s["stack"]["urls"]["observer-session"]
+    engine = SessionClient(url, f"obs_{s['run']}.{s['engine']}")
+    participant = SessionClient(url, f"obs_{s['run']}.{s['participant']}")
+    publication = {"target_catalog": [{"target_id": str(i), "value": hashlib.sha512(str(i).encode()).hexdigest()}
+                                      for i in range(120000)],
+                   "evaluation": {"instance_commitment": "public-commitment"}}
+    assert len(json.dumps(publication)) > 16 * 1024 * 1024
+    engine.call("initialize", publication=publication)
+    engine.call("initialize", publication=publication)  # idempotent after compression
+    assert participant.call("poll")["publication"] == publication
+    participant.call("ready")
+    assert engine.call("poll", scope="engine")["ready"]
+    assert participant.call("poll", initialized=True)["publication"] is None
+
+
 def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run_setup):
     s=run_setup;url=s['stack']['urls']['observer-portal'];uri=s['uri']
     token=user_token(str(s['user']),f"{s['user']}@example.test")

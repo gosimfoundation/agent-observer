@@ -85,3 +85,21 @@ def test_connection_reset_retries_the_same_request_without_reissuing_a_model_cal
         client=SessionClient('http://127.0.0.1/session','scoped-test-credential');client.opener=Opener()
         assert client.call('respond',sequence=1,response={'action':'wait'})=={'accepted':True}
     assert len(requests)==2 and requests[0].data==requests[1].data
+
+
+def test_catalog_transfer_budget_does_not_extend_decision_deadlines():
+    import time
+    timeouts=[]
+    class Opener:
+        def open(self,request,**kwargs):
+            timeouts.append(kwargs['timeout'])
+            return io.BytesIO(b'{"data":{}}')
+    client=SessionClient('http://127.0.0.1/session','scoped-test-credential');client.opener=Opener()
+    client.call('initialize',publication={})
+    client.call('poll')
+    client.call('poll',initialized=True)
+    client.call('poll',scope='engine')
+    client.call('respond',sequence=1,response={'action':'wait'})
+    client.call('initialize',publication={},deadline=time.monotonic()+0.5)
+    assert timeouts[:5]==[120,120,30,30,30]
+    assert 0<timeouts[-1]<=0.5
