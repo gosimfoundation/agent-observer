@@ -1712,7 +1712,9 @@
       "avoidable_wait": "avoidable wait",
       "required_miss": "Must-do patches missed",
       "flexible_shortfall": "Optional patches short",
-      "request_miss": "request miss"
+      "request_miss": "request miss",
+      "fault_misreport": "False fault reports",
+      "wrong_tag_report": "Incorrect anomaly tags"
     },
     "wait_kind": {
       "explicit": "explicit waits",

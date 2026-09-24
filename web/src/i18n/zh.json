@@ -1712,7 +1712,9 @@
       "avoidable_wait": "可避免等待",
       "required_miss": "必做天区未完成",
       "flexible_shortfall": "可选天区缺额",
-      "request_miss": "请求错过"
+      "request_miss": "请求错过",
+      "fault_misreport": "仪器故障误报",
+      "wrong_tag_report": "异常标签误报"
     },
     "wait_kind": {
       "explicit": "显式等待",
