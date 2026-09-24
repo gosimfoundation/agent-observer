@@ -92,8 +92,10 @@ def main():
     lab['team_id']=team;save(state)
     query('update public.teams set is_hidden=true where id='+quote(team))
     # The phase becomes active and restricted in the same transaction.
-    query("begin;insert into public.phases(id,slug,name_en,name_zh,allow_results,allow_agents,leaderboard_mode,counts_for_final,is_active) values("
-      +quote(lab['phase_id'])+",'observer-platform-e2e','Private platform acceptance','平台内部验收',false,false,'hidden',false,true) on conflict(id) do nothing;"
+    # The legacy homepage chooses its default phase by sort_order. Keep this
+    # hidden acceptance phase behind participant phases even while it is open.
+    query("begin;insert into public.phases(id,slug,name_en,name_zh,allow_results,allow_agents,leaderboard_mode,counts_for_final,is_active,sort_order) values("
+      +quote(lab['phase_id'])+",'observer-platform-e2e','Private platform acceptance','平台内部验收',false,false,'hidden',false,true,10000) on conflict(id) do update set sort_order=10000;"
       "insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches,model_token_limit,model_call_limit,access_team_id) values("
       +quote(lab['phase_id'])+",true,true,300,20,5000,10,"+quote(team)+") on conflict(phase_id) do nothing;commit;")
     for i,scenario_id in enumerate(lab['scenario_ids']):
