@@ -9,6 +9,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+import psycopg
 
 from conftest import Client, ROOT, signup
 from harness import service_key
@@ -187,11 +188,15 @@ def test_submission_validation_rules(hs, alice, mallory, fortnight_decisions):
 
 
 def test_agent_submission_runs_on_hidden_weather(hs, alice):
-    # Agent packages are switched off for the event (results files only), but the evaluator keeps the
-    # capability in case organisers turn a phase back on; exercise it with the switch on.
+    # The old worker remains useful for archived formats, but an old phase flag
+    # cannot reopen legacy uploads for the project-only competition.
     hs.sql("update public.phases set allow_agents = true")
+    st, rejected = _submit(alice, phase="online", kind="agent", scenario=None, data=agent_zip(), filename="agent.zip")
+    assert st == 400 and rejected["message"] == "competition_project_required"
+    archive_phase=hs.sql("insert into public.phases(slug,name_en,name_zh,allow_agents,counts_for_final) values('legacy-hidden-worker','Archive','旧格式测试',true,false) returning id")[0][0]
+    hs.sql("insert into public.phase_scenarios select %s,scenario_id from public.phase_scenarios where phase_id=(select id from public.phases where slug='online')",(archive_phase,))
     from worker import main as wm
-    st, sid = _submit(alice, phase="online", kind="agent", scenario=None, data=agent_zip(), filename="agent.zip")
+    st, sid = _submit(alice, phase="legacy-hidden-worker", kind="agent", scenario=None, data=agent_zip(), filename="agent.zip")
     assert st == 200, sid
     assert wm.run_loop(once=True) == 1
     st, rows = alice.select("submissions", f"select=*,evaluations(*,scenarios(slug))&id=eq.{sid}")
@@ -205,7 +210,7 @@ def test_agent_submission_runs_on_hidden_weather(hs, alice):
         st, log = alice.download("results", e["log_path"])
         assert st == 200 and b"provider=deterministic" in log and b"MODEL_PROVIDER=" not in log
     assert sub["score"] == pytest.approx(sum(e["score"] for e in sub["evaluations"]) / 2, abs=1e-6)
-    st, board = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "online", "p_limit": 10})
+    st, board = Client(hs.url).rpc("leaderboard", {"p_phase_slug": "legacy-hidden-worker", "p_limit": 10})
     assert board[0]["team_name"] == "Night Owls" and board[0]["kind"] == "agent"
 
 
@@ -314,14 +319,21 @@ def test_competition_weather_published_when_the_phase_opens(hs, seeded):
 
 def test_final_board_averages_the_best_score_on_each_scenario(hs, mallory):
     """Results files cover one scenario each: the final board takes a team's best score on A and on B,
-    averages them, and lists the team only once both are scored."""
+    averages them, and lists the team only once both are scored. Historical
+    scores keep that behavior even though new CSV uploads are now rejected."""
     uid = hs.sql("select id from public.profiles where email = 'mallory@test.org'")[0][0]
     phase = hs.sql("select id from public.phases where slug = 'online'")[0][0]
 
     def scored(scenario: str, score: float) -> int:
         scn = hs.sql("select id from public.scenarios where slug = %s", (scenario,))[0][0]
-        sid = hs.sql("insert into public.submissions (team_id, user_id, phase_id, scenario_id, kind, storage_path, status, score, base_science, penalty_total) "
-                     "values (%s, %s, %s, %s, 'results', 'x', 'scored', %s, %s, 0) returning id", (mallory.team_id, uid, phase, scn, score, score))[0][0]
+        # Seed an archived result from before the phase became project-only.
+        # Restore the phase in the same local test transaction; never disable
+        # the submission constraint or use this path in production.
+        with psycopg.connect(hs.db_uri) as conn:
+            conn.execute("update public.phases set slug='historical-seed',counts_for_final=false where id=%s",(phase,))
+            sid=conn.execute("insert into public.submissions (team_id,user_id,phase_id,scenario_id,kind,storage_path,status,score,base_science,penalty_total) "
+                "values (%s,%s,%s,%s,'results','x','scored',%s,%s,0) returning id",(mallory.team_id,uid,phase,scn,score,score)).fetchone()[0]
+            conn.execute("update public.phases set slug='online',counts_for_final=true where id=%s",(phase,))
         hs.sql("insert into public.evaluations (submission_id, scenario_id, status, score, base_science, penalty_total, completed_tiles) "
                "values (%s, %s, 'scored', %s, %s, 0, 10)", (sid, scn, score, score))
         return sid
