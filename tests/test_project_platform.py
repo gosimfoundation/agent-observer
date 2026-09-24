@@ -165,6 +165,35 @@ def python_process(tmp_path, code):
                           environment={"PATH": os.environ["PATH"]})
 
 
+def test_large_public_catalog_roundtrip_and_process_initialization(tmp_path):
+    from project_platform.publication import encode_publication, decode_publication
+    # Formal catalogs exceed the ordinary 16 MiB decision-message boundary.
+    publication = {"target_catalog": [{"target_id": "catalog-row", "value": "x" * 100}] * 140000}
+    assert len(json.dumps(publication)) > 16 * 1024 * 1024
+    encoded = encode_publication(publication)
+    assert decode_publication(encoded) == publication
+    assert encode_publication(publication) == encoded  # retries use identical bytes
+    with pytest.raises(ValueError, match="integrity"):
+        decode_publication({**encoded, "sha256": "0" * 64})
+    with pytest.raises(ValueError, match="integrity"):
+        decode_publication({**encoded, "uncompressed_bytes": 100})
+    with pytest.raises(ValueError, match="invalid"):
+        decode_publication({**encoded, "uncompressed_bytes": 1000 * 1024 * 1024})
+    p = python_process(tmp_path, """import json,sys
+m=json.loads(sys.stdin.readline())
+assert len(m['payload']['target_catalog'])==140000
+print(json.dumps({'catalog_received':True}),flush=True)
+""")
+    try:
+        p.publish_initial(decode_publication(encoded))
+        assert p.receive(time.monotonic() + 5) == {"catalog_received": True}
+        # The larger initialization allowance does not increase decision limits.
+        with pytest.raises(ExecutionError, match="size limit"):
+            p.send(publication, time.monotonic() + 5)
+    finally:
+        p.close(force=True)
+
+
 def test_transport_rejects_wrong_sequence(tmp_path):
     code = """import json, sys
 for line in sys.stdin:

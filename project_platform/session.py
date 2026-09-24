@@ -13,6 +13,7 @@ import urllib.request
 from dataclasses import dataclass
 
 from challenge.challenge_workflow import GlobalDeadlineExpired
+from .publication import encode_publication, decode_publication
 
 
 @dataclass
@@ -35,6 +36,8 @@ class SessionClient:
         self.opener = urllib.request.build_opener(_NoRedirect())
 
     def call(self, action: str, *, deadline: float | None = None, **arguments):
+        if action == "initialize":
+            arguments["publication"] = encode_publication(arguments["publication"])
         payload = json.dumps({"action": action, **arguments}, allow_nan=False, separators=(",", ":")).encode()
         attempts = 0
         # Protocol writes are idempotent with sequence+body. A network retry must
@@ -50,7 +53,10 @@ class SessionClient:
                     raw = response.read(17*1024*1024+1)
                     if len(raw)>17*1024*1024:
                         raise SessionError("session_response_too_large")
-                    return json.loads(raw)["data"]
+                    result = json.loads(raw)["data"]
+                    if action == "poll" and isinstance(result, dict) and result.get("publication") is not None:
+                        result["publication"] = decode_publication(result["publication"])
+                    return result
             except urllib.error.HTTPError as exc:
                 try:
                     error = json.loads(exc.read(4096)).get("error","session_error")

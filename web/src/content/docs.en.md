@@ -132,7 +132,7 @@ The platform starts your entry script (given with `--agent`) once per scenario a
 
 ### `initialize` (platform → agent, once, no reply)
 
-Payload `initial-publication-v2`: `calendar` (first and last night, night and slot counts, slot duration), `site`, `tile_catalog` (every tile with its public columns plus `tile_science_value`, `required_tile_ids`, `region_ids`), `target_catalog` (all targets), `scoring_contract` (the full `score_config.json`, the weather score interface and the lunar model) and `global_wallclock_seconds`. About 2 MB for the reference catalogue. You have 30 seconds to start and read it; the global wall clock starts after it has been sent.
+Payload `initial-publication-v2`: `calendar` (first and last night, night and slot counts, slot duration), `site`, `tile_catalog` (every tile with its public columns plus `tile_science_value`, `required_tile_ids`, `region_ids`), `target_catalog` (all targets), `scoring_contract` (the full `score_config.json`, the weather score interface and the lunar model) and `global_wallclock_seconds`. About 2 MB for the reference catalogue; larger competition catalogs can exceed 60 MB. The runner decompresses platform transfers automatically and delivers the complete original JSON. You have 30 seconds to start and read it; the global wall clock starts after it has been sent.
 
 ### `decision_request` (platform → agent, once per decision)
 

@@ -132,7 +132,7 @@ bonus      = program == band 时 base · {DARK: 0.25, BRIGHT: 0.15, BACKUP: 0.08
 
 ### `initialize`（平台 → 智能体，一次，不需回复）
 
-payload 为 `initial-publication-v2`：`calendar`（首末夜、夜数与时隙数、时隙时长）、`site`、`tile_catalog`（每个天区的公开列加 `tile_science_value`、`required_tile_ids`、`region_ids`）、`target_catalog`（全部目标）、`scoring_contract`（完整 `score_config.json`、天气评分接口与月光模型）以及 `global_wallclock_seconds`。参考目录约 2 MB。启动并读取它有 30 秒预算；全局时钟在其发送完成后开始。
+payload 为 `initial-publication-v2`：`calendar`（首末夜、夜数与时隙数、时隙时长）、`site`、`tile_catalog`（每个天区的公开列加 `tile_science_value`、`required_tile_ids`、`region_ids`）、`target_catalog`（全部目标）、`scoring_contract`（完整 `score_config.json`、天气评分接口与月光模型）以及 `global_wallclock_seconds`。参考目录约 2 MB，大规模比赛目录可能超过 60 MB。Runner 会自动解压平台传输的数据，向 Agent 提供完整的原始 JSON。启动并读取它有 30 秒预算；全局时钟在其发送完成后开始。
 
 ### `decision_request`（平台 → 智能体，每次决策一条）
 
