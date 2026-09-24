@@ -146,6 +146,12 @@ def test_team_reads_and_approval_are_isolated_and_immutable(setup):
                  role="authenticated",user=teammate)==[]
 
 
+def test_only_catalog_rpcs_receive_longer_database_budget(setup):
+    rows=query(setup['uri'],"""select proname from pg_proc where pronamespace='public'::regnamespace
+        and 'statement_timeout=60s'=any(proconfig) order by proname""")
+    assert rows==[('observer_poll',),('observer_publish_initial',)]
+
+
 def test_batch_freezes_all_scenarios_and_admission_is_atomic(setup):
     s=setup; uri=s["uri"]
     extra=uuid.uuid4()

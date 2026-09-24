@@ -219,3 +219,21 @@ def test_image_resolution_binds_requested_repository_and_never_runs_it(monkeypat
         with pytest.raises(JobError,match="container_registry_not_supported"):
             prepare.resolve_image(image)
     assert len(calls)==before
+
+
+def test_failed_initialization_preserves_transport_error_without_scoring(tmp_path):
+    from challenge.scenario_builder import generate_scenario
+    from project_platform.session import SessionError
+    from project_platform.trusted_engine import run_session
+    scenario=tmp_path/'scenario'
+    generate_scenario(scenario,scenario_id='startup-failure',seed=31,days=7,start_date='2026-10-05')
+    calls=[]
+    class Client:
+        def call(self,action,**kwargs):
+            calls.append(action)
+            raise SessionError('session_service_unavailable',503)
+    output=tmp_path/'result'
+    with pytest.raises(SessionError,match='session_service_unavailable'):
+        run_session(scenario,output,Client(),wallclock_seconds=1)
+    assert calls==['initialize']
+    assert not output.exists()

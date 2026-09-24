@@ -26,30 +26,33 @@ class SessionError(RuntimeError):
 
 
 class SessionClient:
-    def __init__(self, url: str, credential: str, *, timeout: float = 30):
+    def __init__(self, url: str, credential: str, *, timeout: float = 30, catalog_timeout: float = 120):
         parsed = urllib.parse.urlsplit(url)
         if parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname in ("127.0.0.1", "localhost")):
             raise ValueError("Session endpoint must use HTTPS (except a local test server).")
         if parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError("Invalid session endpoint.")
         self.url, self.credential, self.timeout = url, credential, timeout
+        self.catalog_timeout = catalog_timeout
         self.opener = urllib.request.build_opener(_NoRedirect())
 
     def call(self, action: str, *, deadline: float | None = None, **arguments):
         if action == "initialize":
             arguments["publication"] = encode_publication(arguments["publication"])
         payload = json.dumps({"action": action, **arguments}, allow_nan=False, separators=(",", ":")).encode()
+        request_timeout = self.catalog_timeout if (action == "initialize" or
+            (action == "poll" and arguments.get("scope") != "engine" and not arguments.get("initialized"))) else self.timeout
         attempts = 0
         # Protocol writes are idempotent with sequence+body. A network retry must
         # send exactly the same action, never ask the agent to decide again.
         while True:
-            remaining = (deadline-time.monotonic()) if deadline is not None else self.timeout
+            remaining = (deadline-time.monotonic()) if deadline is not None else request_timeout
             if remaining <= 0:
                 raise GlobalDeadlineExpired()
             request = urllib.request.Request(self.url, data=payload,
                 headers={"Authorization":"Bearer "+self.credential, "Content-Type":"application/json"}, method="POST")
             try:
-                with self.opener.open(request, timeout=min(remaining,self.timeout)) as response:
+                with self.opener.open(request, timeout=min(remaining,request_timeout)) as response:
                     raw = response.read(17*1024*1024+1)
                     if len(raw)>17*1024*1024:
                         raise SessionError("session_response_too_large")
