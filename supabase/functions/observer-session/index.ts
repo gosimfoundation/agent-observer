@@ -47,6 +47,10 @@ Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async
     const result = await sessionRequest(request, async (name, args) => {
       const { data, error } = await service.rpc(name, args);
       if (error) {
+        // Privileged logs contain only the fixed RPC name and database code,
+        // never request bodies, credentials, catalogs or arbitrary error text.
+        if (!known.has(error.message)) console.warn("observer_session_rpc_failed", name,
+          /^[A-Z0-9]{5,12}$/.test(error.code ?? "") ? error.code : "unknown");
         const code = known.has(error.message) ? error.message : "session_service_unavailable";
         throw new ProxyError(
           code === "invalid_or_expired_capability" || code === "session_deadline"
