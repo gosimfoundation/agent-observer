@@ -9,7 +9,7 @@ defineProps<{ kicker: string; title: string; admin?: boolean }>()
     <section class="section tight">
       <div class="wrap">
         <span class="poster-kicker">{{ kicker }}</span>
-        <h1 class="section-title sm mt-4">{{ title }}<slot name="title-extra" /></h1>
+        <h1 class="section-title sm mt-4 [overflow-wrap:anywhere]">{{ title }}<slot name="title-extra" /></h1>
         <div class="mt-6">
           <AdminNav v-if="admin" />
           <DashNav v-else />

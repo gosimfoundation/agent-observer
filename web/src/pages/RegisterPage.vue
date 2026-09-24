@@ -24,7 +24,7 @@ const busy = ref(false)
 const errors = ref<string[]>([])
 const sent = ref(false)
 const reg = ref({
-  name: '', email: '', password: '', password2: '', github: '', affiliation: '', agree: false, seeking: '', seeking_count: 1,
+  name: '', nickname: '', email: '', password: '', password2: '', github: '', affiliation: '', agree: false, seeking: '', seeking_count: 1,
   astro_level: 0, ai_level: 0, role: '', city: '', contact: '', heard_from: '', blurb: '', show_on_wall: true,
 })
 const astroTiers = computed(() => t('tiers.astro') as string[])
@@ -62,6 +62,7 @@ watch(() => state.session, session => { if (session && !busy.value && route.path
 function nextStep() {
   errors.value = []
   if (!reg.value.name.trim()) errors.value.push(t('auth.errors.name_required'))
+  if (Array.from(reg.value.nickname.trim()).length > 40) errors.value.push(t('auth.errors.nickname_too_long'))
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reg.value.email.trim())) errors.value.push(t('auth.errors.email_invalid'))
   if (reg.value.password.length < 8) errors.value.push(t('auth.errors.password_too_short'))
   if (reg.value.password.length > 128) errors.value.push(t('auth.errors.password_too_long'))
@@ -81,6 +82,7 @@ function setMode(next: Mode) {
 
 async function submitRegister() {
   errors.value = []
+  if (Array.from(reg.value.nickname.trim()).length > 40) errors.value.push(t('auth.errors.nickname_too_long'))
   if (!reg.value.contact.trim()) errors.value.push(t('auth.errors.contact_required'))
   if (!registrationOpen.value) errors.value.push(t('auth.errors.registration_closed'))
   if (!isSupabaseConfigured) errors.value.push(t('errors.not_configured'))
@@ -94,6 +96,7 @@ async function submitRegister() {
         emailRedirectTo: publicSiteUrl('/register?mode=login'),
         data: {
           name: reg.value.name.trim(),
+          nickname: reg.value.nickname.trim(),
           github: reg.value.github.trim().replace(/^@/, ''),
           affiliation: reg.value.affiliation.trim(),
           seeking: reg.value.seeking,
@@ -203,6 +206,7 @@ async function submitForgot() {
             </div>
             <div v-show="regStep === 1" class="grid-form">
               <label class="field"><span>{{ t('auth.name') }}</span><input data-testid="reg-name" v-model="reg.name" type="text" required maxlength="120" autocomplete="name"></label>
+              <label class="field"><span>{{ t('auth.nickname') }} · {{ t('common.optional') }}</span><input data-testid="reg-nickname" v-model="reg.nickname" type="text" autocomplete="nickname" aria-describedby="reg-nickname-hint"><small id="reg-nickname-hint" class="help">{{ t('auth.nickname_hint') }}</small></label>
               <label class="field"><span>{{ t('auth.email') }}</span><input data-testid="reg-email" v-model="reg.email" type="email" required autocomplete="email"></label>
               <label class="field"><span>{{ t('auth.password') }}</span><input data-testid="reg-password" v-model="reg.password" type="password" required minlength="8" autocomplete="new-password"></label>
               <label class="field"><span>{{ t('auth.password2') }}</span><input data-testid="reg-password2" v-model="reg.password2" type="password" required minlength="8" autocomplete="new-password"></label>
