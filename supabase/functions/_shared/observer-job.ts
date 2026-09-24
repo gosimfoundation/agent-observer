@@ -65,6 +65,7 @@ export function validateJobPayload(payload: unknown, expected: WorkflowIdentity,
       "run_credential",
       "runtime_seconds",
       "artifact_upload",
+      "instance",
     ],
     prepare: [
       "kind",
@@ -134,6 +135,18 @@ export function validateJobPayload(payload: unknown, expected: WorkflowIdentity,
       throw new ProxyError(503, "invalid_job_payload");
     }
     validateArtifactUpload(value.artifact_upload, string("run_id", uuid), "result");
+    if (value.instance !== undefined) {
+      const instance = value.instance as Record<string, unknown>;
+      if (!instance || typeof instance !== "object" || Array.isArray(instance) ||
+        Object.keys(instance).sort().join(",") !== "bundle_digest,max_candidates,profile,profile_id,seed" ||
+        typeof instance.seed !== "string" || !hash.test(instance.seed) ||
+        typeof instance.profile_id !== "string" || !uuid.test(instance.profile_id) ||
+        instance.bundle_digest !== value.scenario_digest || instance.max_candidates !== 32 ||
+        !instance.profile || typeof instance.profile !== "object" || Array.isArray(instance.profile) ||
+        JSON.stringify(instance.profile).length > 65536) {
+        throw new ProxyError(503, "invalid_job_payload");
+      }
+    }
   }
   if (kind === "prepare") {
     const revision = string("revision_id", uuid);

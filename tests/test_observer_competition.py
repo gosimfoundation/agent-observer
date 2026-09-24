@@ -36,18 +36,22 @@ def test_activation_preserves_old_rows_and_refuses_existing_competition_results(
           ('AGENTIC-OBSERVER26-runner-'+str(i),str(i),i,str(i+10),'a'*40))
     query(uri,"insert into private.observer_dispatch_config(endpoint,secret_id,enabled) values('https://example.supabase.co/functions/v1/observer-dispatch',%s,true)",(uuid.uuid4(),))
     before=query(uri,"select row_to_json(p)::text from public.phases p order by id")
+    query(uri,'update private.observer_providers set enabled=false')
     providers=query(uri,'select id,daily_token_limit from private.observer_providers order by id')
     statement=competition.activation_sql(str(phase),str(s['scenario']),3600,10,'test-model')
     query(uri,statement);query(uri,statement)
     assert query(uri,"select row_to_json(p)::text from public.phases p order by id")==before
     assert query(uri,'select id,daily_token_limit from private.observer_providers order by id')==providers
-    assert query(uri,'select projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches from public.observer_phase_settings where phase_id=%s',(phase,))==[(True,True,3600,10)]
+    assert query(uri,'select projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches from public.observer_phase_settings where phase_id=%s',(phase,))==[(True,False,3600,10)]
     assert query(uri,'select phase_id,scenario_id from private.observer_preparation_config')==[(phase,s['scenario'])]
     # A legacy result cannot be silently displaced if an operator uses this
     # script on a phase that already has old submissions.
     query(uri,'update public.observer_phase_settings set projects_enabled=false,local_sessions_enabled=false where phase_id=%s',(phase,))
-    old=rpc(uri,'create_submission','online','results',str(formal[0]),str(s['team'])+'/old.csv',role='authenticated',user=s['user'])
+    # Seed a historical CSV from before project-only admission; existing rows must survive.
+    query(uri,"update public.phases set counts_for_final=false,slug=%s where id=%s",(str(phase),phase))
+    old=rpc(uri,'create_submission',str(phase),'results',str(formal[0]),str(s['team'])+'/old.csv',role='authenticated',user=s['user'])
     query(uri,"update public.submissions set status='scored',score=21085.3 where id=%s",(old,))
+    query(uri,"update public.phases set counts_for_final=true,slug='online' where id=%s",(phase,))
     with pytest.raises(psycopg.Error,match='Existing competition submissions'):
         query(uri,statement)
     assert query(uri,'select score from public.submissions where id=%s',(old,))==[(21085.3,)]

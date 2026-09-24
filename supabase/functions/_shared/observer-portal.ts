@@ -1,4 +1,6 @@
-import { boundedJson, decryptCredential, encryptCredential, ProxyError } from "./observer-model.ts";
+import { fulfillPersonalModel } from "./observer-personal-model.ts";
+import { sendModelBroadcast } from "./observer-model-broadcast.ts";
+import { boundedJson, decryptCredential, ProxyError } from "./observer-model.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { sourceRepository } from "./observer-github.ts";
 
@@ -13,6 +15,9 @@ type Dependencies = {
 };
 const known = new Set([
   "team_required",
+  "model_request_already_received",
+  "request_id_conflict",
+  "competition_project_required",
   "projects_not_enabled",
   "invalid_repository_url",
   "invalid_upload_path",
@@ -54,7 +59,7 @@ function text(value: unknown, max: number, empty = false): string {
 }
 
 export async function portalRequest(request: Request, d: Dependencies): Promise<unknown> {
-  const body = await boundedJson(request, 65536);
+  const body = await boundedJson(request, 98304);
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new ProxyError(400, "invalid_request");
   const userRpc = async (name: string, args: Record<string, unknown> = {}) => {
     const { data, error } = await d.user.rpc(name, args);
@@ -68,6 +73,15 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
   };
   const staging = d.service.storage.from("observer-staging");
   switch (body.action) {
+    case "model_routes":
+      return await userRpc("observer_personal_model_routes");
+    case "personal_model":
+      return await fulfillPersonalModel(body, d.userId, {
+        rpc: serviceRpc,
+        fetch,
+        allowedBases: new Set(d.modelBases),
+        send: (topic, event, payload) => sendModelBroadcast(d.service, topic, event, payload),
+      });
     case "diagnostics":
       return await userRpc("observer_diagnostics", {
         p_revision: body.revision_id ? uuid(body.revision_id) : null,
@@ -181,37 +195,8 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
       });
       return { accepted: true };
     }
-    case "save_provider": {
-      const id = body.id ? uuid(body.id) : crypto.randomUUID();
-      const base = text(body.base_url, 1000).replace(/\/+$/, "");
-      if (!d.modelBases.includes(base) || (base.startsWith("http:") && !d.httpBases.includes(base))) {
-        throw new ProxyError(400, "model_destination_not_enabled");
-      }
-      const key = text(body.key, 8192);
-      if (
-        !Array.isArray(body.models) || body.models.length < 1 || body.models.length > 20 ||
-        body.models.some((m: unknown) => typeof m !== "string" || !m || m.length > 160 || /[\r\n\0]/.test(m))
-      ) {
-        throw new ProxyError(400, "invalid_models");
-      }
-      if (
-        !Number.isSafeInteger(body.daily_token_limit) || body.daily_token_limit < 0 || body.daily_token_limit > 10000000
-      ) {
-        throw new ProxyError(400, "invalid_model_limit");
-      }
-      const encrypted = await encryptCredential(key, id, d.masterKey);
-      await serviceRpc("observer_save_provider", {
-        p_user: d.userId,
-        p_id: id,
-        p_name: text(body.name, 80),
-        p_base: base,
-        p_encrypted_key: encrypted,
-        p_models: body.models,
-        p_limit: body.daily_token_limit,
-        p_http: base.startsWith("http:"),
-      });
-      return { id };
-    }
+    case "save_provider":
+      throw new ProxyError(410, "ephemeral_credentials_required");
     case "disable_provider":
       await userRpc("observer_disable_provider", { p_id: uuid(body.id) });
       return { accepted: true };
@@ -254,7 +239,12 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
       if (!data || data.size > 20 * 1024 * 1024) throw new ProxyError(400, "csv_too_large");
       const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", await data.arrayBuffer()));
       const digest = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-      await serviceRpc("observer_accept_uploaded_csv", { p_run: run, p_user: d.userId, p_upload: uuid(body.upload_id), p_digest: digest });
+      await serviceRpc("observer_accept_uploaded_csv", {
+        p_run: run,
+        p_user: d.userId,
+        p_upload: uuid(body.upload_id),
+        p_digest: digest,
+      });
       return { accepted: true };
     }
     default:

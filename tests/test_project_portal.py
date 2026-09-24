@@ -12,14 +12,18 @@ def test_team_model_credentials_are_never_returned_and_cannot_be_overwritten_by_
     s=setup; uri=s['uri']; provider=uuid.uuid4()
     other,other_team=identity(uri)
     args=[s['user'],provider,'Team API','https://models.example.test/v1','encrypted-do-not-return-key','{model-a}',10000,False]
-    rpc(uri,'observer_save_provider',*args)
+    with pytest.raises(psycopg.Error,match='ephemeral_credentials_required'):
+        rpc(uri,'observer_save_provider',*args)
+    assert query(uri,'select id from private.observer_providers where id=%s',(provider,))==[]
+    # A record retained from the old platform is still private and can be disabled.
+    query(uri,"insert into private.observer_providers(id,team_id,name,base_url,encrypted_key,models,daily_token_limit) values(%s,%s,'Old API','https://models.example.test/v1','encrypted-do-not-return-key',array['model-a'],10000)",(provider,s['team']))
     listed=rpc(uri,'observer_list_providers',role='authenticated',user=s['user'])
     own=next(p for p in listed if p['id']==str(provider))
     assert own['models']==['model-a'] and own['shared'] is False
     assert 'encrypted' not in str(listed) and 'key' not in own
     assert all(p['id']!=str(provider) for p in rpc(uri,'observer_list_providers',role='authenticated',user=other))
     args[0]=other
-    with pytest.raises(psycopg.Error,match='provider_not_found'):rpc(uri,'observer_save_provider',*args)
+    with pytest.raises(psycopg.Error,match='ephemeral_credentials_required'):rpc(uri,'observer_save_provider',*args)
     with pytest.raises(psycopg.Error,match='permission denied'):
         rpc(uri,'observer_save_provider',*args,role='authenticated',user=other)
     with pytest.raises(psycopg.Error,match='provider_not_found'):

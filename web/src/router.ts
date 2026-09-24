@@ -1,7 +1,8 @@
-import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteLocationGeneric } from 'vue-router'
 import HomePage from './pages/HomePage.vue'
 import { initAuth, refreshMe, useAuth } from './stores/auth'
 import { applyDocumentMeta } from './composables/useI18n'
+import { loadCompetition } from './stores/competition'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,8 +24,9 @@ const router = createRouter({
     { path: '/reset', component: () => import('./pages/ResetPage.vue') , meta: { page: 'reset' }},
     { path: '/dashboard', component: () => import('./pages/DashboardPage.vue'), meta: { page: 'dashboard', auth: true } },
     { path: '/team', component: () => import('./pages/TeamPage.vue'), meta: { page: 'team', auth: true } },
-    { path: '/submit', component: () => import('./pages/SubmitPage.vue'), meta: { page: 'submit', auth: true } },
-    { path: '/projects', component: () => import('./pages/ProjectsPage.vue'), meta: { page: 'projects', auth: true } },
+    { path: '/notifications', component: () => import('./pages/NotificationsPage.vue'), meta: { page: 'team', auth: true } },
+    { path: '/compete', component: () => import('./pages/CompetitionWorkspacePage.vue'), meta: { page: 'submit', auth: true } },
+    ...['/submit','/projects'].map(path=>({path,redirect:(to:RouteLocationGeneric)=>({path:'/compete',query:to.query,hash:to.hash})})),
     { path: '/submissions', component: () => import('./pages/SubmissionsPage.vue'), meta: { page: 'submissions', auth: true } },
     { path: '/submissions/:id', component: () => import('./pages/SubmissionDetailPage.vue'), meta: { page: 'submission', auth: true } },
     { path: '/profile', component: () => import('./pages/ProfilePage.vue'), meta: { page: 'profile', auth: true } },
@@ -51,6 +53,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to: RouteLocationNormalized) => {
+  await loadCompetition()
   if (!to.meta.auth) return true
   await initAuth()
   const { state } = useAuth()

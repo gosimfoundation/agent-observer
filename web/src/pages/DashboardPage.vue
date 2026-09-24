@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EvaluationHistory from '../components/dashboard/EvaluationHistory.vue'
+import { competition } from '../stores/competition'
 import UserAvatar from '../components/UserAvatar.vue'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -41,7 +43,15 @@ onMounted(async () => {
       await loadSubmissions()
       const [{ data: memberRows }, ...counts] = await Promise.all([
         supabase.rpc('team_members', { p_team_id: team.value.id }),
-        ...phases.value.filter(p => p.status === 'open').map(p => supabase.rpc('team_daily_count', { p_phase_slug: p.slug }).then(r => [p.slug, Number(r.data ?? 0)] as const)),
+        ...phases.value.filter(p => p.status === 'open').map(async p => {
+          if(competition.mode==='competition') {
+            const r=await supabase.from('observer_batches').select('id',{count:'exact',head:true})
+              .eq('team_id',team.value!.id).eq('phase_id',p.id).eq('purpose','formal')
+              .gte('created_at',new Date().toISOString().slice(0,10)+'T00:00:00Z')
+            return [p.slug,r.count??0] as const
+          }
+          const r=await supabase.rpc('team_daily_count',{p_phase_slug:p.slug});return [p.slug,Number(r.data??0)] as const
+        }),
       ])
       members.value = memberRows ?? []
       quota.value = Object.fromEntries(counts)
@@ -61,6 +71,7 @@ onMounted(async () => {
           <p class="text2">{{ t('dash.no_team') }}</p>
           <p class="mt-5"><router-link class="btn primary sm" to="/team">{{ t('nav.team') }} →</router-link></p>
         </div>
+        <EvaluationHistory v-else-if="competition.mode==='competition'" :limit="5" />
         <div v-else class="panel">
           <div class="hd"><h2>{{ t('dash.recent') }}</h2><router-link class="label accent" to="/submissions">{{ t('dash.all_submissions') }} →</router-link></div>
           <div v-if="submissions.length" class="table-wrap">
@@ -79,7 +90,7 @@ onMounted(async () => {
             </table>
           </div>
           <p v-else class="text2">{{ t('subs.empty') }}</p>
-          <p class="mt-5"><router-link class="btn primary sm" to="/submit">{{ t('dash.new_submission') }} →</router-link></p>
+          <p class="mt-5"><router-link class="btn primary sm" to="/compete">{{ t('dash.new_submission') }} →</router-link></p>
         </div>
 
         <div class="panel mt-8">
@@ -92,8 +103,8 @@ onMounted(async () => {
                   <td>{{ pick(p.name_en, p.name_zh) }}</td>
                   <td><StatusPill :status="p.status" ns="leaderboard.status" /></td>
                   <td class="m xs whitespace-nowrap"><template v-if="p.starts_at || p.ends_at">{{ fmtUtc(p.starts_at, { short: true }) }} → {{ fmtUtc(p.ends_at, { short: true }) }}</template><template v-else>—</template></td>
-                  <td class="r m">{{ p.daily_limit }}</td>
-                  <td class="r m">{{ p.status === 'open' && team ? `${quota[p.slug] ?? 0} / ${p.daily_limit}` : '—' }}</td>
+                  <td class="r m">{{ p.observer_settings?.daily_batches ?? p.daily_limit }}</td>
+                  <td class="r m">{{ p.status === 'open' && team ? `${quota[p.slug] ?? 0} / ${p.observer_settings?.daily_batches ?? p.daily_limit}` : '—' }}</td>
                 </tr>
                 <tr v-if="!phases.length"><td colspan="5" class="text3">{{ t('leaderboard.no_phases') }}</td></tr>
               </tbody>
@@ -114,12 +125,13 @@ onMounted(async () => {
             <li v-for="m in members" :key="m.id"><UserAvatar :name="m.name" :github="m.github" /> {{ m.name }}<template v-if="m.is_leader"> · <span class="label accent">{{ t('team.leader') }}</span></template></li>
           </ul>
         </div>
-        <CreditsPanel :class="{ 'mt-8': Boolean(team) }" />
+        <CreditsPanel v-if="competition.mode==='practice'" :class="{ 'mt-8': Boolean(team) }" />
         <div class="panel mt-8">
           <div class="hd"><h2>{{ t('resources.kicker') }}</h2></div>
           <div class="flex flex-col gap-2">
             <router-link class="btn sm primary" to="/start">{{ t('nav.start') }} →</router-link>
-            <a class="btn sm" :href="appUrl('/downloads/agent-observer-starter-kit.zip')" download>{{ t('dash.quick.kit') }} ↓</a>
+            <a v-if="competition.mode==='practice'" class="btn sm" :href="appUrl('/downloads/agent-observer-starter-kit.zip')" download>{{ t('dash.quick.kit') }} ↓</a>
+            <router-link v-else class="btn sm" to="/resources">{{ t('dash.quick.kit') }} →</router-link>
             <router-link class="btn sm" to="/docs">{{ t('dash.quick.docs') }} →</router-link>
             <a class="btn sm" :href="appUrl('/skill.md')" target="_blank" rel="noopener">SKILL.md →</a>
           </div>

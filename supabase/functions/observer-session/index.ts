@@ -11,6 +11,13 @@ const service = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("S
   auth: { persistSession: false },
 });
 const known = new Set([
+  "instance_not_configured",
+  "invalid_instance_record",
+  "instance_record_conflict",
+  "instance_already_published",
+  "instance_not_recorded",
+  "scenario_not_comparable",
+  "invalid_calibrated_score",
   "session_not_finished",
   "decisions_export_too_large",
   "invalid_or_expired_capability",

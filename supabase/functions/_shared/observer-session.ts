@@ -31,6 +31,8 @@ export async function sessionRequest(request: Request, rpc: Rpc): Promise<unknow
       return await rpc("observer_respond", { ...base, p_sequence: body.sequence, p_response: body.response });
     case "initialize":
       return await rpc("observer_publish_initial", { ...base, p_publication: body.publication });
+    case "record_instance":
+      return await rpc("observer_record_instance", { ...base, p_record: body.record });
     case "begin":
       return await rpc("observer_begin", base);
     case "publish":

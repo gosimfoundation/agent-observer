@@ -33,6 +33,7 @@ export async function scheduleRuns(deps: RunScheduler) {
       // Local sessions need a private result repository too. Provision it before
       // opening a capability; a GitHub failure cannot leave a half-started run.
       await deps.ensureRepository(run.user_id);
+      const instance = await deps.rpc("observer_instance_input", { p_run: run.id });
       const participant = randomCapability(), engine = randomCapability();
       const jobs = [];
       const encodeJob = async (kind: string, input: Record<string, unknown>) => {
@@ -54,6 +55,7 @@ export async function scheduleRuns(deps: RunScheduler) {
           scenario_digest: run.scenario_digest,
           runtime_seconds: run.runtime_seconds,
           artifact_upload: { kind: "github" },
+          ...(instance ? { instance } : {}),
         }),
       );
       if (run.mode === "project") {

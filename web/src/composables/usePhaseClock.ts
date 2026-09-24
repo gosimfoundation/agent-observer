@@ -2,9 +2,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { loadPhases, phaseStatus, type Phase } from '../lib/data'
 
-/** Static fallback when the phases table is unreachable: the Online Competition start. */
-export const FALLBACK_NEXT_START = '2026-10-04T16:00:00Z'
-
 // One shared fetch for every clock on the page (header + hero); refreshed at most once a minute.
 const shared = ref<Phase[]>([])
 const loaded = ref(false)
@@ -14,8 +11,8 @@ function fetchPhases(): Promise<void> {
   if (inflight) return inflight
   if (Date.now() - fetchedAt < 60_000 && loaded.value) return Promise.resolve()
   inflight = (async () => {
-    // A slow or retrying backend must not hold the clocks in limbo: after 4 s the static
-    // fallback is shown, and a late successful answer still replaces it.
+    // A slow backend must not hold the page in limbo. Show no invented date while
+    // unavailable; a late successful answer still replaces the empty list.
     const attempt: Promise<Phase[]> = isSupabaseConfigured ? loadPhases().catch(() => []) : Promise.resolve([])
     const result = await Promise.race([attempt, new Promise<null>(resolve => window.setTimeout(() => resolve(null), 4000))])
     if (result) shared.value = result
@@ -34,8 +31,7 @@ export function countdownParts(targetIso: string | null, now: number): Countdown
 
 /**
  * Current open phase, the next upcoming phase and a per-second countdown to its start.
- * `next` is null when the table is unavailable or nothing is scheduled; use `nextStartsAt` (which
- * then carries the static fallback) together with `usingFallback` for the display.
+ * Dates always come from the current competition configuration.
  */
 export function usePhaseClock() {
   const now = ref(Date.now())
@@ -48,9 +44,9 @@ export function usePhaseClock() {
   const next = computed<Phase | null>(() => phases.value
     .filter(p => p.status === 'upcoming' && p.starts_at)
     .sort((a, b) => new Date(a.starts_at!).getTime() - new Date(b.starts_at!).getTime())[0] ?? null)
-  /** True when the phases table gave nothing (offline / unconfigured): the static date is shown instead. */
-  const usingFallback = computed(() => loaded.value && shared.value.length === 0)
-  const nextStartsAt = computed<string | null>(() => next.value?.starts_at ?? (usingFallback.value ? FALLBACK_NEXT_START : current.value?.ends_at ?? null))
+  /** Kept for display consumers; an unavailable schedule never invents a stage. */
+  const usingFallback = computed(() => false)
+  const nextStartsAt = computed<string | null>(() => next.value?.starts_at ?? current.value?.ends_at ?? null)
   const countdown = computed(() => countdownParts(nextStartsAt.value, now.value))
 
   return { phases, loaded, current, next, nextStartsAt, usingFallback, countdown, now }

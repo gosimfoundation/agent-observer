@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { competition } from '../stores/competition'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { loadPublicSettings } from '../lib/data'
 
@@ -20,5 +21,5 @@ export function usePublicSettings() {
       }
     })()
   }
-  return { mechanicsPublic, registrationDeadline }
+  return { mechanicsPublic:computed(()=>competition.mode==='competition' && mechanicsPublic.value), registrationDeadline }
 }

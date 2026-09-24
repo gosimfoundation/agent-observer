@@ -8,6 +8,8 @@ import { useAuth, initAuth, refreshMe } from '../stores/auth'
 import { useFlash } from '../stores/flash'
 import TierBadge from '../components/TierBadge.vue'
 import UserAvatar from '../components/UserAvatar.vue'
+import TeamDirectory from '../components/TeamDirectory.vue'
+import { teamAction } from '../stores/teamNotifications'
 
 const { t, tf } = useI18n()
 const i18n = useI18n()
@@ -22,6 +24,14 @@ const lookingOnly = ref(false)
 const complementary = ref(true)
 const contacts = ref<Record<string, { contact: string; github: string } | null>>({})
 const contactBusy = ref<string | null>(null)
+const inviteBusy = ref(''), invited = ref(new Set<string>())
+async function invite(e: WallEntry) {
+  if (inviteBusy.value || invited.value.has(e.id)) return
+  inviteBusy.value=e.id
+  try { await teamAction('send_team_invite',{p_recipient:e.id}); invited.value.add(e.id) }
+  catch(err) { flash.error(describeError(err,i18n,['team.errors','team'])) }
+  finally { inviteBusy.value='' }
+}
 
 const wallForm = ref({ show_on_wall: false, blurb: '', contact: '', seeking: '', seeking_count: 1 })
 const wallBusy = ref(false)
@@ -30,6 +40,10 @@ onMounted(async () => {
   await initAuth()
   if (isLoggedIn.value) await syncWallForm()
   await reload()
+  if (isLoggedIn.value) {
+    const {data} = await supabase.rpc('my_team_invitations')
+    for (const item of data ?? []) if (item.direction==='sent' && item.kind==='invite' && item.status==='pending') invited.value.add(item.recipient_id)
+  }
 })
 
 async function syncWallForm() {
@@ -128,6 +142,8 @@ const tierNames = (kind: 'astro' | 'ai') => t(`tiers.${kind}`) as string[]
         </div>
       </div>
 
+      <TeamDirectory />
+
       <div v-if="isLoggedIn" class="wall-self panel mt-10" data-testid="wall-self">
         <div class="hd"><h2>{{ t('teammates.self_title') }}</h2>
           <span class="label" :class="wallForm.show_on_wall ? 'accent-emerald' : ''">{{ wallForm.show_on_wall ? t('teammates.self_on') : t('teammates.self_off') }}</span>
@@ -168,7 +184,7 @@ const tierNames = (kind: 'astro' | 'ai') => t(`tiers.${kind}`) as string[]
       </div>
 
       <p v-if="loading" class="text3 mt-10 text-sm">{{ t('common.loading') }}</p>
-      <div v-else-if="entries.length < 3" class="wall-empty mt-12">
+      <div v-else-if="entries.length === 0" class="wall-empty mt-12">
         <p class="wall-empty-title">{{ t('home.participants.empty_title') }}</p>
         <p class="mt-2 text-sm text-[#9aa3b8]">{{ t('home.participants.empty_desc') }}</p>
       </div>
@@ -184,6 +200,11 @@ const tierNames = (kind: 'astro' | 'ai') => t(`tiers.${kind}`) as string[]
           <p class="wall-meta">{{ [roleLabel(e.role), e.affiliation, e.city].filter(Boolean).join(' · ') || '—' }}</p>
           <p class="wall-meta">{{ e.team_name ? tf('home.participants.in_team', { team: e.team_name }) : t('teammates.no_team') }}</p>
           <div class="mt-4">
+            <div v-if="isLoggedIn && e.id !== me?.id" class="mb-3">
+              <router-link v-if="invited.has(e.id)" class="copy-btn" to="/notifications">{{ i18n.pick('Invitation sent · view progress','已邀请 · 查看进度') }}</router-link>
+              <button v-else-if="team && !e.team_name" class="btn primary sm" :disabled="!!inviteBusy" @click="invite(e)">{{ inviteBusy===e.id ? t('common.working') : i18n.pick('Invite','邀请') }}</button>
+              <span v-else class="text3 text-sm">{{ e.team_name ? i18n.pick('Already in a team','已有队伍') : i18n.pick('Create a team to invite','创建队伍后可邀请') }}</span>
+            </div>
             <template v-if="isLoggedIn">
               <div v-if="e.id in contacts" class="wall-contact">
                 <template v-if="contacts[e.id] && (contacts[e.id]!.contact || contacts[e.id]!.github)">

@@ -54,7 +54,7 @@
         "description": "Create or join a team with an invite code."
       },
       "submit": {
-        "title": "Submit",
+        "title": "Participate",
         "description": "Upload a decisions.csv or an agent for evaluation."
       },
       "submissions": {
@@ -101,9 +101,9 @@
     "logout": "Log out",
     "admin": "Admin",
     "announcements": "Announcements",
-    "submit": "Submit",
+    "submit": "Participate",
     "team": "Team",
-    "submissions": "Submissions",
+    "submissions": "Competition history",
     "profile": "Profile",
     "menu": "Menu",
     "registration_closed": "Registration closed",
@@ -1244,7 +1244,10 @@
       "scored_at": "Scored at",
       "github": "Leader on GitHub @{handle}",
       "view_submission": "Open this submission"
-    }
+    },
+    "calibrated_score": "Calibrated score",
+    "raw_score": "Raw score",
+    "calibration_note": "Rankings use difficulty-calibrated scores. Component scores are shown before calibration."
   },
   "cta": {
     "title": "The next observation, decided by you and your agent",
@@ -1530,7 +1533,11 @@
       "locked": "This team is locked.",
       "full": "This team is full.",
       "leader_must_transfer": "Transfer leadership before leaving.",
-      "has_submissions": "A team with submissions cannot be disbanded."
+      "has_submissions": "A team with submissions cannot be disbanded.",
+      "recipient_unavailable": "This person cannot currently receive a team invitation.",
+      "team_unavailable": "This team is no longer available.",
+      "invitation_not_found": "This request is not addressed to you.",
+      "invitation_finished": "This request has already been handled."
     },
     "members": "Members",
     "copy_code": "Copy code",
@@ -1550,7 +1557,7 @@
     "copy_fallback": "Copy failed. Select the invite code or link and copy it manually."
   },
   "submit": {
-    "title": "New submission",
+    "title": "Participate",
     "phase": "Phase",
     "kind": "Submission type",
     "scenario": "Scenario",

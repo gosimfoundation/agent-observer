@@ -93,7 +93,7 @@ def edge_stack(tmp_path_factory):
         bases.append(os.environ["OBSERVER_LIVE_MODEL_BASE"].rstrip("/"))
     env.update({"SUPABASE_URL":harness.url,"SUPABASE_SERVICE_ROLE_KEY":service_key(),"SUPABASE_ANON_KEY":anon_key(),
                 "OBSERVER_KEY_ENCRYPTION_KEY":encoded,"OBSERVER_DEFAULT_MODEL_PROVIDER":str(provider),
-                "OBSERVER_MODEL_BASES":",".join(bases),"OBSERVER_MODEL_HTTP_BASES":",".join(b for b in bases if b.startswith("http://"))})
+                "OBSERVER_MODEL_BASES":",".join([*bases,"https://personal.example/v1"]),"OBSERVER_MODEL_HTTP_BASES":",".join(b for b in bases if b.startswith("http://"))})
     deno=os.environ["OBSERVER_DENO_BIN"]
     # Only disposable test credentials are used in this integration fixture.
     encrypted=subprocess.run([deno,"eval",
@@ -199,18 +199,12 @@ def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run
     key='only-the-organizer-proxy-can-read-this-key'
     status,saved=post(url,{'action':'save_provider','name':'My API','base_url':base,
         'key':key,'models':['test-model'],'daily_token_limit':5000},token)
-    assert status==200,saved
-    provider=saved['data']['id']
-    encrypted=query(uri,'select encrypted_key from private.observer_providers where id=%s',(provider,))[0][0]
-    assert key not in encrypted
+    assert status==410 and saved['error']=='ephemeral_credentials_required'
+    assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
     status,listed=post(url,{'action':'list'},token)
-    assert status==200 and key not in json.dumps(listed) and encrypted not in json.dumps(listed)
-    assert any(p['id']==provider for p in listed['data']['providers'])
-    status,other_list=post(url,{'action':'list'},other_token)
-    assert status==200 and all(p['id']!=provider for p in other_list['data']['providers'])
-    assert post(url,{'action':'disable_provider','id':provider},other_token)[0]==400
+    assert status==200 and key not in json.dumps(listed)
     assert post(url,{'action':'save_provider','name':'Bypass','base_url':'https://unapproved.test/v1',
-        'key':key,'models':['test-model'],'daily_token_limit':5000},token)[0]==400
+        'key':key,'models':['test-model'],'daily_token_limit':5000},token)[0]==410
     status,submitted=post(url,{'action':'submit_repository','title':'Complete project','url':'https://github.com/owner/repo.git'},token)
     assert status==200,submitted
     revision=submitted['data']['revision_id']
@@ -490,8 +484,8 @@ for line in sys.stdin:
 
 
 @pytest.mark.skipif(not os.environ.get("OBSERVER_TEST_PYTHON_IMAGE"),reason="Explicit resolved container image required")
-@pytest.mark.parametrize('storage_kind',['staging','github'])
-def test_workflow_jobs_download_run_and_upload_before_publishing_score(run_setup,tmp_path,monkeypatch,storage_kind):
+@pytest.mark.parametrize('storage_kind,randomized',[('staging',False),('github',False),('github',True)])
+def test_workflow_jobs_download_run_and_upload_before_publishing_score(run_setup,tmp_path,monkeypatch,storage_kind,randomized):
     """Both production handlers, private downloads, actual Docker, Edge and scorer.
 
     GitHub OIDC signatures are covered by the TypeScript tests. This fixture uses
@@ -504,6 +498,28 @@ def test_workflow_jobs_download_run_and_upload_before_publishing_score(run_setup
                       start_date="2026-10-05",global_wallclock_seconds=120)
     scenario_zip=pack_files(tuple(ProjectFile(p.relative_to(scenario).as_posix(),p.read_bytes())
                                   for p in scenario.rglob("*") if p.is_file()))
+    instance = None
+    if randomized:
+        from project_platform.scenario_instances import directory_digest, POLICIES
+        # A fresh phase exercises the real configuration and seed-allocation
+        # path, without mutating an already admitted fixed-scenario run.
+        s = {**s, 'phase': uuid.uuid4()}
+        s['user'], s['team'] = identity(s['uri'])
+        query(s['uri'], "insert into public.phases(id,slug,name_en,name_zh) values(%s,%s,'Random','Random')",
+              (s['phase'], str(s['phase'])))
+        query(s['uri'], 'insert into public.phase_scenarios values(%s,%s)', (s['phase'], s['scenario']))
+        query(s['uri'], 'insert into public.observer_phase_settings(phase_id,local_sessions_enabled,runtime_seconds) values(%s,true,120)', (s['phase'],))
+        bundle = hashlib.sha256(scenario_zip).hexdigest()
+        query(s['uri'], "insert into private.observer_scenario_bundles values(%s,'fixture/template.zip',%s)", (s['scenario'], bundle))
+        profile = {'schema_version':'observer-calibration-profile-v1', 'panel_version':'observer-reference-panel-v1',
+            'template_digest':directory_digest(scenario), 'bounds':{'span':[1,1e9],'open_fraction':[0,1],
+            **{name:[-1e9,1e9] for name in POLICIES}}}
+        profile_id = query(s['uri'], 'insert into private.observer_calibration_profiles(scenario_id,bundle_digest,profile) values(%s,%s,%s) returning id',
+            (s['scenario'], bundle, Jsonb(profile)))[0][0]
+        query(s['uri'], 'insert into private.observer_scenario_calibration values(%s,%s,%s)', (s['phase'],s['scenario'],profile_id))
+        run, participant, engine = session(s)
+        s.update(run=run, participant=participant, engine=engine)
+        instance = rpc(s['uri'], 'observer_instance_input', run)
     manifest=ProjectManifest.parse({"schema_version":"observer-project-v1","image":os.environ["OBSERVER_TEST_PYTHON_IMAGE"],
                                    "run":["python3","-u","agent.py"]})
     source=(ProjectFile(MANIFEST_NAME,manifest.canonical_bytes()),ProjectFile("agent.py",b'''
@@ -574,6 +590,8 @@ for line in sys.stdin:
         "session_url":session_url,"run_credential":f"obs_{s['run']}.{s['engine']}","runtime_seconds":120,
         "artifact_upload":{"url":base+"/upload","path":result_path}}
     if storage_kind=='github':jobs[ids['engine']]['artifact_upload']={'kind':'github'}
+    if instance is not None:
+        jobs[ids['engine']]['instance'] = instance
     # The runtime is already present by explicit digest. Avoid a remote registry
     # availability dependency; all execution below still happens in real Docker.
     monkeypatch.setattr(DockerWorkspace,"pull",lambda self:None)
@@ -609,7 +627,18 @@ for line in sys.stdin:
     status,path,stored=query(s["uri"],"select status,result_path,decisions_digest from public.observer_runs where id=%s",(s["run"],))[0]
     assert (status,path,stored)==("awaiting_csv",result_path,digest)
     output=tmp_path/"downloaded-result";extract_project(artifacts,output)
-    scored=score_files(scenario,output/"decisions.csv",output/"verified-score.json","survey_complete")
+    expected_scenario = scenario
+    if randomized:
+        from project_platform.scenario_instances import generate_candidate, calibrated_score
+        record = query(s['uri'], 'select record from private.observer_scenario_instances where run_id=%s', (s['run'],))[0][0]
+        assert record and record['seed'] == instance['seed']
+        expected_scenario = tmp_path/'replay-private'
+        regenerated = generate_candidate(scenario, expected_scenario, seed=record['seed'], candidate=record['candidate'])
+        assert regenerated['instance_digest'] == record['instance_digest']
+        assert all(instance['seed'].encode() not in f.data for f in artifacts)
+        assert instance['seed'] not in json.dumps(receipts)
+    scored=score_files(expected_scenario,output/"decisions.csv",output/"verified-score.json","survey_complete")
     rpc(s["uri"],"observer_accept_csv",s["run"],s["user"],digest)
     board=query(s["uri"],"select team_id,score from public.observer_leaderboard(%s)",(s["phase"],),role="anon")
-    assert board==[(s["team"],scored["score"]["total"])]
+    expected_score = calibrated_score(scored['score']['total'], record['difficulty']) if randomized else scored['score']['total']
+    assert board==[(s["team"],expected_score)]

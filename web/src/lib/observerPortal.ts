@@ -12,7 +12,8 @@ export type PortalData = {
       starts_at: string | null; ends_at: string | null } }[]
   projects: { id: string; title: string; observer_revisions: ProjectRevision[] }[]
   batches: { id: string; mode: string; status: string; score: number | null; created_at: string
-    observer_runs: { id: string; status: string; score: number | null; result_path: string | null }[] }[]
+    observer_runs: { id: string; status: string; score: number | null; result_path: string | null
+      score_summary?: { raw_score?: { total: number }; calibration?: { version: string } } | null }[] }[]
   providers: { id: string; name: string; base_url: string; models: string[]; shared: boolean; enabled: boolean; daily_token_limit: number }[]
   model_bases: string[]
 }

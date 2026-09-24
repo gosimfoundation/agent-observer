@@ -54,7 +54,7 @@
         "description": "创建队伍或凭邀请码加入。"
       },
       "submit": {
-        "title": "提交",
+        "title": "参赛",
         "description": "上传 decisions.csv 或智能体以进行评测。"
       },
       "submissions": {
@@ -101,9 +101,9 @@
     "logout": "退出",
     "admin": "管理",
     "announcements": "公告",
-    "submit": "提交",
+    "submit": "参赛",
     "team": "队伍",
-    "submissions": "提交记录",
+    "submissions": "比赛记录",
     "profile": "个人资料",
     "menu": "菜单",
     "registration_closed": "报名已截止",
@@ -1244,7 +1244,10 @@
       "scored_at": "评分时间",
       "github": "队长 GitHub @{handle}",
       "view_submission": "查看这次提交"
-    }
+    },
+    "calibrated_score": "校准分",
+    "raw_score": "原始分",
+    "calibration_note": "排名使用难度校准后的分数，各项得分展示校准前的原始值。"
   },
   "cta": {
     "title": "下一次观测，由你和智能体决定",
@@ -1530,7 +1533,11 @@
       "locked": "该队伍已锁定。",
       "full": "该队伍已满员。",
       "leader_must_transfer": "退出前请先转让队长。",
-      "has_submissions": "已有提交的队伍不能解散。"
+      "has_submissions": "已有提交的队伍不能解散。",
+      "recipient_unavailable": "对方目前无法接收组队邀请。",
+      "team_unavailable": "这个队伍目前不可加入。",
+      "invitation_not_found": "你不是这条请求的接收方。",
+      "invitation_finished": "这条请求已经处理完毕。"
     },
     "members": "成员",
     "copy_code": "复制邀请码",
@@ -1550,7 +1557,7 @@
     "copy_fallback": "复制失败，请选中邀请码或邀请链接手动复制。"
   },
   "submit": {
-    "title": "新建提交",
+    "title": "参赛",
     "phase": "阶段",
     "kind": "提交类型",
     "scenario": "场景",

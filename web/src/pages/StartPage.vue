@@ -6,7 +6,10 @@ import { useAuth } from '../stores/auth'
 import PageHead from '../components/layout/PageHead.vue'
 import MarkdownArticle from '../components/content/MarkdownArticle.vue'
 import startEn from '../content/start.en.md?raw'
+import competitionEn from '../content/start.competition.en.md?raw'
+import competitionZh from '../content/start.competition.zh.md?raw'
 import startZh from '../content/start.zh.md?raw'
+import { competition } from '../stores/competition'
 
 /** The participant walkthrough: register -> team -> run the kit -> edit one function -> upload -> read the score.
  *  Deliberately lighter than the Docs page, which is the engineer's reference. */
@@ -14,7 +17,12 @@ const { t, pick } = useI18n()
 const { isLoggedIn } = useAuth()
 const { mechanicsPublic } = usePublicSettings()
 const source = computed(() => {
-  const text = pick(startEn, startZh)
+  if(competition.mode==='competition') return pick(competitionEn,competitionZh)
+  let text = pick(startEn, startZh)
+  if (competition.mode==='practice') text=text
+    .replace(/^以上流程用于练习赛。.*$/m,'')
+    .replace(/^This upload flow is for practice\..*$/m,'')
+    .replace('选阶段和场景','选择场景').replace('pick the phase and the scenario','pick the scenario')
   return mechanicsPublic.value ? text : text.replace(/<!-- mechanics:start -->[\s\S]*?<!-- mechanics:end -->/g, '')
 })
 </script>

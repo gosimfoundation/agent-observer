@@ -58,6 +58,7 @@ export interface LeaderboardEntry {
   /** The scenario this board ranks; null on the final board, which averages every scenario of the phase. */
   scenario_slug: string | null
   observer_batch_id?: string | null; report_reward?: number
+  calibrated?: boolean; raw_total_score?: number | null
 }
 
 export interface PhaseCopy {
@@ -108,18 +109,22 @@ export function phaseStatus(p: { is_active: boolean; starts_at: string | null; e
   return 'open'
 }
 
-export async function loadPhases(): Promise<Phase[]> {
+export async function loadPhases(all = false): Promise<Phase[]> {
   const { data, error } = await supabase
     .from('phases')
     .select(`*, observer_settings:observer_phase_settings(projects_enabled,local_sessions_enabled,daily_batches), phase_scenarios(scenario_id, scenarios(${SCENARIO_PUBLIC_COLUMNS}))`)
     .order('sort_order', { ascending: true })
   if (error) throw error
-  return ((data ?? []) as any[]).map(row => {
+  const rows = ((data ?? []) as any[]).map(row => {
     const { phase_scenarios, ...rest } = row
     const scenarios = ((phase_scenarios ?? []) as any[]).map(link => link.scenarios).filter(Boolean) as Scenario[]
     scenarios.sort((a, b) => a.slug.localeCompare(b.slug))
     return { ...rest, scenarios, status: phaseStatus(rest) } as Phase
   })
+  if (all) return rows
+  const { loadCompetition } = await import('../stores/competition')
+  const current = await loadCompetition()
+  return rows.filter(p => current.phaseId ? p.id===current.phaseId : p.slug===(current.mode==='practice'?'practice':'online'))
 }
 
 /** The "main" phase: the counts_for_final one that is open/closed, else the first open one, else the first. */
@@ -214,6 +219,8 @@ export async function loadLeaderboard(phaseSlug: string | null, limit = 500, sce
     scored_at: row.scored_at ?? null,
     scenario_slug: row.scenario_slug ? String(row.scenario_slug) : null,
     observer_batch_id: row.observer_batch_id ?? null,
+    calibrated: row.calibrated === true,
+    raw_total_score: row.raw_total_score == null ? null : Number(row.raw_total_score),
     report_reward: Number(row.report_reward ?? 0),
   }))
 }

@@ -30,7 +30,7 @@ const { registrationOpen } = useRegistrationOpen()
                 <p class="max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">{{ t('cta.tagline') }}</p>
                 <p class="mt-4 font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ t('cta.location') }}</p>
               </div>
-              <router-link v-if="isLoggedIn" to="/submit" class="btn light min-w-60">{{ t('dash.new_submission') }} →</router-link>
+              <router-link v-if="isLoggedIn" to="/compete" class="btn light min-w-60">{{ t('dash.new_submission') }} →</router-link>
               <router-link v-else-if="registrationOpen" to="/register" class="btn light min-w-60">{{ t('cta.button') }} →</router-link>
               <span v-else class="btn light disabled min-w-60">{{ t('nav.registration_closed') }}</span>
             </div>
