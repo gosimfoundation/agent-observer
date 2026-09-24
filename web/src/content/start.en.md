@@ -47,7 +47,7 @@ Save, double-click `run_baseline` again, and see whether the score went up. If i
 
 Back on the site, open **Submit**, pick the phase and the scenario, drag in the `run_output/decisions.csv` your local run produced, and press **Upload and queue →**. Scored within seconds.
 
-The Playground and the online competition both take this file only. The two competition scenarios' weather is published when the competition opens on October 5: download it then, run locally, and upload the `decisions.csv`.
+This upload flow is for practice. For competition, open [Agent projects](/projects) to submit a public repository or private project ZIP, or start an official local session and upload its exported CSV. Both modes receive current information step by step; future weather remains private.
 
 ## Step 6 · Read the result
 

@@ -1,0 +1,192 @@
+import { assert, assertEquals, assertRejects, assertThrows } from "@std/assert";
+import {
+  capability,
+  chatCompletion,
+  decryptCredential,
+  encryptCredential,
+  ProxyError,
+  validateChat,
+} from "./observer-model.ts";
+import type { ProxyDependencies } from "./observer-model.ts";
+
+const run = "00000000-0000-4000-8000-000000000001";
+const provider = "00000000-0000-4000-8000-000000000002";
+const token = "a".repeat(43);
+const master = btoa("k".repeat(32));
+function request(
+  body: unknown = { model: "qwen-test", messages: [{ role: "user", content: "hi" }], max_tokens: 32 },
+  headers = {},
+) {
+  return new Request("https://platform.test/observer-model/v1/chat/completions", {
+    method: "POST",
+    headers: { authorization: "Bearer obs_" + run + "." + token, "content-type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+}
+function fixture(overrides: Partial<ProxyDependencies> = {}) {
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const upstream: { url: string; init: RequestInit | undefined }[] = [];
+  const deps: ProxyDependencies = {
+    rpc: (name, args) => {
+      calls.push({ name, args });
+      return Promise.resolve(
+        name === "observer_reserve_model"
+          ? { reserved: true, base_url: "https://provider.test/v1", encrypted_key: "encrypted" }
+          : null,
+      );
+    },
+    fetch: (url, init) => {
+      upstream.push({ url: String(url), init });
+      return Promise.resolve(
+        Response.json({ choices: [{ message: { role: "assistant", content: "OK" } }], usage: { total_tokens: 18 } }),
+      );
+    },
+    decrypt: () => Promise.resolve("private-master-api-key"),
+    allowedBases: new Set(["https://provider.test/v1"]),
+    allowedHttpBases: new Set(),
+    defaultProvider: provider,
+    ...overrides,
+  };
+  return { deps, calls, upstream };
+}
+
+Deno.test("scoped credentials are parsed and account/GitHub tokens are rejected", () => {
+  assertEquals(capability("Bearer obs_" + run + "." + token), { run, token });
+  for (const value of [null, "Bearer supabase-jwt", "Bearer ghp-token", "Bearer obs_" + run + ".short"]) {
+    assertThrows(() => capability(value), ProxyError);
+  }
+});
+
+Deno.test("chat limits bound text, calls and completion size before charging", () => {
+  const good = { model: "m", messages: [{ role: "user", content: "天文".repeat(10) }], max_tokens: 20 };
+  const checked = validateChat(good);
+  assert(checked.reservedTokens > new TextEncoder().encode(JSON.stringify(good)).length + 20);
+  for (
+    const bad of [
+      { ...good, stream: true },
+      { ...good, n: 2 },
+      { ...good, max_tokens: 5000 },
+      { ...good, max_tokens: -1 },
+      { ...good, max_completion_tokens: 20 },
+      { ...good, unknown: "option" },
+      {
+        ...good,
+        messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "https://example.test" } }] }],
+      },
+      { ...good, messages: [{ role: "user", content: "a".repeat(65536) }] },
+    ]
+  ) assertThrows(() => validateChat(bad), ProxyError);
+});
+
+Deno.test("encryption is random, round-trips, and binds each key to its provider", async () => {
+  const a = await encryptCredential("a real key", provider, master);
+  const b = await encryptCredential("a real key", provider, master);
+  assert(a !== b && !a.includes("a real key"));
+  assertEquals(await decryptCredential(a, provider, master), "a real key");
+  await assertRejects(() => decryptCredential(a, run, master), ProxyError);
+  await assertRejects(() => decryptCredential(a, provider, btoa("z".repeat(32))), ProxyError);
+});
+
+Deno.test("proxy reserves before forwarding, strips scoped key, and settles actual usage", async () => {
+  const f = fixture();
+  const result = await chatCompletion(request(), f.deps);
+  assertEquals(result.status, 200);
+  assertEquals((await result.json()).choices[0].message.content, "OK");
+  assertEquals(f.calls.map((c) => c.name), ["observer_reserve_model", "observer_settle_model"]);
+  assertEquals(f.calls[0].args.p_run, run);
+  assertEquals(f.calls[0].args.p_provider, provider);
+  assertEquals(f.calls[0].args.p_token, token);
+  assertEquals(f.calls[1].args.p_actual_tokens, 18);
+  assertEquals(f.upstream.length, 1);
+  assertEquals(f.upstream[0].init?.redirect, "error");
+  assertEquals(new Headers(f.upstream[0].init?.headers).get("authorization"), "Bearer private-master-api-key");
+  assert(!String(f.upstream[0].init?.body).includes(token));
+});
+
+Deno.test("BYO provider prefix is routed without changing the upstream model name", async () => {
+  const f = fixture();
+  await chatCompletion(request({ model: run + "::custom-model", messages: [{ role: "user", content: "OK" }] }), f.deps);
+  assertEquals(f.calls[0].args.p_provider, run);
+  assertEquals(JSON.parse(String(f.upstream[0].init?.body)).model, "custom-model");
+});
+
+Deno.test("duplicate idempotency key never resends to the provider", async () => {
+  const f = fixture({ rpc: () => Promise.resolve({ reserved: false, status: "settled" }) });
+  const error = await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(error.code, "model_request_already_received");
+  assertEquals(f.upstream.length, 0);
+});
+
+Deno.test("quota failure makes zero upstream calls", async () => {
+  const f = fixture({ rpc: () => Promise.reject(new ProxyError(429, "run_model_quota")) });
+  await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(f.upstream.length, 0);
+});
+
+Deno.test("unapproved destinations are rejected before secrets are forwarded", async () => {
+  const f = fixture({ allowedBases: new Set(["https://different.test/v1"]) });
+  await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(f.upstream.length, 0);
+  assertEquals(f.calls.at(-1)?.args.p_actual_tokens, 0);
+});
+
+Deno.test("HTTP requires an explicit backend exception as well as a provider flag", async () => {
+  const f = fixture({ allowedBases: new Set(["http://provider.test:40101/v1"]) });
+  const baseRpc = f.deps.rpc;
+  f.deps.rpc = async (name, args) => {
+    const value = await baseRpc(name, args);
+    return name === "observer_reserve_model"
+      ? { ...value, base_url: "http://provider.test:40101/v1", allow_http: true }
+      : value;
+  };
+  await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(f.upstream.length, 0);
+  f.deps.allowedHttpBases.add("http://provider.test:40101/v1");
+  assertEquals((await chatCompletion(request(), f.deps)).status, 200);
+  assertEquals(f.upstream.length, 1);
+});
+
+Deno.test("unknown network failure consumes reservation and hides internal errors", async () => {
+  const f = fixture({ fetch: () => Promise.reject(new Error("private-master-api-key socket detail")) });
+  const error = await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(error.code, "model_provider_unavailable");
+  assertEquals(f.calls.at(-1)?.args.p_actual_tokens, null);
+});
+
+Deno.test("provider errors never return credential-bearing diagnostics", async () => {
+  const f = fixture({ fetch: () => Promise.resolve(new Response("private-master-api-key internal", { status: 500 })) });
+  const error = await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(error.code, "model_provider_error");
+  assertEquals(f.calls.at(-1)?.args.p_actual_tokens, null);
+});
+
+Deno.test("missing or invalid usage is charged conservatively", async () => {
+  for (const usage of [undefined, { total_tokens: -1 }, { total_tokens: 99999999 }, { total_tokens: 0.5 }]) {
+    const f = fixture({ fetch: () => Promise.resolve(Response.json({ choices: [], usage })) });
+    await chatCompletion(request(), f.deps);
+    assertEquals(f.calls.at(-1)?.args.p_actual_tokens, null);
+  }
+});
+
+Deno.test("provider cannot accidentally echo its credential into participant logs", async () => {
+  const f = fixture({
+    fetch: () =>
+      Promise.resolve(Response.json({
+        choices: [{ message: { content: "private-master-api-key" } }],
+        usage: { total_tokens: 10 },
+      })),
+  });
+  const result = await chatCompletion(request(), f.deps);
+  assertEquals((await result.json()).choices[0].message.content, "[REDACTED]");
+});
+
+Deno.test("accounting failure retains the reservation and never retries inference", async () => {
+  const f = fixture();
+  const base = f.deps.rpc;
+  f.deps.rpc = (name, args) =>
+    name === "observer_settle_model"
+      ? Promise.reject(new ProxyError(503, "model_accounting_unavailable"))
+      : base(name, args);
+  await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
+  assertEquals(f.upstream.length, 1);
+});

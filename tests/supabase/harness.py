@@ -95,6 +95,7 @@ class Harness:
         self.server = None
         self.storage_root = self.dir / "storage"
         self.refresh_tokens: dict[str, str] = {}
+        self.signed_uploads: dict[str, tuple[str, str, float]] = {}
         self.thread = None
 
     # ---------------------------------------------------------------- lifecycle
@@ -356,6 +357,29 @@ class Harness:
         url = urllib.parse.urlparse(path)
         route = urllib.parse.unquote(url.path[len("/storage/v1"):])
         claims = self._claims(h)
+        if route.startswith('/object/upload/sign/'):
+            bucket, name = route[len('/object/upload/sign/'):].split('/', 1)
+            if '..' in name.split('/') or name.startswith('/'):
+                return self._send(h, 400, {'error':'invalid_path'})
+            if method == 'POST':
+                if not self._storage_allowed(claims, bucket, name, True):
+                    return self._send(h, 403, {'error':'Unauthorized'})
+                token = secrets.token_urlsafe(24)
+                self.signed_uploads[token] = (bucket, name, time.time()+7200)
+                return self._send(h, 200, {'url':f'/object/upload/sign/{bucket}/{name}?token={token}'})
+            if method == 'PUT':
+                token = urllib.parse.parse_qs(url.query).get('token',[''])[0]
+                grant = self.signed_uploads.get(token)
+                if not grant or grant[:2] != (bucket,name) or grant[2] <= time.time():
+                    return self._send(h, 403, {'error':'Unauthorized'})
+                f = self.storage_root / bucket / name
+                if f.exists():
+                    return self._send(h, 409, {'error':'Duplicate'})
+                payload = _multipart_file(body,h.headers['Content-Type']) if h.headers.get('Content-Type','').startswith('multipart/form-data') else body
+                if len(payload)>52428800:
+                    return self._send(h, 413, {'error':'too_large'})
+                f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(payload)
+                return self._send(h, 200, {'Key':f'{bucket}/{name}'})
         m = re.match(r"^/object/(authenticated/|public/)?([^/]+)/(.+)$", route)
         if route.startswith("/object/list/") and method == "POST":
             bucket = route[len("/object/list/"):]

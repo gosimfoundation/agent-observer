@@ -1,0 +1,114 @@
+"""Finite trusted workflow entrypoint, never a participant-selected host command."""
+from __future__ import annotations
+
+import argparse
+import os
+import tempfile
+from pathlib import Path
+
+from .artifacts import download_project, pack_results, store_private_artifact, upload_artifact
+from .docker_runtime import DockerWorkspace
+from .diagnostics import ProjectJobFailure, private_log, safe_code
+from .executor import execute
+from .job_client import GitHubIdentity, Http, JobClient, JobError
+from .manifest import ProjectManifest
+from .package import extract_project, project_digest, read_project_zip
+from .preparation import prepare_project
+from .session import SessionClient
+from .trusted_engine import result_summary, run_session
+
+
+def execute_job(payload: dict, root: Path, http: Http) -> dict:
+    files = download_project(http, payload["archive_url"])
+    # This is the digest of the fully materialized, approved project, including
+    # adapter and reviewed manifest. It is not the original pre-adaptation hash.
+    if project_digest(files) != payload["source_digest"]:
+        raise JobError("project_digest_mismatch")
+    manifest = ProjectManifest.parse(payload["manifest"])
+    workspace = root / "project"
+    extract_project(files, workspace)
+    client = SessionClient(payload["session_url"], payload["run_credential"])
+    environment = {
+        "OBSERVER_API_URL": payload["session_url"], "OBSERVER_RUN_TOKEN": payload["run_credential"],
+        "OBSERVER_RUN_ID": payload["run_id"],
+        "OPENAI_BASE_URL": payload["model_base_url"], "OPENAI_API_KEY": payload["run_credential"],
+    }
+    runtime= DockerWorkspace(workspace, manifest, manifest.image)
+    try:
+        # The image is immutable; pull happens on the disposable execution host,
+        # before any participant process. No installation/model master keys exist.
+        runtime.pull()
+        outcome = execute(runtime, client, environment)
+    except Exception as error:
+        raise ProjectJobFailure({'stage':'execute','code':safe_code(error),
+            'log':private_log(runtime.build_log+'\n'+(runtime.transport.log if runtime.transport else ''),
+                              (payload['run_credential'],))}) from None
+    finally:
+        runtime.close()
+    return {"run_id": payload["run_id"], "status": outcome["status"],
+            'diagnostics':{'stage':'execute','code':'completed',
+              'log':private_log(runtime.build_log+'\n'+(runtime.transport.log if runtime.transport else ''),(payload['run_credential'],))}}
+
+
+def engine_job(payload: dict, root: Path, http: Http, *, repository_credentials=None) -> dict:
+    files = download_project(http, payload["scenario_url"], payload["scenario_digest"])
+    scenario, output = root / "scenario", root / "result"
+    extract_project(files, scenario)
+    client = SessionClient(payload["session_url"], payload["run_credential"])
+    result, digest = run_session(scenario, output, client, wallclock_seconds=payload["runtime_seconds"])
+    archive = pack_results(output)
+    if payload['artifact_upload'] == {'kind': 'github'}:
+        path = store_private_artifact(read_project_zip(archive), payload['run_id'], 'results', repository_credentials)
+    else:
+        path = upload_artifact(http, payload["artifact_upload"], archive)
+    # Upload succeeds before score publication. Execution receipts cannot call
+    # this method because they do not possess the separate engine capability.
+    client.call("finish", summary=result_summary(result), decisions_digest=digest, result_path=path)
+    return {"run_id": payload["run_id"], "result_path": path, "decisions_digest": digest}
+
+
+def run_claimed(kind: str, client: JobClient, root: Path) -> None:
+    payload = client.claim()
+    if payload.get("kind") != kind or payload.get("job_id") != client.job_id:
+        raise JobError("job_kind_mismatch")
+    try:
+        handler = {
+            'execute': execute_job,
+            'engine': lambda payload, root, http: engine_job(payload, root, http, repository_credentials=client.artifact_repository),
+            'prepare': lambda payload, root, http: prepare_project(payload, http, repository_credentials=client.artifact_repository),
+        }.get(kind)
+        if handler is None:
+            raise JobError("job_kind_unavailable")
+        result = handler(payload, root, client.http)
+    except Exception as error:
+        # Exception strings may contain signed URLs, project output or model
+        # credentials. Detailed diagnostics must use the private artifact path.
+        if kind == "engine":
+            try:
+                SessionClient(payload["session_url"], payload["run_credential"]).call("fail", error="engine_job_failed")
+            except Exception:
+                pass
+        diagnostics=error.diagnostics if isinstance(error,ProjectJobFailure) else {'stage':kind,'code':safe_code(error),'log':''}
+        client.complete({'diagnostics':diagnostics}, error=kind + "_job_failed")
+        raise JobError(kind + "_job_failed") from None
+    client.complete(result)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("kind", choices=("execute", "engine", "prepare"))
+    args = parser.parse_args()
+    try:
+        client = JobClient(os.environ.get("OBSERVER_JOB_URL", ""), os.environ.get("OBSERVER_JOB_ID", ""),
+                           os.environ.get("OBSERVER_JOB_NONCE", ""), GitHubIdentity())
+        with tempfile.TemporaryDirectory(prefix="observer-job-") as temporary:
+            run_claimed(args.kind, client, Path(temporary))
+        print("Observer job completed.")
+        return 0
+    except Exception:
+        print("Observer job failed; check the private platform job status.")
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

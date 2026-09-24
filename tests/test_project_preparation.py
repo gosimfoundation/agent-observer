@@ -1,0 +1,158 @@
+"""Preparation receipts cannot bypass public testing or participant approval."""
+import concurrent.futures
+import secrets
+import uuid
+
+import psycopg
+import pytest
+
+from test_project_database import database, identity, query, rpc, setup  # noqa: F401
+from test_project_orchestration import job
+
+
+@pytest.fixture
+def preparation(setup):
+    s=setup;uri=s['uri']
+    query(uri,"""insert into private.observer_installations
+      (organization,organization_id,installation_id,repository_id,approved_sha,enabled)
+      values('AGENTIC-OBSERVER26-runner-1','101',202,'303',%s,true)
+      on conflict(organization) do update set enabled=true""",('a'*40,))
+    query(uri,'update public.scenarios set events_public=true where id=%s',(s['scenario'],))
+    query(uri,'insert into private.observer_scenario_bundles values(%s,%s,%s)',(s['scenario'],f"{s['scenario']}/bundle.zip",'b'*64))
+    query(uri,"""insert into private.observer_preparation_config(id,phase_id,scenario_id,model,enabled)
+      values(true,%s,%s,'test-model',true) on conflict(id) do update
+      set phase_id=excluded.phase_id,scenario_id=excluded.scenario_id,enabled=true""",(s['phase'],s['scenario']))
+    rev=rpc(uri,'observer_create_project','My complete project','repository','https://github.com/example/project',
+            role='authenticated',user=s['user'])
+    return {**s,'revision':rev}
+
+
+def reserve(s):
+    return next(r for r in rpc(s['uri'],'observer_pending_preparations',10) if r['id']==str(s['revision']))
+
+
+def start(s,reserved=None):
+    reserved=reserved or reserve(s);j=job('prepare');participant=secrets.token_urlsafe(32)
+    rpc(s['uri'],'observer_schedule_preparation',s['revision'],reserved['lease'],'AGENTIC-OBSERVER26-runner-1',
+        participant,secrets.token_urlsafe(32),j)
+    return {**reserved,'job':j,'participant':participant}
+
+
+def finish(s,started,**changes):
+    j=started['job'];repo='AGENTIC-OBSERVER26-runner-1/participant-'+s['user'].hex
+    result={'status':'awaiting_public_test','revision_id':str(s['revision']), 'repository':repo,
+        'source_digest':'c'*64,'source_commit':'d'*40,'materialized_digest':'e'*64,'approval_digest':'f'*64,
+        'manifest':{'schema_version':'observer-project-v1','image':'python@sha256:'+'a'*64,'run':['python','agent.py']},
+        'adapter_files':{},'explanation':'Existing interface','preview_path':'github:'+repo+'@'+'a'*40,**changes}
+    rpc(s['uri'],'observer_claim_job',j['id'],j['nonce'],'404','1','303','101','a'*40)
+    rpc(s['uri'],'observer_finish_job',j['id'],'404','1',result,'')
+    rpc(s['uri'],'observer_reconcile_preparations')
+    return result
+
+
+def test_concurrent_preparation_reservations_cannot_create_two_model_sessions(preparation):
+    s=preparation
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        values=list(pool.map(lambda _:rpc(s['uri'],'observer_pending_preparations',10),range(6)))
+    ours=[v for group in values for v in group if v['id']==str(s['revision'])]
+    assert len(ours)==1
+    first=start(s,ours[0])
+    start(s,ours[0])
+    assert query(s['uri'],'select count(*) from private.observer_jobs where revision_id=%s',(s['revision'],))==[(1,)]
+    assert query(s['uri'],'select token_limit,call_limit,concurrency_limit from private.observer_sessions where run_id=%s',
+                 (first['model_run_id'],))==[(65536,1,1)]
+
+
+def test_public_preview_is_required_and_excluded_from_formal_quotas_and_board(preparation):
+    s=preparation;uri=s['uri'];started=start(s)
+    # Internal adaptation neither blocks a formal batch nor consumes its daily slot.
+    query(uri,'update public.observer_phase_settings set daily_batches=1 where phase_id=%s',(s['phase'],))
+    formal=rpc(uri,'observer_create_batch',s['phase'],None,role='authenticated',user=s['user'])
+    assert formal
+    finish(s,started)
+    assert rpc(uri,'observer_materialized_project',s['revision'],s['user']) is None
+    assert query(uri,'select status from public.observer_revisions where id=%s',(s['revision'],))==[('preparing',)]
+    with pytest.raises(psycopg.Error,match='revision_not_ready'):
+        rpc(uri,'observer_approve_revision',s['revision'],'f'*64,role='authenticated',user=s['user'])
+    with pytest.raises(psycopg.Error,match='invalid_or_expired_capability'):
+        rpc(uri,'observer_poll',started['model_run_id'],started['participant'])
+    preview=query(uri,'select preview_run_id from private.observer_preparations where revision_id=%s',(s['revision'],))[0][0]
+    selected=next(r for r in rpc(uri,'observer_pending_runs',10) if r['id']==str(preview))
+    assert selected['runtime_seconds']==300 and selected['materialized_digest']=='e'*64
+    jobs=[job('engine'),job('execute')]
+    rpc(uri,'observer_schedule_run',preview,selected['lease'],'AGENTIC-OBSERVER26-runner-1',
+        secrets.token_urlsafe(32),secrets.token_urlsafe(32),None,jobs)
+    # Even an official engine score is insufficient until both trusted jobs finish.
+    query(uri,"""update public.observer_runs set status='scored',score=123,finished_at=now(),score_summary='{"termination_reason":"survey_complete","committed_action_count":1}' where id=%s""",(preview,))
+    rpc(uri,'observer_reconcile_preparations')
+    assert query(uri,'select status from public.observer_revisions where id=%s',(s['revision'],))==[('preparing',)]
+    for i,j in enumerate(jobs):
+        rpc(uri,'observer_claim_job',j['id'],j['nonce'],str(500+i),'1','303','101','a'*40)
+        rpc(uri,'observer_finish_job',j['id'],str(500+i),'1',{'finished':True},'')
+    rpc(uri,'observer_reconcile_preparations')
+    rpc(uri,'observer_reconcile_preparations')
+    assert query(uri,'select status,public_test->>\'passed\' from public.observer_revisions where id=%s',(s['revision'],))==[('reviewable','true')]
+    assert rpc(uri,'observer_materialized_project',s['revision'],s['user']).startswith('github:AGENTIC-OBSERVER26-runner-1/')
+    other,_=identity(uri)
+    assert rpc(uri,'observer_materialized_project',s['revision'],other) is None
+    query(uri,"update public.observer_batches set status='scored',score=123,finished_at=now() where purpose='preview' and revision_id=%s",(s['revision'],))
+    assert query(uri,'select * from public.observer_leaderboard(%s)',(s['phase'],),role='anon')==[]
+    rpc(uri,'observer_approve_revision',s['revision'],'f'*64,role='authenticated',user=s['user'])
+    assert query(uri,'select status from public.observer_revisions where id=%s',(s['revision'],))==[('approved',)]
+
+
+@pytest.mark.parametrize('change',[{'repository':'foreign/private'}, {'preview_path':'github:foreign/private@'+'a'*40},
+    {'approval_digest':None},{'adapter_files':[]},{'status':'approved'}])
+def test_malformed_preparation_receipt_cannot_materialize_or_approve(preparation,change):
+    s=preparation;finish(s,start(s),**change)
+    assert query(s['uri'],'select status from public.observer_revisions where id=%s',(s['revision'],))==[('failed',)]
+    assert query(s['uri'],'select revision_id from private.observer_materializations where revision_id=%s',(s['revision'],))==[]
+    assert rpc(s['uri'],'observer_reconcile_preparations')==0
+
+
+def test_hidden_scenario_is_never_used_for_public_test(preparation):
+    s=preparation;uri=s['uri']
+    query(uri,'update public.scenarios set events_public=false where id=%s',(s['scenario'],))
+    assert rpc(uri,'observer_pending_preparations',10)==[]
+    query(uri,'update public.scenarios set events_public=true where id=%s',(s['scenario'],))
+    started=start(s)
+    query(uri,'update public.scenarios set weather_public=false where id=%s',(s['scenario'],))
+    finish(s,started)
+    assert query(uri,'select status from public.observer_revisions where id=%s',(s['revision'],))==[('failed',)]
+
+
+@pytest.mark.parametrize('summary',[{}, {'termination_reason':'agent_error','committed_action_count':1},
+    {'termination_reason':'global_wallclock_expired','committed_action_count':0}])
+def test_preview_cannot_pass_an_agent_error_or_zero_committed_actions(preparation,summary):
+    from psycopg.types.json import Jsonb
+    s=preparation;uri=s['uri'];finish(s,start(s))
+    preview=query(uri,'select preview_run_id from private.observer_preparations where revision_id=%s',(s['revision'],))[0][0]
+    query(uri,"update public.observer_runs set status='scored',score=10,score_summary=%s,finished_at=now() where id=%s",(Jsonb(summary),preview))
+    rpc(uri,'observer_reconcile_preparations')
+    assert query(uri,'select status,public_test->>\'passed\' from public.observer_revisions where id=%s',(s['revision'],))==[('failed','false')]
+    with pytest.raises(psycopg.Error,match='revision_not_ready'):
+        rpc(uri,'observer_approve_revision',s['revision'],'f'*64,role='authenticated',user=s['user'])
+
+
+def test_failed_preparation_revokes_model_access_and_backend_controls_are_private(preparation):
+    s=preparation;started=start(s);j=started['job'];uri=s['uri']
+    for stmt in ['select * from private.observer_preparation_config','select * from private.observer_preparations',
+                 'select public.observer_pending_preparations(3)','select public.observer_reconcile_preparations()']:
+        with pytest.raises(psycopg.Error,match='permission denied'):
+            query(uri,stmt,role='authenticated',user=s['user'])
+    rpc(uri,'observer_claim_job',j['id'],j['nonce'],'404','1','303','101','a'*40)
+    rpc(uri,'observer_finish_job',j['id'],'404','1',{},'prepare_job_failed')
+    rpc(uri,'observer_reconcile_preparations')
+    assert query(uri,'select status from public.observer_runs where id=%s',(started['model_run_id'],))==[('cancelled',)]
+    assert rpc(uri,'observer_reconcile_preparations')==0
+
+
+def test_failed_public_test_remains_unapproved_but_owner_can_inspect_materialized_adapter(preparation):
+    s=preparation;uri=s['uri'];finish(s,start(s))
+    preview=query(uri,'select preview_run_id from private.observer_preparations where revision_id=%s',(s['revision'],))[0][0]
+    query(uri,"update public.observer_runs set status='failed',error='build_failed',finished_at=now() where id=%s""",(preview,))
+    rpc(uri,'observer_reconcile_preparations')
+    assert query(uri,'select status,public_test->>\'passed\' from public.observer_revisions where id=%s',(s['revision'],))==[('failed','false')]
+    assert rpc(uri,'observer_materialized_project',s['revision'],s['user']).startswith('github:')
+    with pytest.raises(psycopg.Error,match='revision_not_ready'):
+        rpc(uri,'observer_approve_revision',s['revision'],'f'*64,role='authenticated',user=s['user'])

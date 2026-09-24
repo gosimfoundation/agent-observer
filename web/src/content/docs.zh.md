@@ -4,9 +4,9 @@
 
 你要构建的，是一个替天文台值夜班的程序。夜晚被切成 900 秒一格的时隙；每一格，你的智能体看一眼当前天况和一串候选天区，决定观测哪一块天，或者等一等。跑完一整场，它会留下一张按时隙排列的决策清单（`decisions.csv`）；一个冻结不变的评分器读这张清单，产出成绩单（`score_report.json`）。
 
-一个场景就是一道题，形式是一个文件夹：`config/` 下六个配置文件写明这一局的全部规则；`outputs/reference/` 下是参考数据——按真实太阳历生成的时隙日历，分 REQUIRED / FLEXIBLE 两类、各有可用时间窗的天区与目标目录，逐时隙的天气与影响特定天区的方向性干扰事件，每日修订、带不确定性的预报，以及中途插进来的临时观测请求。练习场景的天气全部公开；比赛场景的天气、预报与事件在开赛时公开，并启用异常机制——隐藏的仪器故障与逐天区异常标签，`decisions.csv` 里的 `report_*` 行就是对它们的上报（开关写在各场景 `score_config.json` 的异常小节；入门包的 `finals-preview` 场景也启用，便于本地演练）。全部练习场景保持赛初合约逐字节不变（快照 `decision-snapshot-v2`，不接受上报）。这套合约的正式名字是 **challenge v3**（`challenge-score-v3`、`participant-agent-protocol-v2`）。
+一个场景就是一道题，形式是一个文件夹：`config/` 下六个配置文件写明这一局的全部规则；`outputs/reference/` 下是参考数据——按真实太阳历生成的时隙日历，分 REQUIRED / FLEXIBLE 两类、各有可用时间窗的天区与目标目录，逐时隙的天气与影响特定天区的方向性干扰事件，每日修订、带不确定性的预报，以及中途插进来的临时观测请求。练习场景的天气全部公开；比赛场景通过官方会话逐步提供当前天气、已发布预报与真实观测结果，并启用异常机制——隐藏的仪器故障与逐天区异常标签，`decisions.csv` 里的 `report_*` 行就是对它们的上报（开关写在各场景 `score_config.json` 的异常小节；入门包的 `finals-preview` 场景也启用，便于本地演练）。全部练习场景保持赛初合约逐字节不变（快照 `decision-snapshot-v2`，不接受上报）。这套合约的正式名字是 **challenge v3**（`challenge-score-v3`、`participant-agent-protocol-v2`）。
 
-提交方式只有一种：在自己电脑上运行智能体，上传它生成的 `decisions.csv`。Playground 与线上比赛都只收这种文件（2026 年 9 月 24 日起不再接受智能体程序包）。
+练习赛继续接收本地练习生成的 `decisions.csv`。正式赛支持完整项目（公开仓库链接或私有 ZIP）以及官方本地会话导出的 CSV。两种正式赛方式逐步接收相同信息，未来天气保留在服务器。项目语言不限，不强制调用模型；已有提交、成绩与回放全部保留。
 
 平台和入门包使用同一份 `scoring_core.py`。入门包包含 workflow、评分器、最小智能体与公开的场景文件。
 
@@ -18,15 +18,23 @@
 
 | | Playground | 线上比赛 |
 |---|---|---|
-| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | `eval-a`、`eval-b`（各 30 晚）；天气、预报、事件在开赛时公开 |
-| 提交 | 结果文件（`decisions.csv`），每队每天 50 次 | 结果文件（`decisions.csv`），每队每天 10 次 |
-| 得分 | 按场景分开排名，仅供参考 | 两个场景各自最高分的平均值；决定奖项 |
+| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | `eval-a`、`eval-b`（各 30 晚）；通过会话逐步提供当前信息，未来天气不公开 |
+| 提交 | 结果文件（`decisions.csv`），每队每天 50 次 | 完整项目或官方本地会话 CSV，每队每天 10 个完整批次 |
+| 得分 | 按场景分开排名，仅供参考 | 同一批全部场景的平均值，每队取最高分的完整批次 |
 
-场景的天气与事件公开后，本地运行 `score_decisions.py` 能逐字节复现平台报告。唯一的例外是比赛场景的异常标签：答案不公开，只在平台评分时使用，所以比赛场景的本地分数不含这一部分。
+公开练习数据可用 `score_decisions.py` 在本地复现评分。正式赛由服务器计算官方成绩，隐藏天气与异常答案不会放入选手项目或下载文件。
 
 两个阶段用同一个评分器和同一份 `score_config.json`，报告格式相同，因此 Playground 调出来的策略可以直接用于比赛。
 
-## 3. 入门包
+### 正式赛项目与本地会话
+
+1. 打开[智能体项目](/projects)，提交公开仓库链接或私有 ZIP（不超过 50 MB）。[最小完整项目示例](https://github.com/BH3GEI/observer-project-example)展示 JSONL 接口；Python 是运行器的语言，不限制项目语言。
+2. 公开试跑通过后，审阅固定的源码、容器镜像、启动设置与适配文件，确认版本后才能正式评测。
+3. 选择本地运行时，启动本地 CSV 会话，从运行说明下载运行器，执行自己的完整项目，再把导出的 CSV（不超过 20 MB）上传到对应记录。修改过的文件会被拒绝；旧入门包的 CSV 用于练习，不能替代正式会话。
+4. 每批评测包含全部场景，取平均分；队伍可以下载私有结果、查看运行日志。模型调用可选，可使用主办方 API 或在项目页保存受支持的个人 API；临时凭证有额度与有效期。
+5. 可随已确认项目保存架构与复现说明，用于独立设计评价，不计入成绩榜分数。
+
+## 3. 入门包（练习赛）
 
 ### 最短路径（不需要任何工具）
 
@@ -186,9 +194,9 @@ payload 为 `decision-snapshot-v3`：
 | `outputs/reference/night_calendar.csv`、`slots.csv` | 共享时间轴（每晚 37–47 个时隙） | 公开 |
 | `outputs/reference/tiles.csv`、`targets.csv`、`tile_windows.csv` | 目录、逐目标科学权重、可见窗口示例 | 公开 |
 | `outputs/reference/observation_requests.csv`、`observation_request_tiles.csv` | 预生成的请求及其天区 | 公开 |
-| `outputs/reference/weather.csv` | 逐时隙站点基线天气 | 练习场景公开；比赛场景开赛时公开 |
-| `outputs/reference/weather_forecasts.csv` | 不确定、每日修订的预报 | 练习场景公开；比赛场景开赛时公开 |
-| `outputs/reference/weather_events.csv` | 方向性干扰事件（`active_event_ids` 背后的真值；`instrument_fault` 故障事件永不进预报、不进快照） | 练习场景公开；比赛场景开赛时公开 |
+| `outputs/reference/weather.csv` | 逐时隙站点基线天气 | 练习场景公开；正式赛仅通过会话提供当前已发布信息 |
+| `outputs/reference/weather_forecasts.csv` | 不确定、每日修订的预报 | 练习场景公开；正式赛仅通过会话提供当前已发布信息 |
+| `outputs/reference/weather_events.csv` | 方向性干扰事件（`active_event_ids` 背后的真值；`instrument_fault` 故障事件永不进预报、不进快照） | 练习场景公开；正式赛仅通过会话提供当前已发布信息 |
 | `outputs/reference/tile_anomalies.csv` | 隐藏 per-tile 真值标签（nova ×1.5 / reddening ×0.8，只作用于评分器） | 比赛场景隐藏，练习场景可审计 |
 | `outputs/reference/scenario_manifest.json`、`*_metadata.json` | 每个文件的行数与 SHA-256 | 公开 |
 

@@ -20,6 +20,34 @@ jobs:
           curl -sSL -o postgrest.tar.xz https://github.com/PostgREST/postgrest/releases/download/v16.2/postgrest-v16.2-linux-static-x86-64.tar.xz
           tar xJf postgrest.tar.xz && chmod +x postgrest
       - run: SAC_POSTGREST_BIN=$PWD/postgrest pytest tests/supabase -q
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Project contracts, database permissions and quotas
+        run: pytest tests/test_project_platform.py tests/test_project_database.py tests/test_project_jobs.py tests/test_project_repository.py tests/test_project_model_adapter.py tests/test_project_job_worker.py tests/test_project_portal.py tests/test_project_local.py tests/test_project_orchestration.py tests/test_project_preparation.py tests/test_observer_deploy.py tests/test_observer_rollout.py tests/test_project_runtime.py tests/test_project_board.py -q
+      - name: Pull explicit project test runtimes
+        run: |
+          docker pull python:3.12-slim
+          docker pull rust:1.98-bookworm
+      - name: Complete Python and Rust projects, real Edge API and trusted scoring
+        run: |
+          export OBSERVER_TEST_PYTHON_IMAGE="$(docker image inspect python:3.12-slim --format '{{index .RepoDigests 0}}')"
+          export OBSERVER_TEST_RUST_IMAGE="$(docker image inspect rust:1.98-bookworm --format '{{index .RepoDigests 0}}')"
+          export SAC_POSTGREST_BIN="$PWD/postgrest"
+          export OBSERVER_DENO_BIN="$(command -v deno)"
+          pytest tests/test_project_docker.py tests/test_project_http.py -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --prefix web
+      - run: pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - name: Participant portal browser journeys
+        run: |
+          export SAC_NODE_BIN="$(dirname "$(command -v node)")"
+          export SAC_POSTGREST_BIN="$PWD/postgrest"
+          export OBSERVER_DENO_BIN="$(command -v deno)"
+          pytest tests/test_project_portal_browser.py -q
   edge-functions:
     runs-on: ubuntu-24.04
     steps:
@@ -28,4 +56,8 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check leaderboard/index.ts
+        working-directory: supabase/functions
+      - run: deno task check:observer
+        working-directory: supabase/functions
+      - run: deno task test:observer
         working-directory: supabase/functions

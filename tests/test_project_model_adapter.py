@@ -1,0 +1,58 @@
+import json
+
+import pytest
+
+from project_platform.manifest import ProjectError
+from project_platform.model_adapter import MAX_PROMPT_BYTES, propose_adapter, source_context
+from project_platform.package import ProjectFile
+
+SOURCE=(ProjectFile("agent.py",b"def choose(snapshot):\n    return {'action':'wait'}\n"),)
+
+
+def proposal():
+    return {"manifest":{"schema_version":"observer-project-v1","image":"python:3.12-slim",
+        "run":["python3","-u",".observer-adapter/main.py"]},
+        "files":[{"path":".observer-adapter/main.py","content":"from agent import choose\n"}],
+        "explanation":"Calls the original agent.choose function; only translates the protocol."}
+
+
+def model_response(value):
+    return {"choices":[{"message":{"content":json.dumps(value)}}]}
+
+
+def test_model_proposal_is_bound_to_original_source_and_cannot_edit_it():
+    requests=[]
+    def complete(request):
+        requests.append(request)
+        return model_response(proposal())
+    adapted=propose_adapter(SOURCE,"test-model",complete)
+    assert adapted.files[0].path==".observer-adapter/main.py"
+    assert SOURCE[0].data==b"def choose(snapshot):\n    return {'action':'wait'}\n"
+    assert requests[0]["max_tokens"]==4096
+    bad=proposal(); bad["files"][0]["path"]="agent.py"
+    with pytest.raises(ProjectError,match="cannot be replaced"):
+        propose_adapter(SOURCE,"test-model",lambda _:model_response(bad))
+
+
+def test_unknown_interface_stops_instead_of_substituting_a_reference_agent():
+    with pytest.raises(ProjectError,match="could not identify the entry point"):
+        propose_adapter(SOURCE,"test",lambda _:model_response({
+            "error":"manual_interface_required","explanation":"No callable agent found"}))
+
+
+def test_large_complete_project_gets_explicitly_truncated_model_context():
+    source=tuple(ProjectFile(f"src/module{i}.rs",b"x"*20000) for i in range(100))
+    context=source_context(source)
+    assert context["file_count"]==100
+    assert sum(len(item["content"].encode()) for item in context["source_samples"])<=32768
+    assert all(item["truncated"] for item in context["source_samples"])
+    def complete(request):
+        assert len(json.dumps(request,ensure_ascii=False).encode())<MAX_PROMPT_BYTES
+        return model_response(proposal())
+    propose_adapter(source,"test",complete)
+
+
+def test_malformed_or_ambiguous_model_output_is_not_accepted():
+    for text in (chr(96)*3+"json\n{}\n"+chr(96)*3,"not JSON",'{"manifest":{},"manifest":{}}'):
+        with pytest.raises(ProjectError):
+            propose_adapter(SOURCE,"test",lambda _:{"choices":[{"message":{"content":text}}]})

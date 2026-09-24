@@ -501,12 +501,12 @@
       "title": "Modes de soumission",
       "items": [
         {
-          "title": "Fichier de résultats",
-          "desc": "Téléversez le decisions.csv produit par le kit en local ; le score tombe en quelques secondes. Accepté au Playground comme en compétition en ligne."
+          "title": "Projets et CSV",
+          "desc": "Le Playground accepte toujours decisions.csv. La compétition accepte un projet complet par dépôt public ou ZIP privé, ou le CSV exporté par une session locale officielle."
         },
         {
           "title": "Limites",
-          "desc": "La plateforme utilise Python 3.12, réseau autorisé (appels d'API de modèles), une horloge globale par scénario (7200 s pour le scénario de référence), démarrage en 30 s, 20 Mo par envoi ; compétition en ligne : 10 soumissions par équipe et par jour."
+          "desc": "Tout langage est accepté ; les modèles sont facultatifs. ZIP : 50 Mo ; CSV : 20 Mo. Chaque scénario a une durée commune. Compétition : 10 évaluations complètes de tous les scénarios par équipe et par jour."
         }
       ],
       "link": "Documentation des soumissions"

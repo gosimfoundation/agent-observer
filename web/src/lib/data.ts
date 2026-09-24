@@ -44,6 +44,7 @@ export interface Phase {
   sort_order: number; starts_at: string | null; ends_at: string | null; allow_results: boolean; allow_agents: boolean
   daily_limit: number; leaderboard_mode: LeaderboardMode; counts_for_final: boolean; is_active: boolean
   scenarios: Scenario[]; status: PhaseStatus
+  observer_settings?: { projects_enabled: boolean; local_sessions_enabled: boolean; daily_batches: number } | null
 }
 export interface Announcement {
   id: string; title_en: string; title_zh: string; body_en: string | null; body_zh: string | null
@@ -56,6 +57,7 @@ export interface LeaderboardEntry {
   submission_count: number; best_submission_id: number | null; kind: string | null; scored_at: string | null; leader_github: string | null
   /** The scenario this board ranks; null on the final board, which averages every scenario of the phase. */
   scenario_slug: string | null
+  observer_batch_id?: string | null; report_reward?: number
 }
 
 export interface PhaseCopy {
@@ -73,12 +75,16 @@ export interface PhaseCopy {
  * only need to happen in one place.
  */
 export function phaseCopy(
-  phase: Pick<Phase, 'description_en' | 'description_zh' | 'allow_results' | 'allow_agents' | 'daily_limit' | 'leaderboard_mode'>,
+  phase: Pick<Phase, 'description_en' | 'description_zh' | 'allow_results' | 'allow_agents' | 'daily_limit' | 'leaderboard_mode' | 'observer_settings'>,
   locale: string,
 ): PhaseCopy {
   const description = (locale === 'zh' ? phase.description_zh : phase.description_en)
     ?? (locale === 'zh' ? phase.description_en : phase.description_zh)
     ?? ''
+  const online=phase.observer_settings
+  if (online?.projects_enabled || online?.local_sessions_enabled) return {description,facts:locale==='zh'
+    ? [...(online.projects_enabled?['完整项目云端评测']:[]),...(online.local_sessions_enabled?['本地运行并提交 CSV']:[]),`每队每天 ${online.daily_batches} 次`,'同一次评测的多个场景取平均']
+    : [...(online.projects_enabled?['Complete project cloud evaluation']:[]),...(online.local_sessions_enabled?['Local run with CSV submission']:[]),`${online.daily_batches} evaluations per team per day`,'Average across all scenarios in one evaluation']}
   const facts = locale === 'zh'
     ? [
         `结果文件 ${phase.allow_results ? '允许' : '不允许'}`,
@@ -105,7 +111,7 @@ export function phaseStatus(p: { is_active: boolean; starts_at: string | null; e
 export async function loadPhases(): Promise<Phase[]> {
   const { data, error } = await supabase
     .from('phases')
-    .select(`*, phase_scenarios(scenario_id, scenarios(${SCENARIO_PUBLIC_COLUMNS}))`)
+    .select(`*, observer_settings:observer_phase_settings(projects_enabled,local_sessions_enabled,daily_batches), phase_scenarios(scenario_id, scenarios(${SCENARIO_PUBLIC_COLUMNS}))`)
     .order('sort_order', { ascending: true })
   if (error) throw error
   return ((data ?? []) as any[]).map(row => {
@@ -174,13 +180,15 @@ export async function loadRegistrationOpen(): Promise<boolean> {
  * board ranks one scenario at a time (longest first, the database's default); the final board averages
  * every scenario and has no switch.
  */
-export function boardScenarios(phase: Pick<Phase, 'counts_for_final' | 'scenarios'> | null): Scenario[] {
-  if (!phase || phase.counts_for_final || phase.scenarios.length < 2) return []
+export function boardScenarios(phase: Pick<Phase, 'counts_for_final' | 'scenarios' | 'observer_settings'> | null): Scenario[] {
+  if (!phase || phase.observer_settings?.projects_enabled || phase.observer_settings?.local_sessions_enabled || phase.counts_for_final || phase.scenarios.length < 2) return []
   return [...phase.scenarios].sort((a, b) => (b.n_nights ?? 0) - (a.n_nights ?? 0) || a.slug.localeCompare(b.slug))
 }
 
-export async function loadLeaderboard(phaseSlug: string | null, limit = 500, scenarioSlug: string | null = null): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase.rpc('leaderboard', { p_phase_slug: phaseSlug, p_limit: limit, p_scenario_slug: scenarioSlug })
+export async function loadLeaderboard(phaseSlug: string | null, limit = 500, scenarioSlug: string | null = null, observerPhaseId?: string): Promise<LeaderboardEntry[]> {
+  const { data, error } = observerPhaseId
+    ? await supabase.rpc('observer_board', { p_phase: observerPhaseId, p_limit: limit })
+    : await supabase.rpc('leaderboard', { p_phase_slug: phaseSlug, p_limit: limit, p_scenario_slug: scenarioSlug })
   if (error) throw error
   return ((data ?? []) as any[]).map((row, index) => ({
     rank: Number(row.rank ?? index + 1),
@@ -205,6 +213,8 @@ export async function loadLeaderboard(phaseSlug: string | null, limit = 500, sce
     kind: row.kind ?? null,
     scored_at: row.scored_at ?? null,
     scenario_slug: row.scenario_slug ? String(row.scenario_slug) : null,
+    observer_batch_id: row.observer_batch_id ?? null,
+    report_reward: Number(row.report_reward ?? 0),
   }))
 }
 

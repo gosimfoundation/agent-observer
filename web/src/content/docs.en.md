@@ -4,9 +4,9 @@
 
 What you are building is a program that takes the night shift at an observatory. The night is cut into 900-second slots; in each one, your agent looks at the current sky conditions and a list of candidate tiles, then decides which patch of sky to observe — or waits. Over a full run it leaves behind a slot-by-slot decision list (`decisions.csv`); a frozen scorer reads that list and produces the report card (`score_report.json`).
 
-A scenario is one exercise, shipped as a folder: six configuration files under `config/` spell out every rule of that round, and the reference data under `outputs/reference/` holds the rest — a slot calendar built on a real solar calendar; a tile and target catalogue split into REQUIRED and FLEXIBLE classes, each tile with its own availability window; per-slot weather plus directional disruption events that hit specific parts of the sky; uncertain, daily-revised forecasts; and observation requests that arrive mid-run. Practice scenarios publish their weather in full; competition scenarios publish their weather, forecasts and events when the competition opens, and switch on the anomaly mechanics — hidden instrument faults and per-tile anomaly tags, reported through `report_*` rows in `decisions.csv` (the switch lives in each scenario's `score_config.json`; the kit's `finals-preview` scenario enables it too, for local rehearsal). Every practice scenario keeps the original contract byte for byte (`decision-snapshot-v2`, no reports). The formal name for all of this is the **challenge v3** contract (`challenge-score-v3`, `participant-agent-protocol-v2`).
+A scenario is one exercise, shipped as a folder: six configuration files under `config/` spell out every rule of that round, and the reference data under `outputs/reference/` holds the rest — a slot calendar built on a real solar calendar; a tile and target catalogue split into REQUIRED and FLEXIBLE classes, each tile with its own availability window; per-slot weather plus directional disruption events that hit specific parts of the sky; uncertain, daily-revised forecasts; and observation requests that arrive mid-run. Practice scenarios publish their weather in full; competition scenarios reveal current weather, released forecasts and observation results through the official session, and switch on the anomaly mechanics — hidden instrument faults and per-tile anomaly tags, reported through `report_*` rows in `decisions.csv` (the switch lives in each scenario's `score_config.json`; the kit's `finals-preview` scenario enables it too, for local rehearsal). Every practice scenario keeps the original contract byte for byte (`decision-snapshot-v2`, no reports). The formal name for all of this is the **challenge v3** contract (`challenge-score-v3`, `participant-agent-protocol-v2`).
 
-There is one way to submit: run your agent on your own machine and upload the `decisions.csv` it produces. The Playground and the online competition both take this file only (agent packages are no longer accepted from 24 September 2026).
+The Playground continues to accept `decisions.csv` from local practice. Competition supports complete projects (public repository URL or private ZIP) and CSVs exported by official local sessions. Both competition modes receive the same information step by step; future weather remains on the server. Any project language is allowed, and model use is optional. Existing submissions, scores and replays are preserved.
 
 The platform and the starter kit use the same `scoring_core.py`. The starter kit contains the workflow, the scorer, the minimal agent and the public scenario files.
 
@@ -18,15 +18,23 @@ Two arenas: **the Playground** is for practice — submit freely, scores land in
 
 | | Practice | Online competition |
 |---|---|---|
-| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); weather, forecasts and events published when the competition opens |
-| Submissions | results files (`decisions.csv`), 50 per team per day | results files (`decisions.csv`), 10 per team per day |
-| Score | ranked per scenario; informational | mean of the best score on each of the two scenarios; decides the awards |
+| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); current information released through the session, future weather private |
+| Submissions | results files (`decisions.csv`), 50 per team per day | complete projects or official local-session CSVs, 10 complete batches per team per day |
+| Score | ranked per scenario; informational | mean of all scenarios in the same batch; best complete batch counts |
 
-Once a scenario's weather and events are published, a local `score_decisions.py` run reproduces the platform report exactly. The one exception is the competition scenarios' anomaly tags: their answer key is not published and is used only when the platform scores, so a local score on a competition scenario leaves that part out.
+For public practice data, `score_decisions.py` reproduces the platform report. Competition scores are computed by the trusted server; hidden weather and anomaly answers are never included in participant projects or downloads.
 
 Both phases use the same scorer and the same `score_config.json`, and the reports have the same format, so a strategy tuned in the Playground carries straight into the competition.
 
-## 3. Starter kit
+### Competition project and local-session flow
+
+1. Open [Agent projects](/projects). Submit a public repository URL or a private ZIP (up to 50 MB). A [minimal complete project](https://github.com/BH3GEI/observer-project-example) demonstrates the JSONL interface. Python is the runner language, not a requirement for your project.
+2. Review the fixed source, container image, launch settings and any proposed adapter after the public preview passes. Confirm this version before formal evaluation.
+3. For local execution, start a local CSV session instead. Download the runner from the run instructions, execute your own complete project and upload the exported CSV (up to 20 MB) to the matching record. Modified CSVs are rejected. The old starter-kit CSV is for practice, not a substitute for an official competition session.
+4. Each batch evaluates every scenario and uses their mean score. Private results and logs are available to your team. Model APIs are optional; use the organizer provider or save a supported personal provider on the project page. Temporary credentials expire and have quotas.
+5. Keep architecture and reproduction notes with the confirmed project for separate design review. These notes do not alter the performance score.
+
+## 3. Starter kit (practice)
 
 ### The short path (no tooling)
 
@@ -186,9 +194,9 @@ Conventions: UTF-8 (a BOM is tolerated), comma-separated, the header must contai
 | `outputs/reference/night_calendar.csv`, `slots.csv` | the shared time axis (37–47 slots per night) | public |
 | `outputs/reference/tiles.csv`, `targets.csv`, `tile_windows.csv` | catalogue, per-target science weights, sample visibility windows | public |
 | `outputs/reference/observation_requests.csv`, `observation_request_tiles.csv` | pre-generated requests and their tiles | public |
-| `outputs/reference/weather.csv` | site baseline weather per slot | public on practice scenarios; published when the competition opens |
-| `outputs/reference/weather_forecasts.csv` | uncertain, daily-revised forecasts | public on practice scenarios; published when the competition opens |
-| `outputs/reference/weather_events.csv` | directional disruption events (the truth behind `active_event_ids`; `instrument_fault` events never enter forecasts or snapshots) | public on practice scenarios; published when the competition opens |
+| `outputs/reference/weather.csv` | site baseline weather per slot | public for practice; only currently released information in competition sessions |
+| `outputs/reference/weather_forecasts.csv` | uncertain, daily-revised forecasts | public for practice; only currently released information in competition sessions |
+| `outputs/reference/weather_events.csv` | directional disruption events (the truth behind `active_event_ids`; `instrument_fault` events never enter forecasts or snapshots) | public for practice; only currently released information in competition sessions |
 | `outputs/reference/tile_anomalies.csv` | hidden per-tile truth tags (nova ×1.5 / reddening ×0.8, applied by the scorer only) | hidden on competition scenarios, auditable on practice ones |
 | `outputs/reference/scenario_manifest.json`, `*_metadata.json` | row counts and SHA-256 of every file | public |
 

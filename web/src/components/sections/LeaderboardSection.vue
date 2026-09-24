@@ -40,7 +40,8 @@ async function load() {
     phase.value = mainPhase(phases)
     hidden.value = phase.value?.leaderboard_mode === 'hidden'
     if (!scenarioTabs.value.some(s => s.slug === scenarioSlug.value)) scenarioSlug.value = scenarioTabs.value[0]?.slug ?? null
-    entries.value = phase.value && !hidden.value ? await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value) : []
+    entries.value = phase.value && !hidden.value ? await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value,
+      phase.value.observer_settings?.projects_enabled || phase.value.observer_settings?.local_sessions_enabled ? phase.value.id : undefined) : []
     updatedAt.value = new Date()
     error.value = false
     loading.value = false
