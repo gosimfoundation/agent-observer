@@ -419,3 +419,23 @@ enabled = true
 # ---------------------------------------------------------------------------
 [functions.leaderboard]
 verify_jwt = false   # public read-only endpoint
+
+[functions.observer-model]
+# Validates short-lived run capabilities itself; Supabase user JWTs are not model keys.
+verify_jwt = false
+
+[functions.observer-session]
+# Each operation validates the run token and its participant/engine scope.
+verify_jwt = false
+
+[functions.observer-job]
+# Verifies GitHub OIDC signature and the exact pinned workflow, then binds the run.
+verify_jwt = false
+
+[functions.observer-dispatch]
+# Backend scheduler only; checks its dedicated random dispatch secret.
+verify_jwt = false
+
+[functions.observer-portal]
+# Validates the user session and team before every operation.
+verify_jwt = false

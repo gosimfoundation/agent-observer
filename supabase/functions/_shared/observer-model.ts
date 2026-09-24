@@ -1,0 +1,254 @@
+/** Model proxy core. No model credential ever reaches the participant process. */
+export class ProxyError extends Error {
+  constructor(public status: number, public code: string) {
+    super(code);
+  }
+}
+
+export type Rpc = (name: string, args: Record<string, unknown>) => Promise<any>;
+export type ProxyDependencies = {
+  rpc: Rpc;
+  fetch: typeof fetch;
+  decrypt: (ciphertext: string, providerId: string) => Promise<string>;
+  // Exact backend-configured bases. Participants cannot authorize a new origin.
+  allowedBases: Set<string>;
+  allowedHttpBases: Set<string>;
+  defaultProvider: string;
+  timeoutMs?: number;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function capability(authorization: string | null) {
+  const match = /^Bearer obs_([0-9a-f-]{36})\.([A-Za-z0-9_-]{40,200})$/i.exec(authorization ?? "");
+  if (!match || !UUID.test(match[1])) throw new ProxyError(401, "invalid_run_credential");
+  return { run: match[1], token: match[2] };
+}
+
+export async function boundedJson(input: Request | Response, limit: number): Promise<any> {
+  if (!input.body) throw new ProxyError(400, "empty_body");
+  const reader = input.body.getReader();
+  const parts: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > limit) throw new ProxyError(413, "body_too_large");
+      parts.push(value);
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+  const data = new Uint8Array(length);
+  let offset = 0;
+  for (const part of parts) {
+    data.set(part, offset);
+    offset += part.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(data));
+  } catch {
+    throw new ProxyError(400, "invalid_json");
+  }
+}
+
+function object(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function validateChat(body: unknown) {
+  if (!object(body)) throw new ProxyError(400, "invalid_chat");
+  const allowed = new Set([
+    "model",
+    "messages",
+    "max_tokens",
+    "max_completion_tokens",
+    "temperature",
+    "top_p",
+    "stop",
+    "tools",
+    "tool_choice",
+    "response_format",
+    "seed",
+    "stream",
+    "n",
+    "chat_template_kwargs",
+  ]);
+  if (Object.keys(body).some((k) => !allowed.has(k))) throw new ProxyError(400, "unsupported_chat_option");
+  if (
+    typeof body.model !== "string" || body.model.length > 256 ||
+    !Array.isArray(body.messages) || !body.messages.length || body.messages.length > 128
+  ) {
+    throw new ProxyError(400, "invalid_chat");
+  }
+  if (body.stream === true) throw new ProxyError(400, "streaming_not_supported");
+  if (body.stream !== undefined && body.stream !== false) throw new ProxyError(400, "invalid_stream");
+  if (body.n !== undefined && body.n !== 1) throw new ProxyError(400, "one_completion_required");
+  if (body.max_tokens !== undefined && body.max_completion_tokens !== undefined) {
+    throw new ProxyError(400, "ambiguous_token_limit");
+  }
+  const maxTokens = body.max_completion_tokens ?? body.max_tokens ?? 1024;
+  if (!Number.isSafeInteger(maxTokens) || maxTokens < 1 || maxTokens > 4096) {
+    throw new ProxyError(400, "invalid_token_limit");
+  }
+  for (const message of body.messages) {
+    if (
+      !object(message) || !["system", "developer", "user", "assistant", "tool"].includes(message.role) ||
+      (typeof message.content !== "string" && !(message.content === null && Array.isArray(message.tool_calls)))
+    ) {
+      throw new ProxyError(400, "text_messages_required");
+    }
+    // Remote image/audio/attachment URLs would invalidate bounded token accounting.
+    if (Object.keys(message).some((k) => !["role", "content", "name", "tool_calls", "tool_call_id"].includes(k))) {
+      throw new ProxyError(400, "unsupported_message_option");
+    }
+  }
+  if (
+    body.chat_template_kwargs !== undefined &&
+    (!object(body.chat_template_kwargs) ||
+      Object.keys(body.chat_template_kwargs).some((k) => k !== "enable_thinking") ||
+      typeof body.chat_template_kwargs.enable_thinking !== "boolean")
+  ) {
+    throw new ProxyError(400, "unsupported_template_option");
+  }
+  const cleaned: Record<string, any> & { model: string } = { ...body, model: body.model, stream: false, n: 1 };
+  if (body.max_completion_tokens === undefined) cleaned.max_tokens = maxTokens;
+  const bytes = new TextEncoder().encode(JSON.stringify(cleaned)).length;
+  if (bytes > 65536) throw new ProxyError(413, "chat_too_large");
+  // Byte count is deliberately conservative for supported text tokenizers. Add
+  // room for the provider's role/tool template and bound completion explicitly.
+  return { body: cleaned, reservedTokens: bytes + body.messages.length * 128 + 1024 + maxTokens };
+}
+
+function upstreamUrl(base: string, allowHttp: boolean, deps: ProxyDependencies): URL {
+  let url: URL;
+  try {
+    url = new URL(base);
+  } catch {
+    throw new ProxyError(503, "provider_configuration_error");
+  }
+  const normalized = url.href.replace(/\/$/, "");
+  if (
+    url.username || url.password || url.search || url.hash ||
+    !deps.allowedBases.has(normalized) ||
+    (url.protocol !== "https:" && !(url.protocol === "http:" && allowHttp && deps.allowedHttpBases.has(normalized)))
+  ) {
+    throw new ProxyError(503, "provider_not_authorized");
+  }
+  return new URL(normalized + "/chat/completions");
+}
+
+async function digest(value: string) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(bytes), (n) => n.toString(16).padStart(2, "0")).join("");
+}
+
+function redact(value: any, key: string): any {
+  if (typeof value === "string") return value.replaceAll(key, "[REDACTED]");
+  if (Array.isArray(value)) return value.map((item) => redact(item, key));
+  if (object(value)) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replaceAll(key, "[REDACTED]"), redact(v, key)]));
+  }
+  return value;
+}
+
+export async function chatCompletion(request: Request, deps: ProxyDependencies): Promise<Response> {
+  const { run, token } = capability(request.headers.get("authorization"));
+  const checked = validateChat(await boundedJson(request, 65536));
+  const separator = checked.body.model.indexOf("::");
+  const provider = separator < 0 ? deps.defaultProvider : checked.body.model.slice(0, separator);
+  const model = separator < 0 ? checked.body.model : checked.body.model.slice(separator + 2);
+  if (!UUID.test(provider) || !model) throw new ProxyError(400, "invalid_provider");
+  const requestedId = request.headers.get("idempotency-key");
+  if (requestedId && !UUID.test(requestedId)) throw new ProxyError(400, "invalid_idempotency_key");
+  const call = requestedId ?? crypto.randomUUID();
+  const body = JSON.stringify({ ...checked.body, model });
+  const reservation = await deps.rpc("observer_reserve_model", {
+    p_run: run,
+    p_token: token,
+    p_call: call,
+    p_provider: provider,
+    p_model: model,
+    p_digest: await digest(provider + "\n" + body),
+    p_tokens: checked.reservedTokens,
+  });
+  if (!reservation.reserved) throw new ProxyError(409, "model_request_already_received");
+  let actualTokens: number | null = null;
+  let upstreamAttempted = false;
+  try {
+    const url = upstreamUrl(reservation.base_url, reservation.allow_http === true, deps);
+    const key = await deps.decrypt(reservation.encrypted_key, provider);
+    if (!key) throw new ProxyError(503, "provider_configuration_error");
+    upstreamAttempted = true;
+    const response = await deps.fetch(url, {
+      method: "POST",
+      redirect: "error",
+      headers: { "content-type": "application/json", "authorization": "Bearer " + key },
+      body,
+      signal: AbortSignal.timeout(deps.timeoutMs ?? 120000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new ProxyError(502, "model_provider_error");
+    }
+    const result = await boundedJson(response, 2 * 1024 * 1024);
+    if (!object(result) || !Array.isArray(result.choices)) throw new ProxyError(502, "invalid_provider_response");
+    const usage = result.usage?.total_tokens;
+    if (Number.isSafeInteger(usage) && usage >= 0 && usage <= checked.reservedTokens) actualTokens = usage;
+    // Missing/invalid usage is charged at the reserved upper bound. Never refund
+    // on a timeout, unknown provider error, or client disconnect.
+    return new Response(JSON.stringify(redact(result, key)), {
+      status: 200,
+      headers: { "content-type": "application/json", "x-observer-request-id": call },
+    });
+  } catch (error) {
+    if (!upstreamAttempted) actualTokens = 0;
+    if (error instanceof ProxyError) throw error;
+    throw new ProxyError(502, "model_provider_unavailable");
+  } finally {
+    // If the database is temporarily unavailable, leave the reservation held.
+    // The reconciler conservatively settles it; it must never retry the model.
+    await deps.rpc("observer_settle_model", { p_call: call, p_actual_tokens: actualTokens });
+  }
+}
+
+function decode64(value: string): Uint8Array<ArrayBuffer> {
+  try {
+    return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+  } catch {
+    throw new ProxyError(503, "credential_configuration_error");
+  }
+}
+function encode64(value: Uint8Array): string {
+  return btoa(Array.from(value, (x) => String.fromCharCode(x)).join(""));
+}
+async function encryptionKey(encoded: string) {
+  const bytes = decode64(encoded);
+  if (bytes.byteLength !== 32) throw new ProxyError(503, "credential_configuration_error");
+  return await crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+export async function encryptCredential(plaintext: string, providerId: string, masterKey: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: new TextEncoder().encode(providerId) },
+    await encryptionKey(masterKey),
+    new TextEncoder().encode(plaintext),
+  );
+  return "v1." + encode64(iv) + "." + encode64(new Uint8Array(encrypted));
+}
+export async function decryptCredential(ciphertext: string, providerId: string, masterKey: string): Promise<string> {
+  const [version, iv, body, extra] = ciphertext.split(".");
+  if (version !== "v1" || !iv || !body || extra) throw new ProxyError(503, "invalid_encrypted_credential");
+  try {
+    const bytes = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: decode64(iv), additionalData: new TextEncoder().encode(providerId) },
+      await encryptionKey(masterKey),
+      decode64(body),
+    );
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new ProxyError(503, "invalid_encrypted_credential");
+  }
+}

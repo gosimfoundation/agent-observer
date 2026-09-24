@@ -1,0 +1,272 @@
+import { boundedJson, decryptCredential, ProxyError } from "./observer-model.ts";
+import type { Rpc } from "./observer-model.ts";
+import { verifyWorkflowIdentity } from "./observer-github.ts";
+import type { WorkflowIdentity } from "./observer-github.ts";
+
+export type JobDependencies = {
+  rpc: Rpc;
+  masterKey: string;
+  verify?: typeof verifyWorkflowIdentity;
+  repositoryCredentials?: (user: string, kind: "prepare" | "engine") => Promise<{ full_name: string; token: string }>;
+  archiveDownload?: (reference: string, privateOnly: boolean) => Promise<string>;
+  scenarioDownload?: (path: string) => Promise<string>;
+  sourceDownload?: (path: string) => Promise<string>;
+};
+
+function validateArtifactUpload(value: unknown, id: string, filename: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ProxyError(503, "invalid_job_payload");
+  const upload = value as Record<string, unknown>;
+  if (Object.keys(upload).join(",") === "kind" && upload.kind === "github") return;
+  if (
+    Object.keys(upload).sort().join(",") !== "path,url" || typeof upload.url !== "string" ||
+    typeof upload.path !== "string" ||
+    !new RegExp("^[0-9a-f-]{36}/" + id + "/" + filename + "\\.zip$").test(upload.path)
+  ) {
+    throw new ProxyError(503, "invalid_job_payload");
+  }
+  let url: URL;
+  try {
+    url = new URL(upload.url);
+  } catch {
+    throw new ProxyError(503, "invalid_job_payload");
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.hash || url.port) {
+    throw new ProxyError(503, "invalid_job_payload");
+  }
+}
+
+// Payload classes are deliberately separate. An executor can never receive the
+// engine's scenario bundle, a service key, or repository installation credentials.
+export function validateJobPayload(payload: unknown, expected: WorkflowIdentity, job: string) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new ProxyError(503, "invalid_job_payload");
+  }
+  const value = payload as Record<string, unknown>;
+  const kind = expected.workflow.slice("observer-".length, -".yml".length);
+  const fields: Record<string, string[]> = {
+    execute: [
+      "kind",
+      "job_id",
+      "run_id",
+      "archive_url",
+      "source_digest",
+      "manifest",
+      "session_url",
+      "run_credential",
+      "model_base_url",
+    ],
+    engine: [
+      "kind",
+      "job_id",
+      "run_id",
+      "scenario_url",
+      "scenario_digest",
+      "session_url",
+      "run_credential",
+      "runtime_seconds",
+      "artifact_upload",
+    ],
+    prepare: [
+      "kind",
+      "job_id",
+      "revision_id",
+      "archive_url",
+      "source_digest",
+      "repository",
+      "artifact_upload",
+      "model_base_url",
+      "run_credential",
+      "model",
+    ],
+  };
+  if (
+    !fields[kind] || value.kind !== kind || value.job_id !== job ||
+    Object.keys(value).some((key) => !fields[kind].includes(key))
+  ) throw new ProxyError(503, "invalid_job_payload");
+  const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+  const hash = /^[0-9a-f]{64}$/;
+  const string = (name: string, pattern?: RegExp) => {
+    const field = value[name];
+    if (typeof field !== "string" || !field || (pattern && !pattern.test(field))) {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+    return field;
+  };
+  const url = (name: string) => {
+    let parsed: URL;
+    try {
+      parsed = new URL(string(name));
+    } catch {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.hash || parsed.port) {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+  };
+  if (kind === "execute" || kind === "engine") {
+    const run = string("run_id", uuid);
+    string("run_credential", new RegExp("^obs_" + run + "\\.[A-Za-z0-9_-]{40,100}$"));
+    url("session_url");
+  }
+  if (kind === "execute") {
+    url("archive_url");
+    url("model_base_url");
+    string("source_digest", hash);
+    const manifest = value.manifest as Record<string, unknown> | null;
+    if (
+      !manifest || typeof manifest !== "object" || Array.isArray(manifest) ||
+      manifest.schema_version !== "observer-project-v1" ||
+      typeof manifest.image !== "string" ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._/:-]*@sha256:[0-9a-f]{64}$/.test(manifest.image) ||
+      !Array.isArray(manifest.run) || !manifest.run.length ||
+      !manifest.run.every((arg) => typeof arg === "string" && arg.length > 0 && !arg.includes("\0"))
+    ) {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+  }
+  if (kind === "engine") {
+    url("scenario_url");
+    string("scenario_digest", hash);
+    if (
+      !Number.isInteger(value.runtime_seconds) || Number(value.runtime_seconds) < 10 ||
+      Number(value.runtime_seconds) > 18000
+    ) {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+    validateArtifactUpload(value.artifact_upload, string("run_id", uuid), "result");
+  }
+  if (kind === "prepare") {
+    const revision = string("revision_id", uuid);
+    url("archive_url");
+    // A repository upload has an immutable Git commit; a ZIP additionally has
+    // its uploaded archive digest. The preparation worker calculates source hash.
+    if (value.source_digest !== null && value.source_digest !== undefined) string("source_digest", hash);
+    const repository = value.repository as Record<string, unknown> | null;
+    if (
+      !repository || typeof repository !== "object" || Object.keys(repository).sort().join(",") !== "full_name,token" ||
+      typeof repository.full_name !== "string" ||
+      !/^AGENTIC-OBSERVER26-runner-[1-6]\/participant-[0-9a-f]{32}$/.test(repository.full_name) ||
+      !repository.full_name.startsWith(expected.organization + "/") ||
+      typeof repository.token !== "string" || !repository.token || /[\r\n\0]/.test(repository.token)
+    ) {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+    validateArtifactUpload(value.artifact_upload, revision, "preview");
+    if (value.model !== undefined || value.model_base_url !== undefined || value.run_credential !== undefined) {
+      string("model");
+      url("model_base_url");
+      string("run_credential", /^obs_[0-9a-f-]{36}\.[A-Za-z0-9_-]{40,100}$/);
+    }
+  }
+  return value;
+}
+
+export async function jobRequest(request: Request, deps: JobDependencies) {
+  const bearer = /^Bearer ([A-Za-z0-9_.-]+)$/.exec(request.headers.get("authorization") ?? "");
+  if (!bearer) throw new ProxyError(401, "workflow_identity_required");
+  const body = await boundedJson(request, 1100000);
+  if (
+    !body || typeof body !== "object" || Array.isArray(body) ||
+    typeof body.job_id !== "string" || !/^[0-9a-f-]{36}$/.test(body.job_id) ||
+    !["claim", "complete", "artifact_repository"].includes(body.action)
+  ) throw new ProxyError(400, "invalid_job_request");
+  const identity = await deps.rpc("observer_job_identity", { p_job: body.job_id });
+  if (!identity) throw new ProxyError(404, "job_unavailable");
+  const expected: WorkflowIdentity = {
+    ...identity,
+    runId: identity.runId ?? undefined,
+    runAttempt: identity.runAttempt ?? undefined,
+  };
+  const verified = await (deps.verify ?? verifyWorkflowIdentity)(bearer[1], expected);
+  const repository = async () => {
+    if (expected.workflow === "observer-execute.yml" || !deps.repositoryCredentials) {
+      throw new ProxyError(403, "artifact_access_denied");
+    }
+    const target = await deps.rpc("observer_job_artifact_target", {
+      p_job: body.job_id,
+      p_github_run: verified.runId,
+      p_attempt: verified.runAttempt,
+    });
+    if (!target?.user_id || !target?.artifact_id || !["prepare", "engine"].includes(target.kind)) {
+      throw new ProxyError(403, "artifact_access_denied");
+    }
+    return {
+      ...await deps.repositoryCredentials(target.user_id, target.kind),
+      artifact_id: target.artifact_id,
+      kind: target.kind,
+    };
+  };
+  if (body.action === "artifact_repository") return await repository();
+  if (body.action === "claim") {
+    if (typeof body.nonce !== "string" || !/^[A-Za-z0-9_-]{40,100}$/.test(body.nonce)) {
+      throw new ProxyError(400, "invalid_job_nonce");
+    }
+    const ciphertext = await deps.rpc("observer_claim_job", {
+      p_job: body.job_id,
+      p_nonce: body.nonce,
+      p_github_run: verified.runId,
+      p_attempt: verified.runAttempt,
+      p_repository: expected.repositoryId,
+      p_owner: expected.organizationId,
+      p_sha: expected.approvedSha,
+    });
+    const cleartext = await decryptCredential(ciphertext, body.job_id, deps.masterKey);
+    let parsed;
+    try {
+      parsed = JSON.parse(cleartext);
+    } catch {
+      throw new ProxyError(503, "invalid_job_payload");
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      if (parsed.archive_storage_ref !== undefined) {
+        const ref = parsed.archive_storage_ref;
+        if (
+          parsed.kind !== "prepare" || parsed.archive_url !== undefined || parsed.archive_ref !== undefined ||
+          !deps.sourceDownload || !ref || typeof ref !== "object" || Array.isArray(ref) ||
+          Object.keys(ref).sort().join(",") !== "bucket,path" || ref.bucket !== "observer-staging" ||
+          typeof ref.path !== "string" || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\/source[.]zip$/.test(ref.path)
+        ) {
+          throw new ProxyError(503, "invalid_job_payload");
+        }
+        parsed.archive_url = await deps.sourceDownload(ref.path);
+        delete parsed.archive_storage_ref;
+      }
+      if (parsed.scenario_ref !== undefined) {
+        const ref = parsed.scenario_ref;
+        if (
+          parsed.kind !== "engine" || parsed.scenario_url !== undefined || !deps.scenarioDownload ||
+          !ref || typeof ref !== "object" || Array.isArray(ref) ||
+          Object.keys(ref).sort().join(",") !== "bucket,path" || ref.bucket !== "observer-scenarios" ||
+          typeof ref.path !== "string" || !/^[A-Za-z0-9_/-]+[.]zip$/.test(ref.path)
+        ) {
+          throw new ProxyError(503, "invalid_job_payload");
+        }
+        parsed.scenario_url = await deps.scenarioDownload(ref.path);
+        delete parsed.scenario_ref;
+      }
+      if (parsed.archive_ref !== undefined) {
+        if (parsed.archive_url !== undefined || !deps.archiveDownload || typeof parsed.archive_ref !== "string") {
+          throw new ProxyError(503, "invalid_job_payload");
+        }
+        parsed.archive_url = await deps.archiveDownload(parsed.archive_ref, parsed.kind !== "prepare");
+        delete parsed.archive_ref;
+      }
+      if (parsed.kind === "prepare" && parsed.repository && !parsed.repository.token) {
+        const fresh = await repository();
+        if (fresh.full_name !== parsed.repository.full_name || fresh.artifact_id !== parsed.revision_id) {
+          throw new ProxyError(503, "invalid_job_payload");
+        }
+        parsed.repository = { full_name: fresh.full_name, token: fresh.token };
+      }
+    }
+    return validateJobPayload(parsed, expected, body.job_id);
+  }
+  await deps.rpc("observer_finish_job", {
+    p_job: body.job_id,
+    p_github_run: verified.runId,
+    p_attempt: verified.runAttempt,
+    p_result: body.result,
+    p_error: typeof body.error === "string" ? body.error : "",
+  });
+  return { accepted: true };
+}

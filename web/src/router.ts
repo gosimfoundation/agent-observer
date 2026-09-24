@@ -24,6 +24,7 @@ const router = createRouter({
     { path: '/dashboard', component: () => import('./pages/DashboardPage.vue'), meta: { page: 'dashboard', auth: true } },
     { path: '/team', component: () => import('./pages/TeamPage.vue'), meta: { page: 'team', auth: true } },
     { path: '/submit', component: () => import('./pages/SubmitPage.vue'), meta: { page: 'submit', auth: true } },
+    { path: '/projects', component: () => import('./pages/ProjectsPage.vue'), meta: { page: 'projects', auth: true } },
     { path: '/submissions', component: () => import('./pages/SubmissionsPage.vue'), meta: { page: 'submissions', auth: true } },
     { path: '/submissions/:id', component: () => import('./pages/SubmissionDetailPage.vue'), meta: { page: 'submission', auth: true } },
     { path: '/profile', component: () => import('./pages/ProfilePage.vue'), meta: { page: 'profile', auth: true } },

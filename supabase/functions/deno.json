@@ -1,5 +1,7 @@
 {
   "tasks": {
+    "test:observer": "deno test _shared/observer-model_test.ts _shared/observer-github_test.ts _shared/observer-job_test.ts _shared/observer-dispatch_test.ts _shared/observer-orchestrate_test.ts _shared/observer-prepare_test.ts _shared/observer-cleanup_test.ts",
+    "check:observer": "deno check observer-model/index.ts observer-session/index.ts observer-job/index.ts observer-dispatch/index.ts _shared/observer-model_test.ts _shared/observer-github_test.ts _shared/observer-job_test.ts observer-portal/index.ts",
     "test": "deno test -A _shared",
     "check": "deno check score-results/index.ts leaderboard/index.ts _shared/scorer.ts _shared/metrics.ts",
     "fmt": "deno fmt",
@@ -12,14 +14,18 @@
   },
   "compilerOptions": {
     "strict": true,
-    "lib": ["deno.window"]
+    "lib": [
+      "deno.window"
+    ]
   },
   "fmt": {
     "lineWidth": 120
   },
   "lint": {
     "rules": {
-      "exclude": ["no-import-prefix"]
+      "exclude": [
+        "no-import-prefix"
+      ]
     }
   }
 }

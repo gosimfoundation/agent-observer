@@ -80,3 +80,17 @@ console.log(`[build-kit] wrote ${count} files (${rawBytes} bytes raw) into ${rel
 for (const name of ['scoring_core.py', 'contracts.py', 'score_config.json']) console.log(`[build-kit] public/downloads/${name}: ${statSync(resolve(outDir, name)).size} bytes`)
 console.log(`[build-kit] public/skill.md: ${statSync(resolve(root, 'public', 'skill.md')).size} bytes`)
 void sep
+
+// Language-neutral online local runner; no scenarios, credentials or caches.
+const onlineEntries = {}
+for (const pkg of ['project_platform', 'challenge']) {
+  const source = resolve(root, '..', pkg)
+  for (const entry of readdirSync(source, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith('.py')) {
+      onlineEntries[`observer-local-runner/${pkg}/${entry.name}`] = [readFileSync(resolve(source, entry.name)), { mtime, level: 9 }]
+    }
+  }
+}
+onlineEntries['observer-local-runner/README.md'] = [readFileSync(resolve(root, '..', 'docs/local-project-runner.md')), { mtime, level: 9 }]
+writeFileSync(resolve(outDir, 'observer-local-runner.zip'), zipSync(onlineEntries, { level: 9, mtime }))
+console.log(`[build-kit] online runner: ${Object.keys(onlineEntries).length} trusted files; no scenario data`)

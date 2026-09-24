@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+import csv
+import hashlib
+import io
+import json
+import secrets
+import uuid
+
+import psycopg
+import pytest
+
+from challenge.contracts import DECISION_COLUMNS
+from project_platform.local import export_decisions
+from project_platform.manifest import ProjectError
+from project_platform.model_client import ModelClient
+from project_platform.session import SessionClient
+from test_project_database import database, setup, identity, query, rpc, session  # noqa: F401
+
+
+def test_local_credential_is_separate_from_engine_and_only_visible_to_matching_team(setup):
+    s=setup;uri=s['uri'];other,_=identity(uri)
+    batch=rpc(uri,'observer_create_batch',s['phase'],None,role='authenticated',user=s['user'])
+    run=query(uri,'select id from public.observer_runs where batch_id=%s',(batch,))[0][0]
+    participant,engine=secrets.token_urlsafe(32),secrets.token_urlsafe(32)
+    ciphertext='encrypted participant capability only'
+    rpc(uri,'observer_open_local_session',run,participant,engine,ciphertext)
+    assert rpc(uri,'observer_local_access',run,s['user'])['encrypted_credential']==ciphertext
+    assert rpc(uri,'observer_local_access',run,other) is None
+    with pytest.raises(psycopg.Error,match='permission denied'):
+        rpc(uri,'observer_local_access',run,s['user'],role='authenticated',user=other)
+    with pytest.raises(psycopg.Error,match='invalid_or_expired_capability'):
+        rpc(uri,'observer_abort_local',run,engine)
+    rpc(uri,'observer_abort_local',run,participant)
+    assert rpc(uri,'observer_local_access',run,s['user']) is None
+    assert query(uri,'select status from public.observer_batches where id=%s',(batch,))==[('failed',)]
+
+
+def test_export_contains_only_committed_rows_after_completion_and_matches_official_csv(setup,tmp_path):
+    s=setup;uri=s['uri'];run,participant,engine=session(s)
+    with pytest.raises(psycopg.Error,match='session_not_finished'):
+        rpc(uri,'observer_export_decisions',run,participant)
+    row=dict(zip(DECISION_COLUMNS,['1','slot1','wait','','','', '中文, quote " and newline\n']))
+    output=io.StringIO(newline='');writer=csv.DictWriter(output,fieldnames=DECISION_COLUMNS,lineterminator='\n')
+    writer.writeheader();writer.writerow(row);raw=output.getvalue().encode();digest=hashlib.sha256(raw).hexdigest()
+    from psycopg.types.json import Jsonb
+    query(uri,"""insert into private.observer_messages(run_id,sequence,observation,response,committed)
+        values(%s,1,'{"private_future":"not for export"}','{"not_committed":"no"}',%s),
+              (%s,2,'{}','{"not_committed":"no"}',null)""",(run,Jsonb({'rows':[row]}),run))
+    query(uri,"update public.observer_runs set status='awaiting_csv',decisions_digest=%s,finished_at=now() where id=%s",(digest,run))
+    with pytest.raises(psycopg.Error,match='invalid_or_expired_capability'):
+        rpc(uri,'observer_export_decisions',run,engine)
+    data=rpc(uri,'observer_export_decisions',run,participant)
+    assert data=={'rows':[row],'decisions_digest':digest}
+    class Client:
+        def call(self,action):assert action=='decisions';return data
+    target=tmp_path/'decisions.csv'
+    assert export_decisions(Client(),target)==digest
+    assert target.read_bytes()==raw
+    with pytest.raises(FileExistsError):export_decisions(Client(),target)
+    data['decisions_digest']='a'*64
+    with pytest.raises(ProjectError,match='differs from the official trace'):
+        export_decisions(Client(),tmp_path/'bad.csv')
+    assert not (tmp_path/'bad.csv').exists()
+    query(uri,"update public.observer_runs set finished_at=now()-interval '8 days' where id=%s",(run,))
+    with pytest.raises(psycopg.Error,match='invalid_or_expired_capability'):
+        rpc(uri,'observer_export_decisions',run,participant)
+
+
+@pytest.mark.parametrize('model',[False,True])
+def test_connection_reset_retries_the_same_request_without_reissuing_a_model_call(model):
+    from http.client import RemoteDisconnected
+    requests=[]
+    class Opener:
+        def open(self,request,**kwargs):
+            requests.append(request)
+            if len(requests)==1:raise RemoteDisconnected('Connection reset')
+            return io.BytesIO(json.dumps({'data':{'accepted':True},'choices':[]}).encode())
+    if model:
+        client=ModelClient('http://127.0.0.1/v1','scoped-test-credential');client.opener=Opener()
+        assert client({'model':'test-model','messages':[]})['choices']==[]
+        assert requests[0].get_header('Idempotency-key')==requests[1].get_header('Idempotency-key')
+        assert requests[0].get_header('Idempotency-key')
+    else:
+        client=SessionClient('http://127.0.0.1/session','scoped-test-credential');client.opener=Opener()
+        assert client.call('respond',sequence=1,response={'action':'wait'})=={'accepted':True}
+    assert len(requests)==2 and requests[0].data==requests[1].data

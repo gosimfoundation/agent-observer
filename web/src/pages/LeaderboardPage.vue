@@ -44,7 +44,8 @@ const showCoverage = computed(() => entries.value.some(e => (e.coverage_bonus ??
 async function loadBoard() {
   if (!phase.value || !visible.value) { entries.value = []; return }
   boardLoading.value = true
-  try { entries.value = await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value); updatedAt.value = new Date() }
+  try { entries.value = await loadLeaderboard(phase.value.slug, 500, scenarioSlug.value,
+    phase.value.observer_settings?.projects_enabled || phase.value.observer_settings?.local_sessions_enabled ? phase.value.id : undefined); updatedAt.value = new Date() }
   catch { entries.value = [] }
   finally { boardLoading.value = false }
 }

@@ -10,21 +10,22 @@
 | Phase | Dates (UTC) | Submissions | Board |
 |---|---|---|---|
 | Practice | from registration until Awards Day | decisions.csv, 50 per team per day | informational |
-| Online Competition | 2026-10-04 16:00 to 2026-10-07 15:59 (Oct 5–7 in UTC+8) | decisions.csv, 10 per team per day | decides the awards |
+| Online Competition | 2026-10-04 16:00 to 2026-10-07 15:59 (Oct 5–7 in UTC+8) | complete projects or local-session CSVs, 10 batches per team per day | decides the awards |
 | Awards Day | 2026-10-17 at GOSIM Shenzhen | none | final results announced |
 
 The live phase configuration table above this document is authoritative if the two differ.
 
 ## 3. What you submit
 
-1. **Results file.** A `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, produced by running your agent locally and scored immediately by the frozen scorer. The Playground and the Online Competition both take this file only. The weather, forecasts and weather events of the two competition scenarios are published for download when the competition opens.
-2. **Agent packages are no longer accepted.** From 24 September 2026 every phase takes results files only; agent runs scored before then keep their place on the boards. Practice scenarios keep the launch contract `participant-agent-protocol-v1` (no anomaly tags, no repeat observations, no reports); the anomaly mechanics (`participant-agent-protocol-v2`) apply to the competition scenarios only. The starter kit handles both, and its `finals-preview` scenario lets you rehearse the new mechanics.
-3. Files are limited to 20 MB.
+1. **Practice results.** The Playground still accepts `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, scored by the frozen scorer. Existing submissions, scores, replays and practice rankings remain unchanged.
+2. **Complete competition projects.** Submit a public GitHub repository URL or a private project ZIP. Any project language is allowed; Python is only the platform runner. The platform fixes the source version, checks launch settings and runs a public preview. If adaptation is needed, a model proposes reviewable interface files that the participant must confirm before formal evaluation. Calling a model is optional.
+3. **Local competition CSVs.** Start a local session on the project page, download the runner, execute your project on your computer and upload the session's exported `decisions.csv`. The server reveals current information and actual observation results step by step. The CSV must match the decisions actually executed by the server. Cloud projects use the same interface; future weather and anomaly answers are not downloadable.
+4. CSV files are limited to 20 MB; project ZIPs to 50 MB. Practice scenarios retain their original `participant-agent-protocol-v1` contract. Competition scenarios use the anomaly mechanics in `participant-agent-protocol-v2`; the starter kit's `finals-preview` is available for public rehearsal.
 
 ## 4. Running locally
 
-1. Your agent runs on your own machine, in any language, with any dependencies, and may call model APIs over the network (with your own keys or the sponsor codes).
-2. The starter kit's `local_runner.py` hands the agent one slot's snapshot at a time and writes its actions to `run_output/decisions.csv` — the file you submit.
+1. Practice uses the starter kit's `local_runner.py`. Competition uses `project_platform.local`, downloaded from the project page, with the session instructions shown there. Any project language is allowed; Docker is the default execution environment.
+2. Models may use the organizer's API or a supported personal API saved on the project page. Keys are encrypted; running projects receive expiring credentials with quotas. Do not put keys in projects or CSVs. Each scenario has a shared runtime limit and the server computes the official score.
 3. Attempts to read other teams' data, to tamper with the scorer or with score files, or to exhaust platform resources deliberately lead to disqualification.
 
 ## 5. Scoring
@@ -42,11 +43,11 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 6. Only completed exposures score. An exposure interrupted by closed weather earns nothing and is not penalised; an exposure interrupted by geometry or the end of the night earns nothing and is an invalid action.
 7. Terminal penalties are applied to every run, including runs cut short by the wall clock or an agent error. An expired request with fewer feasible opportunities than required tiles is excused.
 8. Completion (completed tiles ÷ tiles) and the FLEXIBLE shortfall per region are reported on the board; they are part of the score through the terminal penalties.
-9. Each results file covers one scenario. In the Online Competition a team's score is the arithmetic mean of its best score on each of the two competition scenarios; a team ranks once both scenarios have a scored result. The Playground board ranks each practice scenario separately, with a team's best score on that scenario.
+9. Each competition batch covers every competition scenario. Its score is the arithmetic mean of all scenario scores from that batch; it ranks only when all scenarios are complete. Each team keeps its best complete batch, without combining scenario maxima from different batches. Practice still ranks each scenario separately using each team's best score.
 
 ## 6. Ranking, ties, and verification
 
-1. Only scored, non-excluded submissions count, taking a team's best score on each scenario (combined as in section 5, item 9). Ranking is by score, descending; on an exact tie the earlier submission ranks first.
+1. Only scored, non-excluded submissions count, combined as in section 5, item 9. Ranking is by score, descending; on an exact tie the earlier submission ranks first.
 2. The Online Competition board is live. Organizers may freeze the board during the final hours and publish the final standings after verification.
 3. Before awards are confirmed, organizers may ask the top teams for their agent code and a short description of the approach, and regenerate the decisions.csv with it. Results that cannot be reproduced are removed.
 4. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.
@@ -61,6 +62,11 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 
 Amounts are gross. Winning teams are invited to Awards Day at GOSIM Shenzhen on October 17, 2026; attendance is not required to receive a prize.
 
+Design evaluation is separate from the performance board. It considers code, run
+records and reproducibility, not explanation length. Participants can save
+architecture and reproduction notes on the project page. Design-award places and
+prizes will be announced separately.
+
 ## 8. Code of conduct
 
 1. Be respectful. Harassment, discrimination, and abusive content in team names, notes, or agent output are not tolerated.
@@ -71,7 +77,7 @@ Amounts are gross. Winning teams are invited to Awards Day at GOSIM Shenzhen on 
 ## 9. Data and privacy
 
 1. Registration data (name, email, affiliation, GitHub handle) is used only to run the event and to contact winners.
-2. Uploaded results files and score reports are stored on the platform until 90 days after Awards Day and are visible to the submitting team and to organizers.
+2. Private ZIP projects, results, run records and score reports are visible only to the submitting team and organizers and are retained until 90 days after Awards Day. Forks of public repositories remain public; use ZIP for private projects. Model keys never enter project repositories or frontend code.
 3. Team names, scores, and ranks are public.
 
 Contact: hackathon@gosim.org

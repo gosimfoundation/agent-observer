@@ -33,7 +33,8 @@ type Item = { title: string; desc: string }
 const help = computed(() => t('home.submission.items') as Item[])
 const agentHints = computed(() => t('submit.agent_hints') as string[])
 
-const selectable = computed(() => phases.value.filter(p => isAdmin.value || p.status === 'open'))
+const onlinePhases = computed(() => phases.value.filter(p => p.observer_settings?.projects_enabled || p.observer_settings?.local_sessions_enabled))
+const selectable = computed(() => phases.value.filter(p => !onlinePhases.value.includes(p) && (isAdmin.value || p.status === 'open')))
 const phase = computed(() => phases.value.find(p => p.slug === form.value.phase) ?? null)
 /** Results files can only be scored against scenarios whose weather is public (the scorer needs the full weather truth). */
 const resultScenarios = computed(() => (phase.value?.scenarios ?? []).filter(s => s.is_active))
@@ -167,6 +168,10 @@ onMounted(async () => {
   try {
     phases.value = await loadPhases()
     const preferred = typeof route.query.phase === 'string' ? route.query.phase : ''
+    if (onlinePhases.value.some(p => p.slug === preferred)) {
+      await router.replace('/projects')
+      return
+    }
     form.value.phase = selectable.value.find(p => p.slug === preferred)?.slug ?? selectable.value.find(p => p.status === 'open')?.slug ?? selectable.value[0]?.slug ?? ''
     if (team.value) {
       const counts = await Promise.all(selectable.value.map(p => supabase.rpc('team_daily_count', { p_phase_slug: p.slug }).then(r => [p.slug, Number(r.data ?? 0)] as const)))
@@ -185,6 +190,10 @@ onMounted(async () => {
     </div>
     <div v-else class="dash-grid">
       <div class="panel">
+        <div v-if="onlinePhases.length" class="mb-5" data-testid="online-submission-link">
+          <p>{{ pick('Formal competition: submit a complete project or upload the CSV from your local session on the project page.', '正式赛：在智能体项目页提交完整项目，或上传本地会话生成的 CSV。') }}</p>
+          <router-link class="btn sm mt-3" to="/projects">{{ pick('Projects and local CSV', '项目与本地 CSV') }} →</router-link>
+        </div>
         <div v-if="errors.length" class="errors" role="alert"><ul class="list-disc pl-5"><li v-for="e in errors" :key="e">{{ e }}</li></ul></div>
         <p v-if="!selectable.length" class="text2">{{ t('submit.no_phase') }}</p>
         <form v-else @submit.prevent="submit" novalidate>

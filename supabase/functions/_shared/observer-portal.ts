@@ -1,0 +1,263 @@
+import { boundedJson, decryptCredential, encryptCredential, ProxyError } from "./observer-model.ts";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { sourceRepository } from "./observer-github.ts";
+
+type Dependencies = {
+  user: SupabaseClient;
+  service: SupabaseClient;
+  userId: string;
+  masterKey: string;
+  modelBases: string[];
+  httpBases: string[];
+  artifactDownload?: (reference: string) => Promise<string>;
+};
+const known = new Set([
+  "team_required",
+  "projects_not_enabled",
+  "invalid_repository_url",
+  "invalid_upload_path",
+  "preparation_limit",
+  "preparation_daily_limit",
+  "revision_not_found",
+  "revision_not_ready",
+  "stale_approval",
+  "phase_closed",
+  "local_sessions_disabled",
+  "revision_not_approved",
+  "daily_limit",
+  "batch_already_active",
+  "no_scenarios",
+  "run_not_found",
+  "csv_does_not_match_session",
+  "session_not_finished",
+  "provider_limit",
+  "provider_not_found",
+  "invalid_provider",
+  "upload_limit",
+  "account_banned",
+  "diagnostics_not_found",
+]);
+function failure(error: { message: string } | null) {
+  if (error) throw new ProxyError(400, known.has(error.message) ? error.message : "portal_request_failed");
+}
+function uuid(value: unknown): string {
+  if (typeof value !== "string" || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(value)) {
+    throw new ProxyError(400, "invalid_identifier");
+  }
+  return value;
+}
+function text(value: unknown, max: number, empty = false): string {
+  if (typeof value !== "string" || value.length > max || (!empty && !value.trim())) {
+    throw new ProxyError(400, "invalid_field");
+  }
+  return value.trim();
+}
+
+export async function portalRequest(request: Request, d: Dependencies): Promise<unknown> {
+  const body = await boundedJson(request, 65536);
+  if (!body || typeof body !== "object" || Array.isArray(body)) throw new ProxyError(400, "invalid_request");
+  const userRpc = async (name: string, args: Record<string, unknown> = {}) => {
+    const { data, error } = await d.user.rpc(name, args);
+    failure(error);
+    return data;
+  };
+  const serviceRpc = async (name: string, args: Record<string, unknown>) => {
+    const { data, error } = await d.service.rpc(name, args);
+    failure(error);
+    return data;
+  };
+  const staging = d.service.storage.from("observer-staging");
+  switch (body.action) {
+    case "diagnostics":
+      return await userRpc("observer_diagnostics", {
+        p_revision: body.revision_id ? uuid(body.revision_id) : null,
+        p_run: body.run_id ? uuid(body.run_id) : null,
+      });
+    case "local_access": {
+      const run = uuid(body.run_id);
+      const access = await serviceRpc("observer_local_access", { p_run: run, p_user: d.userId });
+      if (!access) throw new ProxyError(409, "local_session_not_ready");
+      const token = await decryptCredential(access.encrypted_credential, run + ":local", d.masterKey);
+      if (!new RegExp("^obs_" + run + "\\.[A-Za-z0-9_-]{40,100}$").test(token)) {
+        throw new ProxyError(503, "invalid_local_session");
+      }
+      return { run_id: run, credential: token, expires_at: access.expires_at };
+    }
+    case "list": {
+      const queries = [
+        d.user.from("observer_phase_settings").select("*,phases(id,slug,name_en,name_zh,starts_at,ends_at,is_active)"),
+        d.user.from("observer_projects").select("*,observer_revisions(*,observer_evidence(*))").order("created_at", {
+          ascending: false,
+        }).limit(100),
+        d.user.from("observer_batches").select("*,observer_runs(*)").eq("purpose", "formal").order("created_at", {
+          ascending: false,
+        }).limit(
+          50,
+        ),
+      ];
+      const results = await Promise.all(queries);
+      results.forEach((r) => failure(r.error));
+      return {
+        phases: results[0].data,
+        projects: results[1].data,
+        batches: results[2].data,
+        providers: await userRpc("observer_list_providers"),
+        model_bases: d.modelBases,
+      };
+    }
+    case "upload": {
+      const id = crypto.randomUUID();
+      const path = await serviceRpc("observer_reserve_upload", { p_user: d.userId, p_id: id, p_purpose: body.purpose });
+      const { data, error } = await staging.createSignedUploadUrl(path, { upsert: false });
+      failure(error);
+      return { id, path, token: data!.token };
+    }
+    case "submit_repository": {
+      let repository: string;
+      try {
+        repository = sourceRepository(text(body.url, 1024));
+      } catch {
+        throw new ProxyError(400, "invalid_repository_url");
+      }
+      return {
+        revision_id: await userRpc("observer_create_project", {
+          p_title: text(body.title, 100),
+          p_source_kind: "repository",
+          p_source_location: "https://github.com/" + repository,
+        }),
+      };
+    }
+    case "submit_zip": {
+      const id = uuid(body.upload_id);
+      const path = await serviceRpc("observer_upload_access", { p_user: d.userId, p_id: id, p_purpose: "source" });
+      if (!path) throw new ProxyError(404, "upload_not_found");
+      // Source validation is done by the preparation job. Check completion here
+      // without exposing storage credentials or accepting a browser-supplied hash.
+      const { data: objects, error } = await staging.list(path.slice(0, path.lastIndexOf("/")), {
+        search: "source.zip",
+        limit: 2,
+      });
+      failure(error);
+      if (
+        !objects?.some((o) =>
+          o.name === "source.zip" && Number(o.metadata?.size) > 0 && Number(o.metadata?.size) <= 52428800
+        )
+      ) {
+        throw new ProxyError(400, "upload_not_finished");
+      }
+      const revision = await userRpc("observer_submit_zip", { p_title: text(body.title, 100), p_upload: id });
+      return { revision_id: revision };
+    }
+    case "approve":
+      await userRpc("observer_approve_revision", {
+        p_revision: uuid(body.revision_id),
+        p_digest: text(body.digest, 64),
+      });
+      return { accepted: true };
+    case "evaluate":
+      return {
+        batch_id: await userRpc("observer_create_batch", {
+          p_phase: uuid(body.phase_id),
+          p_revision: body.revision_id ? uuid(body.revision_id) : null,
+        }),
+      };
+    case "evidence": {
+      const url = text(body.code_url, 1000, true);
+      if (url) {
+        let parsed: URL;
+        try {
+          parsed = new URL(url);
+        } catch {
+          throw new ProxyError(400, "invalid_code_url");
+        }
+        if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+          throw new ProxyError(400, "invalid_code_url");
+        }
+      }
+      await userRpc("observer_save_evidence", {
+        p_revision: uuid(body.revision_id),
+        p_notes: text(body.notes, 8000, true),
+        p_code_url: url,
+      });
+      return { accepted: true };
+    }
+    case "save_provider": {
+      const id = body.id ? uuid(body.id) : crypto.randomUUID();
+      const base = text(body.base_url, 1000).replace(/\/+$/, "");
+      if (!d.modelBases.includes(base) || (base.startsWith("http:") && !d.httpBases.includes(base))) {
+        throw new ProxyError(400, "model_destination_not_enabled");
+      }
+      const key = text(body.key, 8192);
+      if (
+        !Array.isArray(body.models) || body.models.length < 1 || body.models.length > 20 ||
+        body.models.some((m: unknown) => typeof m !== "string" || !m || m.length > 160 || /[\r\n\0]/.test(m))
+      ) {
+        throw new ProxyError(400, "invalid_models");
+      }
+      if (
+        !Number.isSafeInteger(body.daily_token_limit) || body.daily_token_limit < 0 || body.daily_token_limit > 10000000
+      ) {
+        throw new ProxyError(400, "invalid_model_limit");
+      }
+      const encrypted = await encryptCredential(key, id, d.masterKey);
+      await serviceRpc("observer_save_provider", {
+        p_user: d.userId,
+        p_id: id,
+        p_name: text(body.name, 80),
+        p_base: base,
+        p_encrypted_key: encrypted,
+        p_models: body.models,
+        p_limit: body.daily_token_limit,
+        p_http: base.startsWith("http:"),
+      });
+      return { id };
+    }
+    case "disable_provider":
+      await userRpc("observer_disable_provider", { p_id: uuid(body.id) });
+      return { accepted: true };
+    case "download_project": {
+      const reference = await serviceRpc("observer_materialized_project", {
+        p_revision: uuid(body.revision_id),
+        p_user: d.userId,
+      });
+      if (!reference) throw new ProxyError(404, "project_not_ready");
+      if (!d.artifactDownload) throw new ProxyError(503, "artifact_service_unavailable");
+      return { url: await d.artifactDownload(reference) };
+    }
+    case "download_result": {
+      const { data, error } = await d.user.from("observer_runs").select("result_path").eq("id", uuid(body.run_id))
+        .maybeSingle();
+      failure(error);
+      if (!data?.result_path) throw new ProxyError(404, "result_not_ready");
+      if (data.result_path.startsWith("github:")) {
+        if (!d.artifactDownload) throw new ProxyError(503, "artifact_service_unavailable");
+        return { url: await d.artifactDownload(data.result_path) };
+      }
+      const signed = await staging.createSignedUrl(data.result_path, 120, { download: "observer-result.zip" });
+      failure(signed.error);
+      return { url: signed.data!.signedUrl };
+    }
+    case "accept_csv": {
+      const run = uuid(body.run_id);
+      const path = await serviceRpc("observer_upload_access", {
+        p_user: d.userId,
+        p_id: uuid(body.upload_id),
+        p_purpose: "csv",
+      });
+      if (!path) throw new ProxyError(404, "upload_not_found");
+      // Authorization before accessing the file; only the matching team's run.
+      const visible = await d.user.from("observer_runs").select("id").eq("id", run).maybeSingle();
+      failure(visible.error);
+      if (!visible.data) throw new ProxyError(404, "run_not_found");
+      const { data, error } = await staging.download(path);
+      failure(error);
+      if (!data || data.size > 20 * 1024 * 1024) throw new ProxyError(400, "csv_too_large");
+      const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", await data.arrayBuffer()));
+      const digest = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      await serviceRpc("observer_accept_uploaded_csv", { p_run: run, p_user: d.userId, p_upload: uuid(body.upload_id), p_digest: digest });
+      return { accepted: true };
+    }
+    default:
+      throw new ProxyError(400, "unknown_portal_action");
+  }
+}

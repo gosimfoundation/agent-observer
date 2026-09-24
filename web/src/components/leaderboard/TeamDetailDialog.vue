@@ -9,7 +9,7 @@ import { fmtUtc, num, pct } from '../../lib/format'
 // publishes is shown: team names, scores and ranks are public; member details are not.
 const props = defineProps<{ entry: LeaderboardEntry | null; mine: boolean }>()
 const emit = defineEmits<{ close: [] }>()
-const { t, tf } = useI18n()
+const { t, tf, pick } = useI18n()
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const handle = computed(() => (props.entry?.leader_github || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?github\.com\//i, '').replace(/\/.*$/, ''))
@@ -22,6 +22,7 @@ const parts = computed(() => {
     { key: 'request', label: t('leaderboard.chart.legend_request'), value: e.request_reward },
   ]
   if (e.coverage_bonus != null && e.coverage_bonus !== 0) rows.push({ key: 'coverage', label: t('leaderboard.coverage'), value: e.coverage_bonus })
+  if (e.report_reward) rows.push({key:'reports',label:pick('Anomaly reports','异常报告奖励'),value:e.report_reward})
   rows.push({ key: 'penalty', label: t('leaderboard.penalties'), value: -Math.abs(e.penalty_total) })
   return rows
 })
@@ -66,15 +67,16 @@ onUnmounted(() => { document.documentElement.style.overflow = ''; window.removeE
       <dl class="team-detail-stats">
         <div><dt>{{ t('leaderboard.tiles') }}</dt><dd>{{ entry.completed_tiles ?? '—' }}</dd></div>
         <div><dt>{{ t('leaderboard.required_missing') }}</dt><dd :class="{ neg: Number(entry.required_missing) > 0 }">{{ entry.required_missing ?? '—' }}</dd></div>
-        <div><dt>{{ t('leaderboard.completion') }}</dt><dd>{{ pct(entry.completion_rate) }}</dd></div>
+        <div v-if="entry.kind !== 'observer'"><dt>{{ t('leaderboard.completion') }}</dt><dd>{{ pct(entry.completion_rate) }}</dd></div>
         <div v-if="entry.coverage_evenness != null"><dt>{{ t('leaderboard.detail.evenness') }}</dt><dd>{{ num(entry.coverage_evenness, 3) }}</dd></div>
         <div><dt>{{ t('leaderboard.submissions') }}</dt><dd>{{ entry.submission_count }}</dd></div>
         <div><dt>{{ t('leaderboard.detail.scored_at') }}</dt><dd>{{ entry.scored_at ? `${fmtUtc(entry.scored_at)} UTC` : '—' }}</dd></div>
       </dl>
 
-      <div v-if="handle || (mine && entry.best_submission_id)" class="team-detail-links">
+      <div v-if="handle || (mine && (entry.best_submission_id || entry.observer_batch_id))" class="team-detail-links">
         <a v-if="handle" :href="`https://github.com/${handle}`" target="_blank" rel="noopener noreferrer">{{ tf('leaderboard.detail.github', { handle }) }} ↗</a>
         <router-link v-if="mine && entry.best_submission_id" :to="`/submissions/${entry.best_submission_id}`" @click="emit('close')">{{ t('leaderboard.detail.view_submission') }} →</router-link>
+        <router-link v-if="mine && entry.observer_batch_id" to="/projects" @click="emit('close')">{{ pick('View evaluation','查看评测') }} →</router-link>
       </div>
     </section>
   </div>
