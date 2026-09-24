@@ -28,3 +28,31 @@ def test_board_uses_one_complete_batch_and_respects_private_phase(setup):
     assert rpc(uri,'observer_board',s['phase'],100,role='anon')==[]
     assert query(uri,'select * from public.observer_leaderboard(%s)',(s['phase'],),role='anon')==[]
     assert rpc(uri,'observer_board',s['phase'],100,role='authenticated',user=s['user'])[0]['total_score']==60
+
+
+def test_public_practice_replay_survives_private_finals_opening(setup):
+    s=setup;uri=s['uri'];practice=uuid.uuid4();sky=uuid.uuid4();slug=str(sky)
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh,sort_order) values(%s,%s,'Practice','练习赛',49)",(practice,str(practice)))
+    query(uri,"insert into public.scenarios(id,slug,name,weather_public,tiles_public) values(%s,%s,'Public sky',true,true)",(sky,slug))
+    query(uri,'insert into public.phase_scenarios values(%s,%s)',(practice,sky))
+    submission=query(uri,"""insert into public.submissions(team_id,user_id,phase_id,scenario_id,kind,storage_path,status,score)
+      values(%s,%s,%s,%s,'results','old.csv','scored',21085.3) returning id""",(s['team'],s['user'],practice,sky))[0][0]
+    query(uri,"insert into public.evaluations(submission_id,scenario_id,status,score) values(%s,%s,'scored',21085.3)",(submission,sky))
+    public_path=f"{s['team']}/sub-{submission}/{slug}/report.json"
+    private_path=f"private/sub-999999/{s['scenario']}/report.json"
+    query(uri,"insert into storage.objects(bucket_id,name) values('results',%s),('results',%s)",(public_path,private_path))
+    # A new formal phase has no legacy submissions. Its opening and closing
+    # must neither erase the existing public replay nor expose private output.
+    query(uri,"update public.phases set counts_for_final=true,sort_order=1,starts_at=now()+interval '1 day' where id=%s",(s['phase'],))
+    for schedule in ("starts_at=now()+interval '1 day'", "starts_at=now()-interval '1 day'",
+                     "starts_at=now()-interval '2 days',ends_at=now()-interval '1 day'"):
+        query(uri,'update public.phases set '+schedule+' where id=%s',(s['phase'],))
+        champion=rpc(uri,'champion_run',role='anon')
+        assert champion['submission_id']==submission and champion['report_path']==public_path
+        assert champion['score']==21085.3
+        assert query(uri,'select name from storage.objects where name in (%s,%s)',(public_path,private_path),role='anon')==[(public_path,)]
+    assert query(uri,'select * from public.leaderboard(null,1,null)',role='anon')==[]
+    assert query(uri,'select score from public.submissions where id=%s',(submission,))==[(21085.3,)]
+    query(uri,'update public.scenarios set weather_public=false where id=%s',(sky,))
+    assert rpc(uri,'champion_run',role='anon') is None
+    assert query(uri,'select name from storage.objects where name in (%s,%s)',(public_path,private_path),role='anon')==[]
