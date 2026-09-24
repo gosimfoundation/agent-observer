@@ -16,6 +16,7 @@ from .package import extract_project, project_digest, read_project_zip
 from .preparation import prepare_project
 from .session import SessionClient
 from .scenario_job import prepare_bounded
+from .scenario_instances import InstanceError
 from .trusted_engine import result_summary, run_session
 
 
@@ -61,8 +62,14 @@ def engine_job(payload: dict, root: Path, http: Http, *, repository_credentials=
         instance = payload["instance"]
         if instance["bundle_digest"] != payload["scenario_digest"]:
             raise JobError("calibration_template_mismatch")
-        scenario, record = prepare_bounded(scenario, root / "instance", seed=instance["seed"],
-            profile=instance["profile"], max_candidates=instance["max_candidates"])
+        try:
+            scenario, record = prepare_bounded(scenario, root / "instance", seed=instance["seed"],
+                profile=instance["profile"], max_candidates=instance["max_candidates"])
+        except InstanceError as error:
+            code = str(error)
+            if code not in {"scenario_preparation_timeout", "scenario_preparation_failed", "no_comparable_scenario"}:
+                code = "scenario_preparation_failed"
+            raise JobError(code) from None
         # This acknowledgement is required before the first participant-visible
         # message. Private inputs never enter pack_results or the result repo.
         client.call("record_instance", record=record)

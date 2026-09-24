@@ -118,7 +118,10 @@ def _reuse_geometry_windows(workflow: ChallengeWorkflow, scenario: Path) -> None
             cache_key = (key, night.isoformat())
             if cache_key not in _WINDOW_CACHE:
                 _WINDOW_CACHE[cache_key] = original(night, 1)
-                if len(_WINDOW_CACHE) > 128:
+                # A template spans 180 nights. A smaller LRU evicts its first
+                # nights before the next policy starts, causing every lookup
+                # in that next pass to miss. Cover both official templates.
+                if len(_WINDOW_CACHE) > 512:
                     _WINDOW_CACHE.popitem(last=False)
             _WINDOW_CACHE.move_to_end(cache_key)
             rows.extend(dict(row) for row in _WINDOW_CACHE[cache_key])

@@ -22,8 +22,8 @@ before the first observation is published. Existing sequential commits still
 prevent participants submitting an unreleased future round or replacing an
 accepted decision. Local CSV uploads must match the platform's committed trace.
 
-Trusted preparation has a 600-second process deadline, separate from the Agent's
-scoring clock and below its 900-second startup window. Exhaustion or timeout
+Trusted preparation has a 1200-second process deadline, separate from the Agent's
+scoring clock and below its 1500-second startup window. Exhaustion or timeout
 fails explicitly, with no first observation or score published. It never accepts
 an outlier just to meet a time limit. Candidate choice is independent of timing;
 only whether preparation completes within the resource limit can differ by host.

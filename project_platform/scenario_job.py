@@ -10,10 +10,10 @@ from .scenario_instances import InstanceError, prepare_instance
 
 
 def prepare_bounded(template: Path, destination: Path, *, seed: str, profile: dict,
-                    max_candidates: int = 32, timeout_seconds: float = 600) -> tuple[Path, dict]:
+                    max_candidates: int = 32, timeout_seconds: float = 1200) -> tuple[Path, dict]:
     # Keep the key off process arguments and disk logs. A child lets the parent
     # enforce a real deadline even during expensive geometry calculations. The
-    # participant has a 900-second startup window; its scoring clock has not
+    # participant has a 1500-second startup window; its scoring clock has not
     # begun. Timeout fails the attempt without serving an uncalibrated scenario.
     request = {"template": str(template.resolve()), "destination": str(destination.resolve()),
                "seed": seed, "profile": profile, "max_candidates": max_candidates}

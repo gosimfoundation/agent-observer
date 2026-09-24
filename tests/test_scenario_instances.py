@@ -65,6 +65,29 @@ def test_geometry_reuse_preserves_exact_official_score(generated):
         assert benchmark_policy(scenario, 'wait')['score'] == result['score_report']['score']['total']
 
 
+def test_geometry_cache_reuses_an_entire_180_night_template(monkeypatch):
+    from collections import OrderedDict
+    from datetime import date, timedelta
+    from types import SimpleNamespace
+    import project_platform.scenario_instances as instances
+    monkeypatch.setattr(instances, '_WINDOW_CACHE', OrderedDict())
+    calls=[]
+    def geometry(night, days):
+        calls.append((night,days))
+        return [{'night':night.isoformat(),'tile_id':'T00001'}]
+    workflow=SimpleNamespace(scorer=SimpleNamespace(geometry=SimpleNamespace(get_tile_windows=geometry)))
+    instances._reuse_geometry_windows(workflow,TEMPLATE)
+    nights=[date(2026,10,5)+timedelta(days=i) for i in range(180)]
+    for _policy in range(3):
+        for night in nights:
+            rows=workflow.scorer.geometry.get_tile_windows(night,1)
+            assert rows==[{'night':night.isoformat(),'tile_id':'T00001'}]
+            rows[0]['tile_id']='caller mutation'
+    # Every reference policy must reuse earlier geometry, with detached rows.
+    # A cache smaller than one scenario thrashes on each sequential policy pass.
+    assert len(calls)==len(nights)
+
+
 def test_real_panel_and_negative_raw_score_calibration(generated):
     difficulty = measure_difficulty(generated[0])
     assert difficulty["wait_score"] < 0

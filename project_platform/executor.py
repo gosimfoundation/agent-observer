@@ -10,7 +10,7 @@ from .docker_runtime import DockerWorkspace
 from .session import SessionClient, SessionError, wait_until
 
 
-def execute(runtime: DockerWorkspace, client: SessionClient, environment: dict[str,str], *, startup_seconds: float = 900):
+def execute(runtime: DockerWorkspace, client: SessionClient, environment: dict[str,str], *, startup_seconds: float = 1500):
     try:
         return _execute(runtime,client,environment,startup_seconds=startup_seconds)
     except GlobalDeadlineExpired:
