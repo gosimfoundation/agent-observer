@@ -9,9 +9,9 @@ import { useAuth } from '../stores/auth'
 import { useFlash } from '../stores/flash'
 import DashShell from '../components/layout/DashShell.vue'
 import TierBadge from '../components/TierBadge.vue'
+import TeamDirectory from '../components/TeamDirectory.vue'
 
 interface Member { id: string; name: string; github: string | null; affiliation: string | null; is_leader: boolean; astro_level: number; ai_level: number }
-interface OpenTeam { id: string; name: string; member_count: number; max_size: number; created_at: string }
 
 const { t, tf } = useI18n()
 const i18n = useI18n()
@@ -20,7 +20,6 @@ const { me, team, refreshMe } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const members = ref<Member[]>([])
-const openTeams = ref<OpenTeam[]>([])
 const busy = ref(false)
 const loading = ref(true)
 const copied = ref(false)
@@ -46,10 +45,6 @@ async function load() {
       if (error) throw error
       members.value = (data ?? []) as Member[]
       editForm.value = { max_size: team.value.max_size, github_repo: team.value.github_repo ?? '', project_idea: team.value.project_idea ?? '', is_locked: team.value.is_locked }
-    } else {
-      const { data, error } = await supabase.rpc('open_teams')
-      if (error) throw error
-      openTeams.value = (data ?? []) as OpenTeam[]
     }
   } catch (e) { flash.error(errorText(e)) }
   finally {
@@ -193,16 +188,7 @@ onMounted(load)
             <button data-testid="team-join" class="btn sm" type="submit" :disabled="busy">{{ t('team.join') }} →</button>
           </form>
         </div>
-        <div class="panel mt-8">
-          <div class="hd"><h2>{{ t('team.open_teams') }}</h2></div>
-          <ul v-if="openTeams.length">
-            <li v-for="ot in openTeams" :key="ot.id" class="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle py-2 text-sm">
-              <span>{{ ot.name }} <span class="text3">· {{ ot.member_count }}/{{ ot.max_size }}</span></span>
-              <span class="text3 text-xs">{{ t('team.ask_code') }}</span>
-            </li>
-          </ul>
-          <p v-else class="text2 text-sm">{{ t('team.no_open_teams') }}</p>
-        </div>
+        <TeamDirectory />
       </div>
     </div>
   </DashShell>

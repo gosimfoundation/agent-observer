@@ -6,8 +6,21 @@ import { publicSiteUrl, BASE_URL } from '../../composables/api'
 import { useRegistrationOpen } from '../../composables/useRegistrationOpen'
 import { useAdmin } from '../../composables/useAdmin'
 import DashShell from '../../components/layout/DashShell.vue'
+import { competition, loadCompetition } from '../../stores/competition'
+import { useI18n } from '../../composables/useI18n'
 
 const { t, busy, run } = useAdmin()
+const { pick } = useI18n()
+const modeBusy=ref(false), modeError=ref('')
+async function switchCompetition() {
+  modeBusy.value=true; modeError.value=''
+  try {
+    const {error}=await supabase.rpc('set_competition_mode',{p_mode:competition.mode==='practice'?'competition':'practice'})
+    if (error) { modeError.value=pick('The target competition is not ready. Check its scenarios and evaluation settings.','目标比赛尚未准备好，请先检查题目和评测配置。'); return }
+    await loadCompetition(true)
+    window.location.reload()
+  } finally { modeBusy.value=false }
+}
 const { reload } = useRegistrationOpen()
 const registrationOpen = ref(true)
 const registrationDeadline = ref('')
@@ -58,6 +71,13 @@ async function saveCreditsNote() {
 
 <template>
   <DashShell admin :kicker="t('admin.kicker')" :title="t('admin.nav.settings')">
+    <section class="panel max-w-2xl mb-8" data-testid="competition-mode-settings">
+      <div class="hd"><h2>{{ pick('Current competition','当前比赛') }}</h2></div>
+      <p class="text2">{{ competition.mode==='practice' ? pick('Playground','练习赛 / Playground') : pick('Competition','正式比赛') }}</p>
+      <p class="help mt-3">{{ pick('Participants see only this competition. Switching preserves all scores and keeps the same submission entry.','选手只看到当前比赛。切换后仍使用同一个提交入口，所有已有成绩保留。') }}</p>
+      <p v-if="modeError" class="errors" role="alert">{{ modeError }}</p>
+      <button class="btn primary sm mt-4" data-testid="competition-mode-switch" :disabled="modeBusy || busy" @click="switchCompetition">{{ competition.mode==='practice' ? pick('Switch to competition','切换为正式比赛') : pick('Switch to Playground','切换为练习赛') }}</button>
+    </section>
     <form class="panel max-w-2xl" @submit.prevent="save">
       <label class="check"><input v-model="registrationOpen" type="checkbox"> {{ t('admin.settings.registration_open') }}</label>
       <label class="field mt-4"><span>{{ t('admin.settings.registration_deadline') }}</span>

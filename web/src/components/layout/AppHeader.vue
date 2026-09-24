@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { unreadTeamNotifications, refreshTeamNotifications } from '../../stores/teamNotifications'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '../../stores/auth'
@@ -13,6 +14,10 @@ const { t, tf, pick, toggleLocale, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { isLoggedIn, isAdmin, signOut } = useAuth()
+let notificationTimer: ReturnType<typeof setInterval> | undefined
+watch(isLoggedIn, logged => { if (logged) void refreshTeamNotifications(); else unreadTeamNotifications.value=0 }, {immediate:true})
+onMounted(() => { notificationTimer=setInterval(() => { if (isLoggedIn.value && !document.hidden) void refreshTeamNotifications() },15000) })
+onUnmounted(() => { if (notificationTimer) clearInterval(notificationTimer) })
 const { registrationOpen } = useRegistrationOpen()
 const flash = useFlash()
 const mobileOpen = ref(false)
@@ -46,7 +51,7 @@ type SeriesItem = { n: string; name: string; sub: string; href: string; current:
 const seriesItems = computed(() => t('nav.series.items') as SeriesItem[])
 const isActive = (to: string) => route.path === to || route.path.startsWith(`${to}/`)
 const handbookActive = () => handbook.some(item => isActive(item.to))
-const dashActive = () => ['/dashboard', '/team', '/submit', '/submissions', '/profile'].some(p => route.path.startsWith(p))
+const dashActive = () => ['/dashboard', '/team', '/compete', '/submissions', '/profile'].some(p => route.path.startsWith(p))
 watch(() => route.fullPath, () => { mobileOpen.value = false; handbookOpen.value = false; seriesOpen.value = false })
 
 async function logout() {
@@ -59,10 +64,10 @@ async function logout() {
 
 <template>
   <header class="cosmos-header sticky top-0 z-50 border-b border-border backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-5 md:px-10 xl:px-14">
+    <div class="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-2 px-3 sm:gap-6 sm:px-5 md:px-10 xl:px-14">
       <div class="flex items-center gap-3">
         <router-link to="/" aria-label="Agentic Observer home" class="flex items-center gap-3">
-          <span class="cosmos-wordmark shrink-0 whitespace-nowrap text-lg text-[#f5f5f5]">GOSIM <span class="text-[#315efb]">Create</span></span>
+          <span class="cosmos-wordmark shrink-0 whitespace-nowrap text-lg text-[#f5f5f5]">GOSIM <span class="hidden sm:inline text-[#315efb]">Create</span></span>
         </router-link>
         <span class="hidden h-4 w-px bg-white/25 sm:block"></span>
         <div class="series-drop relative hidden sm:block" @mouseenter="seriesOpen = true" @mouseleave="seriesOpen = false">
@@ -105,10 +110,15 @@ async function logout() {
         <router-link v-if="isAdmin" to="/admin" class="inline-flex h-10 items-center font-mono text-xs uppercase tracking-[.06em] transition-colors hover:text-[#78a6ff]" :class="route.path.startsWith('/admin') ? 'text-[#78a6ff]' : 'text-white/50'">{{ t('nav.admin') }}</router-link>
       </nav>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 sm:gap-2">
+        <router-link to="/compete" class="inline-flex h-10 shrink-0 items-center justify-center bg-[#315efb] px-2 sm:px-3 text-sm font-semibold text-white hover:bg-[#244bda]" data-testid="primary-submit">{{ pick('Submit','提交') }}</router-link>
+        <router-link v-if="isLoggedIn" to="/notifications" class="relative flex h-10 w-10 shrink-0 items-center justify-center text-white/80" :aria-label="pick('Team notifications','组队通知')" data-testid="team-notifications">
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+          <span v-if="unreadTeamNotifications" class="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white" data-testid="notification-dot">{{ unreadTeamNotifications > 99 ? '99+' : unreadTeamNotifications }}</span>
+        </router-link>
         <router-link v-if="phasePill" to="/leaderboard" class="pill header-phase-pill" :class="phasePill.cls" data-testid="phase-pill">{{ phasePill.text }}</router-link>
-        <span v-if="fullMoon" class="moon-chip" :title="pick('Full moon tonight.', '今晚满月。')">🌕</span>
-        <button data-testid="lang-toggle" type="button" @click="toggleLocale" class="inline-flex h-10 min-w-12 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
+        <span v-if="fullMoon" class="moon-chip hidden md:inline-flex" :title="pick('Full moon tonight.', '今晚满月。')">🌕</span>
+        <button data-testid="lang-toggle" type="button" @click="toggleLocale" class="inline-flex h-10 min-w-10 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
           {{ nextLocaleLabel }}
         </button>
         <button v-if="isLoggedIn" data-testid="nav-logout" type="button" @click="logout" class="ml-1 hidden h-10 items-center border border-white/35 px-4 font-mono text-xs font-semibold uppercase tracking-widest text-[#f5f5f5] transition-colors hover:border-[#315efb] hover:text-[#78a6ff] md:inline-flex">{{ t('nav.logout') }}</button>

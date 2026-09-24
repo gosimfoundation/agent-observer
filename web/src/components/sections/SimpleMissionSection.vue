@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { competition } from '../../stores/competition'
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import instrumentImage from '../../assets/images/cosmos-instrument.jpg'
@@ -23,7 +24,7 @@ const cardItems = computed(() => t('home.mission.cardItems') as { term: string; 
           <p class="mt-7 max-w-xl text-base leading-relaxed text-text-secondary md:text-lg">{{ t('home.mission.lede') }}</p>
 
           <div class="reveal mt-14 paper-sheet p-7 md:p-10">
-            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('Online training', '线上培训') }}</span>
+            <span class="font-mono text-xs uppercase tracking-[.1em] text-[#315efb]">{{ pick('Getting started', '开始参与') }}</span>
             <p class="relative z-10 mt-5 max-w-[24ch] text-xl font-semibold leading-relaxed tracking-[-.02em] md:text-2xl">{{ t('home.mission.closing') }}</p>
           </div>
 
@@ -45,7 +46,7 @@ const cardItems = computed(() => t('home.mission.cardItems') as { term: string; 
           <div v-tilt class="reveal mission-sheet mt-12 paper-sheet p-7 md:p-10">
             <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
               <span class="font-mono text-xs uppercase tracking-[.1em] text-[#9c5c38]">{{ t('home.mission.cardKicker') }}</span>
-              <span class="mission-serial">SMC · 2026 · PLAYGROUND</span>
+              <span class="mission-serial">SMC · 2026 · {{ competition.mode==='practice' ? 'PLAYGROUND' : 'COMPETITION' }}</span>
             </div>
             <h3 class="relative z-10 mt-4 text-2xl font-semibold tracking-[-.03em] md:text-3xl">{{ t('home.mission.cardTitle') }}</h3>
             <p class="relative z-10 mt-4 max-w-2xl text-sm leading-relaxed text-[#101d29]/75">{{ t('home.mission.cardLede') }}</p>

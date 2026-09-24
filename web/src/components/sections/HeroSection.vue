@@ -9,6 +9,7 @@ import { fmtUtc } from '../../lib/format'
 import { meteorShower } from '../../lib/eggs'
 import SkyConsole from './SkyConsole.vue'
 import HeroGalaxy from './HeroGalaxy.vue'
+import { competition } from '../../stores/competition'
 
 const { t, tf, pick, locale } = useI18n()
 const { isLoggedIn } = useAuth()
@@ -29,6 +30,7 @@ const parts = computed(() => [
 // The next upcoming stage carries a D-day chip; a stage whose window contains today reads LIVE.
 const STAGE_WINDOWS: [string, string][] = [['2026-10-01', '2026-10-04'], ['2026-10-05', '2026-10-07'], ['2026-10-17', '2026-10-17']]
 function stageChip(i: number): string {
+  if (competition.mode==='practice') return ''
   const [from, to] = STAGE_WINDOWS[i] ?? ['', '']
   if (!from) return ''
   const day = 86_400_000

@@ -65,3 +65,69 @@ def test_discover_create_invite_login_and_join(portal_site, edge_stack):
         expect(mobile.get_by_test_id('team-invite-link')).to_have_value(invite_url)
         assert not errors, errors
         browser.close()
+
+
+def test_invite_decline_accept_and_join_request_notifications(portal_site, edge_stack):
+    uri=edge_stack['harness'].db_uri
+    password='local-notification-browser-password'
+    users=[uuid.uuid4() for _ in range(4)]
+    names=[f'Notifications {str(user)[:8]}' for user in users]
+    for user,name in zip(users,names):
+        query(uri,'insert into auth.users(id,email,raw_user_meta_data) values(%s,%s,%s)',
+              (user,f'{user}@example.test',Jsonb({'name':name,'password_hash':hashlib.sha256(password.encode()).hexdigest()})))
+        query(uri,'update public.profiles set show_on_wall=true where id=%s',(user,))
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(channel=os.environ.get('OBSERVER_BROWSER_CHANNEL'))
+        contexts=[browser.new_context(viewport={'width':390 if i else 1365,'height':950}) for i in range(4)]
+        pages=[c.new_page() for c in contexts]
+        errors=[]
+        for p in pages:p.on('pageerror',lambda error:errors.append(str(error)))
+        def login(index,path='/dashboard'):
+            p=pages[index];p.goto(portal_site+'/login?next='+path+'&lang=en')
+            p.get_by_test_id('login-email').fill(f'{users[index]}@example.test')
+            p.get_by_test_id('login-password').fill(password)
+            p.get_by_test_id('login-submit').click()
+            expect(p.get_by_test_id('team-notifications')).to_be_visible(timeout=15000)
+            return p
+        leader=login(0,'/team')
+        name='Notification team '+str(users[0])[:8]
+        leader.get_by_test_id('team-name-input').fill(name)
+        leader.get_by_test_id('team-create').click()
+        expect(leader.get_by_test_id('team-invite-link')).to_be_visible()
+        for index in (1,2):
+            leader.goto(portal_site+'/teammates')
+            card=leader.get_by_test_id('wall-grid').locator('article').filter(has_text=names[index])
+            card.get_by_role('button',name='Invite',exact=True).click()
+            expect(card.get_by_role('link',name='Invitation sent · view progress')).to_be_visible()
+            expect(leader.get_by_test_id('notification-dot')).to_be_visible()
+            recipient=login(index)
+            expect(recipient.get_by_test_id('notification-dot')).to_be_visible(timeout=15000)
+            recipient.get_by_test_id('team-notifications').click()
+            received=recipient.get_by_test_id('notifications-received')
+            expect(received).to_contain_text(name)
+            received.get_by_role('button',name='Decline' if index==1 else 'Accept',exact=True).click()
+            expect(received).to_contain_text('Declined' if index==1 else 'Accepted')
+            leader.goto(portal_site+'/dashboard')
+            expect(leader.get_by_test_id('notification-dot')).to_be_visible(timeout=15000)
+            leader.get_by_test_id('team-notifications').click()
+            expect(leader.get_by_test_id('notifications-sent')).to_contain_text('Declined' if index==1 else 'Accepted')
+        applicant=login(3,'/teammates')
+        directory=applicant.get_by_test_id('team-directory')
+        directory.get_by_role('button',name=name,exact=True).click()
+        expect(directory.get_by_role('link',name='Request sent · view progress')).to_be_visible()
+        assert query(uri,'select team_id from public.profiles where id=%s',(users[3],))==[(None,)]
+        applicant.reload()
+        expect(directory.get_by_role('link',name='Request sent · view progress')).to_be_visible()
+        leader.goto(portal_site+'/dashboard')
+        expect(leader.get_by_test_id('notification-dot')).to_be_visible(timeout=15000)
+        leader.get_by_test_id('team-notifications').click()
+        received=leader.get_by_test_id('notifications-received')
+        expect(received).to_contain_text(names[3])
+        received.get_by_role('button',name='Accept',exact=True).click()
+        expect(received).to_contain_text('Accepted')
+        applicant.goto(portal_site+'/notifications')
+        expect(applicant.get_by_test_id('notifications-sent')).to_contain_text('Accepted')
+        assert query(uri,'select count(*) from public.profiles where team_id=(select team_id from public.profiles where id=%s)',(users[0],))==[(3,)]
+        assert query(uri,'select team_id from public.profiles where id=%s',(users[1],))==[(None,)]
+        assert not errors,errors
+        browser.close()

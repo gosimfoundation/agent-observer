@@ -3,6 +3,9 @@ import en from '../i18n/en'
 import zh from '../i18n/zh'
 import ja from '../i18n/ja.json'
 import fr from '../i18n/fr.json'
+import { competition } from '../stores/competition'
+import { competitionMessages } from '../i18n/competition'
+import { practiceMessages } from '../i18n/practice'
 
 type Messages = Record<string, any>
 export type Locale = 'en' | 'zh' | 'ja' | 'fr'
@@ -17,7 +20,22 @@ export interface I18n {
 }
 
 const I18N_KEY: InjectionKey<I18n> = Symbol('i18n')
-const messages: Record<Locale, Messages> = { en, zh, ja, fr }
+// Stage patches may address an item inside a list. Fill untranslated sections
+// first so partial locales never acquire sparse lists or lose English fields.
+function withEnglishDefaults(translated: Messages): Messages {
+  function merge(base: Messages, overlay: Messages): Messages {
+    for (const [key,value] of Object.entries(overlay)) {
+      base[key]=value && typeof value==='object' && !Array.isArray(value)
+        ? merge(base[key] && typeof base[key]==='object' && !Array.isArray(base[key]) ? base[key] : {},value)
+        : structuredClone(value)
+    }
+    return base
+  }
+  return merge(structuredClone(en),translated)
+}
+const japanese=withEnglishDefaults(ja),french=withEnglishDefaults(fr)
+const messages: Record<Locale, Messages> = { en:competitionMessages(en,false), zh:competitionMessages(zh,true), ja:competitionMessages(japanese,false), fr:competitionMessages(french,false) }
+const practice:Record<Locale,Messages>={en:practiceMessages(en,false),zh:practiceMessages(zh,true),ja:practiceMessages(japanese,false),fr:practiceMessages(french,false)}
 const STORAGE_KEY = 'agent-observer-locale'
 
 export const LOCALES: Locale[] = ['zh', 'en', 'ja', 'fr']
@@ -38,7 +56,7 @@ function lookup(obj: any, path: string): any {
 
 export function translate(locale: Locale, key: string): any {
   for (const step of CHAIN[locale]) {
-    const value = lookup(messages[step], key)
+    const value = lookup(competition.mode==='practice'?practice[step]:messages[step], key)
     if (value !== undefined) return value
   }
   return key

@@ -52,10 +52,11 @@ onUnmounted(() => { document.documentElement.style.overflow = ''; window.removeE
       <p class="team-detail-board">{{ board }}</p>
 
       <div class="team-detail-total">
-        <span class="label">{{ t('leaderboard.score') }}</span>
+        <span class="label">{{ t(entry.calibrated ? 'leaderboard.calibrated_score' : 'leaderboard.score') }}</span>
         <b :class="{ neg: entry.total_score < 0 }">{{ num(entry.total_score) }}</b>
       </div>
 
+      <p v-if="entry.calibrated" class="team-detail-board">{{ t('leaderboard.calibration_note') }}<br>{{ t('leaderboard.raw_score') }}: {{ num(entry.raw_total_score ?? 0) }}</p>
       <ul class="team-detail-parts">
         <li v-for="p in parts" :key="p.key" :class="p.key">
           <span class="part-label">{{ p.label }}</span>
@@ -76,7 +77,7 @@ onUnmounted(() => { document.documentElement.style.overflow = ''; window.removeE
       <div v-if="handle || (mine && (entry.best_submission_id || entry.observer_batch_id))" class="team-detail-links">
         <a v-if="handle" :href="`https://github.com/${handle}`" target="_blank" rel="noopener noreferrer">{{ tf('leaderboard.detail.github', { handle }) }} ↗</a>
         <router-link v-if="mine && entry.best_submission_id" :to="`/submissions/${entry.best_submission_id}`" @click="emit('close')">{{ t('leaderboard.detail.view_submission') }} →</router-link>
-        <router-link v-if="mine && entry.observer_batch_id" to="/projects" @click="emit('close')">{{ pick('View evaluation','查看评测') }} →</router-link>
+        <router-link v-if="mine && entry.observer_batch_id" to="/compete" @click="emit('close')">{{ pick('View evaluation','查看评测') }} →</router-link>
       </div>
     </section>
   </div>

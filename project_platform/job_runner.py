@@ -15,6 +15,7 @@ from .manifest import ProjectManifest
 from .package import extract_project, project_digest, read_project_zip
 from .preparation import prepare_project
 from .session import SessionClient
+from .scenario_job import prepare_bounded
 from .trusted_engine import result_summary, run_session
 
 
@@ -55,7 +56,18 @@ def engine_job(payload: dict, root: Path, http: Http, *, repository_credentials=
     scenario, output = root / "scenario", root / "result"
     extract_project(files, scenario)
     client = SessionClient(payload["session_url"], payload["run_credential"])
-    result, digest = run_session(scenario, output, client, wallclock_seconds=payload["runtime_seconds"])
+    record = None
+    if payload.get("instance") is not None:
+        instance = payload["instance"]
+        if instance["bundle_digest"] != payload["scenario_digest"]:
+            raise JobError("calibration_template_mismatch")
+        scenario, record = prepare_bounded(scenario, root / "instance", seed=instance["seed"],
+            profile=instance["profile"], max_candidates=instance["max_candidates"])
+        # This acknowledgement is required before the first participant-visible
+        # message. Private inputs never enter pack_results or the result repo.
+        client.call("record_instance", record=record)
+    result, digest = run_session(scenario, output, client, wallclock_seconds=payload["runtime_seconds"],
+                                instance_record=record)
     archive = pack_results(output)
     if payload['artifact_upload'] == {'kind': 'github'}:
         path = store_private_artifact(read_project_zip(archive), payload['run_id'], 'results', repository_credentials)

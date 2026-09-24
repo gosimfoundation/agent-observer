@@ -51,8 +51,9 @@ def portal_site(edge_stack):
         except subprocess.TimeoutExpired:process.kill();process.wait()
 
 
-def test_participant_link_zip_review_key_and_legacy_csv_journey(portal_site,run_setup,tmp_path):
+def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_site,run_setup,tmp_path):
     s=run_setup;uri=s['uri'];password='local-browser-test-password-92'
+    query(uri,"update private.observer_site_mode set mode='competition',phase_id=%s",(s['phase'],))
     legacy=uuid.uuid4()
     query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,%s,'Practice','练习赛')",(legacy,str(legacy)))
     query(uri,'insert into public.phase_scenarios values(%s,%s)',(legacy,s['scenario']))
@@ -74,7 +75,7 @@ def test_participant_link_zip_review_key_and_legacy_csv_journey(portal_site,run_
         page.get_by_test_id('login-password').fill(password)
         page.get_by_test_id('login-submit').click()
         expect(page).to_have_url(portal_site+'/dashboard',timeout=20000)
-        page.get_by_role('link',name='Agent projects',exact=True).click()
+        page.get_by_role('link',name='Participate',exact=True).click()
         expect(page.get_by_test_id('project-title')).to_be_visible(timeout=15000)
         page.get_by_test_id('project-title').fill('Repository project')
         page.get_by_test_id('project-url').fill('https://github.com/owner/project')
@@ -111,71 +112,56 @@ def test_participant_link_zip_review_key_and_legacy_csv_journey(portal_site,run_
             'buffer':pack_files((ProjectFile('main.rs',b'fn main() {}'),))})
         page.get_by_test_id('project-submit').click()
         expect(page.get_by_role('heading',name='ZIP project',exact=True)).to_be_visible(timeout=15000)
-        api=page.locator('form').filter(has=page.get_by_role('button',name='Save encrypted key',exact=True))
-        api.get_by_label('API name',exact=True).fill('Private provider')
-        api.get_by_label('Model names, separated by commas').fill('test-model')
-        api.get_by_label('API key',exact=True).fill('not-a-real-key-browser-fixture')
-        api.get_by_role('button',name='Save encrypted key',exact=True).click()
-        expect(page.get_by_test_id('project-api-key')).to_have_value('')
-        expect(page.get_by_text('Private provider',exact=True)).to_be_visible(timeout=15000)
-        assert 'not-a-real-key-browser-fixture' not in page.content()
+        expect(page.get_by_role('button',name='Save encrypted key',exact=True)).to_have_count(0)
+        expect(page.get_by_role('button',name='Start local CSV session',exact=True)).to_have_count(0)
+        personal=page.get_by_test_id('personal-model-settings')
+        personal.locator('summary').click()
+        personal.get_by_label('Model',exact=True).fill('own-model')
+        personal.get_by_test_id('personal-api-key').fill('in-memory-browser-fixture')
+        personal.get_by_role('button',name='Use for this session',exact=True).click()
+        expect(personal.get_by_role('button',name='Disconnect and clear key')).to_be_visible()
+        assert 'in-memory-browser-fixture' not in page.evaluate('JSON.stringify({...localStorage,...sessionStorage})')
+        assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
+        page.reload()
+        page.get_by_test_id('personal-model-settings').locator('summary').click()
+        expect(page.get_by_test_id('personal-api-key')).to_have_value('')
+
         page.get_by_role('button',name='Review interface',exact=True).click()
         page.get_by_label('Architecture and reproduction notes').fill('Run the project using the submitted manifest.')
         page.get_by_role('button',name='Save evidence',exact=True).click()
         expect(page.get_by_role('status').filter(has_text='Saved.')).to_be_visible(timeout=15000)
-        # The scheduler normally opens this local session. Its credential is
-        # encrypted in the real database, then delivered through the real portal.
-        batch=rpc(uri,'observer_create_batch',s['phase'],None,role='authenticated',user=s['user'])
-        local_run=query(uri,'select id from public.observer_runs where batch_id=%s',(batch,))[0][0]
-        participant=secrets.token_urlsafe(32);engine=secrets.token_urlsafe(32)
-        credential=f'obs_{local_run}.{participant}'
-        encrypted=subprocess.run([os.environ['OBSERVER_DENO_BIN'],'eval',
-            'import {encryptCredential} from "./_shared/observer-model.ts"; '
-            'const d=await new Response(Deno.stdin.readable).json(); console.log(await encryptCredential(d.key,d.id,d.master));'],
-            cwd=ROOT/'supabase/functions',input=json.dumps({'key':credential,'id':str(local_run)+':local','master':s['stack']['master']}),
-            capture_output=True,text=True,check=True).stdout.strip()
-        rpc(uri,'observer_open_local_session',local_run,participant,engine,encrypted)
-        page.get_by_role('button',name='Refresh',exact=True).click()
-        page.get_by_role('button',name='Local run instructions',exact=True).click()
-        panel=page.get_by_test_id('local-instructions')
-        expect(panel.get_by_label('Temporary run credential',exact=True)).to_have_value(credential)
-        expect(panel.get_by_label('Temporary run credential',exact=True)).to_have_attribute('type','password')
-        assert engine not in page.content()
-        with page.expect_download() as downloaded:
-            panel.get_by_role('link',name='Download local runner',exact=True).click()
-        archive=tmp_path/'runner.zip';downloaded.value.save_as(archive)
-        import zipfile
-        with zipfile.ZipFile(archive) as bundle:
-            assert 'observer-local-runner/project_platform/local.py' in bundle.namelist()
-            assert not any(name.endswith(('.csv','.env')) for name in bundle.namelist())
-            bundle.extractall(tmp_path/'unpacked')
-        import sys
-        smoke=subprocess.run([sys.executable,'-m','project_platform.local','--help'],
-            cwd=tmp_path/'unpacked/observer-local-runner',capture_output=True,text=True)
-        assert smoke.returncode==0,smoke.stderr
         page.set_viewport_size({'width':390,'height':844})
         page.goto(portal_site+'/projects?lang=zh')
-        expect(page.get_by_role('heading',name='智能体项目',exact=True)).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('project-title')).to_be_visible(timeout=15000)
         expect(page.get_by_role('heading',name='ZIP project',exact=True)).to_be_visible(timeout=15000)
         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
         shots=ROOT/'artifacts/screenshots-projects';shots.mkdir(parents=True,exist_ok=True)
         page.screenshot(path=str(shots/'portal-mobile.png'),full_page=True)
-        page.get_by_role('link',name='原有 CSV 提交',exact=True).click()
-        expect(page.get_by_test_id('submit-kind-results')).to_be_visible(timeout=15000)
-        expect(page.get_by_test_id('submit-phase')).to_have_value(str(legacy))
-        expect(page.get_by_test_id('online-submission-link')).to_be_visible()
-        expect(page.get_by_test_id('submit-phase').locator('option[value="'+str(s['phase'])+'"]')).to_have_count(0)
+        # The administrator selects one current competition; the participant
+        # never chooses between stages and old project links use the same entry.
+        query(uri,"update private.observer_site_mode set mode='practice',phase_id=%s",(legacy,))
         page.goto(portal_site+'/submit?phase='+str(s['phase'])+'&lang=zh')
-        expect(page).to_have_url(portal_site+'/projects',timeout=15000)
-        expect(page.get_by_test_id('project-title')).to_be_visible()
+        expect(page.get_by_test_id('csv-workflow')).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('current-submission-phase')).to_contain_text('练习赛')
+        expect(page.get_by_test_id('submit-phase')).to_have_count(0)
+        expect(page.get_by_test_id('project-title')).to_have_count(0)
+        page.goto(portal_site+'/projects?lang=zh')
+        expect(page.get_by_test_id('csv-workflow')).to_be_visible()
+        assert '/compete' in page.url
         assert not script_errors,script_errors
         context.close();browser.close()
 
 
-def test_online_board_shows_same_batch_mean_and_keeps_private_artifacts_hidden(portal_site,run_setup):
+@pytest.mark.parametrize('calibrated',[False,True])
+def test_online_board_shows_same_batch_mean_and_keeps_private_artifacts_hidden(portal_site,run_setup,calibrated):
     s=run_setup;uri=s['uri'];batch=query(uri,'select batch_id from public.observer_runs where id=%s',(s['run'],))[0][0]
-    query(uri,"update public.observer_runs set status='scored',score=60,score_summary=%s,result_path='github:private-board-result',finished_at=now() where id=%s",
-      (Jsonb({'score':{'total':60,'base_science':70,'program_bonus':0,'request_reward':0,'penalties':{'bad':10}},'completed_tiles':4,'required_missing':2}),s['run']))
+    query(uri,"update private.observer_site_mode set mode='competition',phase_id=%s",(s['phase'],))
+    raw={'total':60,'base_science':70,'program_bonus':0,'request_reward':0,'penalties':{'bad':10}}
+    summary={'score':raw,'completed_tiles':4,'required_missing':2}
+    score=10000 if calibrated else 60
+    if calibrated:summary.update({'score':{'total':score},'raw_score':raw,'calibration':{'version':'observer-reference-panel-v1'}})
+    query(uri,"update public.observer_runs set status='scored',score=%s,score_summary=%s,result_path='github:private-board-result',finished_at=now() where id=%s",
+      (score,Jsonb(summary),s['run']))
     query(uri,'select private.observer_finalize_batch(%s)',(batch,))
     query(uri,'update public.phases set counts_for_final=(id=%s)',(s['phase'],))
     team_name=query(uri,'select name from public.teams where id=%s',(s['team'],))[0][0]
@@ -187,10 +173,14 @@ def test_online_board_shows_same_batch_mean_and_keeps_private_artifacts_hidden(p
         page.goto(portal_site+'/leaderboard/'+slug+'?lang=en')
         row=page.get_by_test_id('lb-row').filter(has_text=team_name)
         expect(row).to_be_visible(timeout=15000)
-        expect(row.locator('td').nth(2)).to_contain_text('60')
+        expect(row.locator('td').nth(2)).to_contain_text('10000' if calibrated else '60')
         row.click();dialog=page.get_by_test_id('team-detail')
         expect(dialog).to_be_visible()
         expect(dialog).to_contain_text('60')
+        if calibrated:
+            expect(dialog).to_contain_text('Calibrated score')
+            expect(dialog).to_contain_text('Raw score: 60')
+            expect(dialog).to_contain_text('70')
         assert 'private-board-result' not in page.content()
         page.keyboard.press('Escape')
         page.goto(portal_site+'/?lang=en')

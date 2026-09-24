@@ -25,7 +25,7 @@ function toForm(p: Phase): PhaseForm {
   return { id: p.id, slug: p.slug, sort_order: p.sort_order ?? 0, name_en: p.name_en ?? '', name_zh: p.name_zh ?? '', description_en: p.description_en ?? '', description_zh: p.description_zh ?? '', starts_at: toLocalInput(p.starts_at), ends_at: toLocalInput(p.ends_at), daily_limit: p.daily_limit ?? 10, leaderboard_mode: p.leaderboard_mode, scenario_ids: p.scenarios.map(s => s.id), allow_results: p.allow_results, allow_agents: p.allow_agents, counts_for_final: p.counts_for_final, is_active: p.is_active, status: p.status }
 }
 async function load() {
-  const [phases, scn] = await Promise.all([loadPhases(), loadScenarios()])
+  const [phases, scn] = await Promise.all([loadPhases(true), loadScenarios()])
   forms.value = phases.map(toForm)
   scenarios.value = scn
 }

@@ -28,7 +28,7 @@ async function action(id: number, name: string) {
   const ok = await run(() => rpc('admin_submission_action', { p_id: id, p_action: name }), t('admin.done'))
   if (ok) await load()
 }
-onMounted(async () => { try { phases.value = await loadPhases(); await load() } finally { loading.value = false } })
+onMounted(async () => { try { phases.value = await loadPhases(true); await load() } finally { loading.value = false } })
 </script>
 
 <template>

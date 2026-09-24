@@ -59,16 +59,14 @@ do $verify$ begin
   if not exists(select 1 from public.scenarios s join private.observer_scenario_bundles b on b.scenario_id=s.id
     where s.id={q(preview_id)} and s.is_active and s.weather_public and s.forecasts_public and s.events_public)
     then raise exception 'Public preview is not ready';end if;
-  if not exists(select 1 from private.observer_providers where team_id is null and enabled and {q(model)}=any(models))
-    then raise exception 'Configured preview model unavailable';end if;
 end $verify$;
 insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,
   daily_batches,model_token_limit,model_call_limit,model_concurrency)
-  values({q(phase_id)},true,true,{runtime},{daily},5000,10,1)
+  values({q(phase_id)},true,false,{runtime},{daily},0,0,1)
 on conflict(phase_id) do nothing;
 do $settings$ begin
   if not exists(select 1 from public.observer_phase_settings where phase_id={q(phase_id)}
-    and projects_enabled and local_sessions_enabled and runtime_seconds={runtime}
+    and projects_enabled and not local_sessions_enabled and runtime_seconds={runtime}
     and daily_batches={daily} and access_team_id is null)
     then raise exception 'Existing phase settings differ; refusing to overwrite them';end if;
 end $settings$;

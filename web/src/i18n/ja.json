@@ -70,9 +70,9 @@
     "logout": "ログアウト",
     "admin": "管理",
     "announcements": "お知らせ",
-    "submit": "提出",
+    "submit": "参加する",
     "team": "チーム",
-    "submissions": "提出履歴",
+    "submissions": "参加履歴",
     "profile": "プロフィール",
     "menu": "メニュー",
     "registration_closed": "登録受付は終了しました",
@@ -713,7 +713,10 @@
       "scored_at": "採点時刻",
       "github": "リーダーの GitHub @{handle}",
       "view_submission": "この提出を開く"
-    }
+    },
+    "calibrated_score": "補正後スコア",
+    "raw_score": "元のスコア",
+    "calibration_note": "順位には難易度補正後のスコアを使用します。内訳は補正前の値です。"
   },
   "browser_notice": {
     "title": "Chrome で開いてください",
@@ -758,6 +761,15 @@
     "invite_people": "仲間を招待",
     "invite_link": "招待リンク",
     "copy_link": "招待リンクをコピー",
-    "copy_fallback": "コピーできませんでした。招待コードまたはリンクを選択して手動でコピーしてください。"
+    "copy_fallback": "コピーできませんでした。招待コードまたはリンクを選択して手動でコピーしてください。",
+    "errors": {
+      "recipient_unavailable": "現在、この参加者に招待を送れません。",
+      "team_unavailable": "このチームには現在参加できません。",
+      "invitation_not_found": "このリクエストの受信者ではありません。",
+      "invitation_finished": "このリクエストは処理済みです。"
+    }
+  },
+  "submit": {
+    "title": "参加する"
   }
 }

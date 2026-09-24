@@ -70,9 +70,9 @@
     "logout": "Déconnexion",
     "admin": "Admin",
     "announcements": "Annonces",
-    "submit": "Soumettre",
+    "submit": "Participer",
     "team": "Équipe",
-    "submissions": "Soumissions",
+    "submissions": "Historique de participation",
     "profile": "Profil",
     "menu": "Menu",
     "registration_closed": "Inscriptions closes",
@@ -713,7 +713,10 @@
       "scored_at": "Noté le",
       "github": "Chef d'équipe sur GitHub @{handle}",
       "view_submission": "Ouvrir cette soumission"
-    }
+    },
+    "calibrated_score": "Score ajusté",
+    "raw_score": "Score brut",
+    "calibration_note": "Le classement utilise les scores ajustés à la difficulté. Le détail présente les valeurs brutes."
   },
   "browser_notice": {
     "title": "Ouvrez ce site dans Chrome",
@@ -758,6 +761,15 @@
     "invite_people": "Inviter des coéquipiers",
     "invite_link": "Lien d’invitation",
     "copy_link": "Copier le lien",
-    "copy_fallback": "Échec de la copie. Sélectionnez le code ou le lien et copiez-le manuellement."
+    "copy_fallback": "Échec de la copie. Sélectionnez le code ou le lien et copiez-le manuellement.",
+    "errors": {
+      "recipient_unavailable": "Cette personne ne peut pas recevoir cette invitation.",
+      "team_unavailable": "Cette équipe n’est plus disponible.",
+      "invitation_not_found": "Cette demande ne vous est pas adressée.",
+      "invitation_finished": "Cette demande a déjà été traitée."
+    }
+  },
+  "submit": {
+    "title": "Participer"
   }
 }

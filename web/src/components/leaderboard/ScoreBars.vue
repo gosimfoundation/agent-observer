@@ -9,33 +9,35 @@ const props = defineProps<{ entries: LeaderboardEntry[]; teamId: string | null; 
 const emit = defineEmits<{ select: [entry: LeaderboardEntry] }>()
 const { t, tf } = useI18n()
 const top = computed(() => props.entries.slice(0, 10))
+const calibrated = computed(() => props.entries.some(e => e.calibrated))
 const mine = computed(() => props.teamId ? props.entries.find(e => e.team_id === props.teamId) ?? null : null)
 const outside = computed(() => mine.value && !top.value.some(e => e.team_id === mine.value!.team_id) ? mine.value : null)
-const gross = (e: LeaderboardEntry) => Math.max(0, e.base_science) + Math.max(0, e.program_bonus) + Math.max(0, e.request_reward)
+const gross = (e: LeaderboardEntry) => e.calibrated ? Math.max(0, e.total_score) : Math.max(0, e.base_science) + Math.max(0, e.program_bonus) + Math.max(0, e.request_reward)
 const max = computed(() => Math.max(1, ...[...top.value, ...(outside.value ? [outside.value] : [])].map(e => Math.max(gross(e), e.total_score))))
 const scoredRuns = computed(() => props.entries.reduce((s, e) => s + e.submission_count, 0))
 const widthPct = (v: number) => `${Math.max(0, Math.min(100, (v / max.value) * 100)).toFixed(2)}%`
 const isMe = (e: LeaderboardEntry) => props.teamId != null && e.team_id === props.teamId
 /** The hatched penalty tail covers the part of the gross bar that the penalties took away (all of it when the total is negative). */
 const penaltyLeft = (e: LeaderboardEntry) => widthPct(Math.max(0, Math.min(e.total_score, gross(e))))
-const penaltyWidth = (e: LeaderboardEntry) => widthPct(Math.min(gross(e), Math.max(0, e.penalty_total)))
+const penaltyWidth = (e: LeaderboardEntry) => e.calibrated ? '0%' : widthPct(Math.min(gross(e), Math.max(0, e.penalty_total)))
 const tooltip = (e: LeaderboardEntry) => tf('leaderboard.chart.tooltip', { score: num(e.total_score), base: num(e.base_science), bonus: num(e.program_bonus), requests: num(e.request_reward), coverage: num(e.coverage_bonus ?? 0), penalty: num(e.penalty_total), tiles: e.completed_tiles ?? '—', missing: e.required_missing ?? '—' })
 </script>
 
 <template>
   <div class="score-bars" data-testid="score-bars">
     <div class="score-bars-head">
-      <span class="label">{{ t('leaderboard.chart.title') }}</span>
-      <span class="score-bars-legend" aria-hidden="true"><i class="base"></i>{{ t('leaderboard.chart.legend_base') }} <i class="bonus"></i>{{ t('leaderboard.chart.legend_bonus') }} <i class="request"></i>{{ t('leaderboard.chart.legend_request') }} <i class="penalty"></i>{{ t('leaderboard.chart.penalty') }}</span>
+      <span class="label">{{ t(calibrated ? 'leaderboard.calibrated_score' : 'leaderboard.chart.title') }}</span>
+      <span v-if="!calibrated" class="score-bars-legend" aria-hidden="true"><i class="base"></i>{{ t('leaderboard.chart.legend_base') }} <i class="bonus"></i>{{ t('leaderboard.chart.legend_bonus') }} <i class="request"></i>{{ t('leaderboard.chart.legend_request') }} <i class="penalty"></i>{{ t('leaderboard.chart.penalty') }}</span>
+      <span v-else class="text-sm text3">{{ t('leaderboard.calibration_note') }}</span>
     </div>
     <ol class="score-bars-list">
       <li v-for="row in top" :key="row.team_id" class="score-bar-row" :class="{ me: isMe(row) }" data-testid="score-bar" role="button" tabindex="0" @click="emit('select', row)" @keydown.enter.prevent="emit('select', row)" @keydown.space.prevent="emit('select', row)">
         <span class="rank" :class="row.rank <= 3 ? `rank-${row.rank}` : ''">{{ row.rank }}</span>
         <span class="name"><UserAvatar :name="row.team_name" :github="row.leader_github" /><i v-if="row.rank === 1" class="champ-star" aria-hidden="true">✦</i><span class="truncate">{{ row.team_name }}</span><span v-if="isMe(row)" class="tag">{{ t('leaderboard.chart.your_team') }}</span></span>
         <span class="track" :title="tooltip(row)">
-          <i class="base" :style="{ width: widthPct(Math.max(0, row.base_science)) }"></i>
-          <i class="bonus" :style="{ left: widthPct(Math.max(0, row.base_science)), width: widthPct(Math.max(0, row.program_bonus)) }"></i>
-          <i class="request" :style="{ left: widthPct(Math.max(0, row.base_science) + Math.max(0, row.program_bonus)), width: widthPct(Math.max(0, row.request_reward)) }"></i>
+          <i class="base" :style="{ width: widthPct(Math.max(0, row.calibrated ? row.total_score : row.base_science)) }"></i>
+          <i v-if="!row.calibrated" class="bonus" :style="{ left: widthPct(Math.max(0, row.base_science)), width: widthPct(Math.max(0, row.program_bonus)) }"></i>
+          <i v-if="!row.calibrated" class="request" :style="{ left: widthPct(Math.max(0, row.base_science) + Math.max(0, row.program_bonus)), width: widthPct(Math.max(0, row.request_reward)) }"></i>
           <i class="penalty" :style="{ left: penaltyLeft(row), width: penaltyWidth(row) }"></i>
         </span>
         <span class="value" :class="{ neg: row.total_score < 0 }">{{ num(row.total_score) }}</span>
@@ -49,9 +51,9 @@ const tooltip = (e: LeaderboardEntry) => tf('leaderboard.chart.tooltip', { score
           <span class="rank" :class="outside.rank <= 3 ? `rank-${outside.rank}` : ''">{{ outside.rank }}</span>
           <span class="name"><UserAvatar :name="outside.team_name" :github="outside.leader_github" /><span class="truncate">{{ outside.team_name }}</span><span class="tag">{{ t('leaderboard.chart.your_team') }}</span></span>
           <span class="track" :title="tooltip(outside)">
-            <i class="base" :style="{ width: widthPct(Math.max(0, outside.base_science)) }"></i>
-            <i class="bonus" :style="{ left: widthPct(Math.max(0, outside.base_science)), width: widthPct(Math.max(0, outside.program_bonus)) }"></i>
-            <i class="request" :style="{ left: widthPct(Math.max(0, outside.base_science) + Math.max(0, outside.program_bonus)), width: widthPct(Math.max(0, outside.request_reward)) }"></i>
+            <i class="base" :style="{ width: widthPct(Math.max(0, outside.calibrated ? outside.total_score : outside.base_science)) }"></i>
+            <i v-if="!outside.calibrated" class="bonus" :style="{ left: widthPct(Math.max(0, outside.base_science)), width: widthPct(Math.max(0, outside.program_bonus)) }"></i>
+            <i v-if="!outside.calibrated" class="request" :style="{ left: widthPct(Math.max(0, outside.base_science) + Math.max(0, outside.program_bonus)), width: widthPct(Math.max(0, outside.request_reward)) }"></i>
             <i class="penalty" :style="{ left: penaltyLeft(outside), width: penaltyWidth(outside) }"></i>
           </span>
           <span class="value" :class="{ neg: outside.total_score < 0 }">{{ num(outside.total_score) }}</span>

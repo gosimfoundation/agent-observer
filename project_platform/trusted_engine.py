@@ -12,13 +12,14 @@ from pathlib import Path
 
 from challenge.challenge_workflow import ChallengeWorkflow
 from .session import SessionClient, wait_until
+from .scenario_instances import PANEL_VERSION, calibrated_score
 
 
 def result_summary(result: dict) -> dict:
     """Small database summary; full action/replay evidence stays in private storage."""
     report=result["score_report"]
     completion=report.get("completion",{})
-    return {
+    summary = {
         "schema_version":"observer-run-summary-v1",
         "score":report["score"],
         "completed_tiles":len(completion.get("completed_tiles",[])),
@@ -27,17 +28,26 @@ def result_summary(result: dict) -> dict:
         "committed_action_count":result["committed_action_count"],
         "accounted_wallclock_seconds":result["accounted_wallclock_seconds"],
     }
+    if "calibration" in result:
+        summary["raw_score"] = summary["score"]
+        summary["score"] = {"total": result["calibration"]["adjusted_score"]}
+        summary["calibration"] = result["calibration"]
+    return summary
 
 
 class RemoteProvider:
-    def __init__(self, workflow: ChallengeWorkflow, client: SessionClient, *, startup_seconds: float = 900):
+    def __init__(self, workflow: ChallengeWorkflow, client: SessionClient, *, startup_seconds: float = 900,
+                 evaluation: dict | None = None):
         self.workflow, self.client = workflow, client
         self.startup_seconds = startup_seconds
         self.server_deadline: float | None = None
         self.flushed_sequence = 0
         self.flushed_rows = 0
+        self.evaluation = evaluation
 
     def publish_initial(self, publication):
+        if self.evaluation is not None:
+            publication = {**publication, "evaluation": self.evaluation}
         startup = time.monotonic()+self.startup_seconds
         self.client.call("initialize",publication=publication,deadline=startup)
         wait_until(lambda:self.client.call("poll",scope="engine",deadline=startup)["ready"],deadline=startup)
@@ -64,11 +74,24 @@ class RemoteProvider:
         return wait_until(lambda:self.client.call("poll",scope="engine",deadline=deadline)["response"],deadline=deadline)
 
 
-def run_session(scenario: Path, output: Path, client: SessionClient, *, wallclock_seconds: float | None = None):
+def run_session(scenario: Path, output: Path, client: SessionClient, *, wallclock_seconds: float | None = None,
+                instance_record: dict | None = None):
     workflow=ChallengeWorkflow(scenario)
-    provider=RemoteProvider(workflow,client)
+    evaluation = None if instance_record is None else {
+        "instance_commitment": instance_record["instance_digest"], "calibration_version": PANEL_VERSION,
+        "score_formula": "10000 * (raw_score - wait_score) / (reference_panel_mean - wait_score)",
+    }
+    provider=RemoteProvider(workflow,client,evaluation=evaluation)
     result=workflow.run(provider,wallclock_seconds=wallclock_seconds)
     provider.flush()
+    if instance_record is not None:
+        difficulty = instance_record["difficulty"]
+        result["calibration"] = {
+            "version": PANEL_VERSION, "instance_commitment": instance_record["instance_digest"],
+            "wait_score": difficulty["wait_score"], "reference_score": difficulty["reference_score"],
+            "span": difficulty["span"],
+            "adjusted_score": calibrated_score(result["score_report"]["score"]["total"], difficulty),
+        }
     workflow.write_outputs(output,result)
     digest=hashlib.sha256((output/"decisions.csv").read_bytes()).hexdigest()
     return result,digest

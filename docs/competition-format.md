@@ -1,36 +1,30 @@
 # Competition format: what the platform implements
 
-This records the decision the science team asked for ("我们决定的比赛方式会影响后续接口的设计，所以需要大家敲定最终版本")
-and points at the code that implements it. Both formats that were on the table are supported; they are used in
-different phases rather than one replacing the other.
+The participant UI presents one current competition, selected by the administrator.
+The single `/compete` workspace replaces the former submission and project pages;
+old links redirect there. Its workflow follows the configured phase, project
+versions and evaluation batches. A prominent Submit button links to that workspace.
 
-## The decision
+## Current policy (2026-09-24)
 
-| | Practice phase | Online competition phase |
+| | Current Playground | Formal competition after the administrator switches |
 |---|---|---|
-| Submission | `decisions.csv` (results file) only | `decisions.csv` (results file) only — agent packages are no longer accepted (2026-09-24) |
-| Weather | published in full, including `weather_events.csv` | weather, forecasts and events published automatically when the phase opens; `tile_anomalies.csv` stays hidden |
-| Who runs the survey | the participant, locally | the participant, locally |
-| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14), `dev-reference` (180) | `eval-a`, `eval-b` (30 nights, 8 regions × 200 tiles each) |
-| Daily limit per team | 50 | 10 |
-| Counts for awards | no | yes, mean over both scenarios |
+| Entry | `/compete` | `/compete` |
+| Input | locally generated `decisions.csv` | complete repository or private project ZIP; no CSV |
+| Execution | participant computer, original scorer | approved project version, platform-controlled sequential observations |
+| Scenario | existing public scenarios | a new secret random seed per team and attempt, calibrated difficulty |
+| Ranking | best score per scenario, unchanged | best complete batch, mean calibrated score over all scenarios |
+| Model | optional | optional; participant supplies API and quota, no organizer credits |
+| Personal credentials | never include in results | HTTPS only, browser/request memory only, never persisted |
 
-The online-phase scenarios are generated at 8 regions × 200 tiles over the same 30 nights, with
-`coverage_bonus_weight` 0.35. Demand against available observing time is ~142% (eval-a) and ~137% (eval-b), so
-finishing everything is impossible by construction and the coverage term makes what gets skipped matter.
+Formal evaluation accepts a decision only for its current sequence, records it,
+then publishes the next observation. Private seeds, frozen generator/calibration
+versions and immutable decisions support independent reconstruction and scoring.
+CSV remains an exported result artifact, not a formal submission format.
 
-Rationale, in the terms the original discussion used:
-
-- The **results-file** route is the one that works when the weather CSV is public. The participant replays the
-  weather with the shipped simulators, produces a decision sequence and the scorer grades it. Local and platform
-  scores are byte-identical, so this is the fastest feedback loop and the easiest to debug. It is kept for practice.
-- The **hosted-agent** route is the answer to the fairness concern. If a participant holds the whole weather
-  sequence, a global optimiser beats any honest online policy. On hidden scenarios the platform starts the agent
-  itself and gives it only the snapshot for the current slot, so future weather is unavailable by construction.
-  It is the only route for the phase that decides the awards.
-
-Keeping both costs nothing in interface terms: they meet at `decisions.csv`. The hosted run produces exactly the
-file a participant would have uploaded, and the same scorer grades both.
+See `randomized-evaluation.md` for calibration and
+`ephemeral-personal-models.md` for the personal API flow. Existing scores and
+submissions are not deleted or rewritten by the migration.
 
 ## The coverage term
 

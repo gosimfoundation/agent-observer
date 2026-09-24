@@ -3,7 +3,7 @@
 需要 Python 3.12；默认使用 Docker 运行完整项目。也可以用 `--native` 在自己的电脑上直接运行自己信任的项目。
 项目语言不限，Python 只是与比赛服务器通信的运行器。
 
-1. 在网站「智能体项目」选择正式赛程，点击「启动本地 CSV 会话」。
+1. 在网站「提交」页选择本地运行，点击「启动本地 CSV 会话」。
 2. 等待任务启动，打开对应记录中的「本地运行信息」。下载并解压运行器。
 3. 项目根目录应包含 `observer.project.json`，其中 `run` 和 `build` 是参数数组。
    可以使用已经在网站检查过的运行设置；不需要把项目改写成 Python。
@@ -22,7 +22,7 @@ python3 -m project_platform.local --project /path/to/project --session-url https
 已有输出文件不会覆盖，请改用新的 `--output` 文件名。临时凭证不要提交到仓库或写入项目 ZIP。
 导出只包含官方实际执行的决策；运行器核对文件指纹后才写入 CSV。
 
-For English-speaking teams: select a local session on the project page, download
+For English-speaking teams: select a local session on the Submit page, download
 and extract this runner, and execute the command above. Your complete project
 must include `observer.project.json`; any language can implement its JSON-Lines
 interface. Docker is the default. `--native` explicitly runs your own trusted
