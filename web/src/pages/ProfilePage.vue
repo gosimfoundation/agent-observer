@@ -13,7 +13,7 @@ const i18n = useI18n()
 const flash = useFlash()
 const { me, refreshMe } = useAuth()
 const form = ref({
-  name: '', github: '', affiliation: '', role: '', seeking: '', seeking_count: 1, locale: 'zh' as Locale,
+  name: '', nickname: '', github: '', affiliation: '', role: '', seeking: '', seeking_count: 1, locale: 'zh' as Locale,
   astro_level: 0, ai_level: 0, city: '', contact: '', blurb: '', show_on_wall: false,
 })
 const astroTiers = computed(() => t('tiers.astro') as string[])
@@ -28,7 +28,7 @@ const loading = ref(true)
 onMounted(async () => {
   const profile = await refreshMe()
   if (profile) form.value = {
-    name: profile.name ?? '', github: profile.github ?? '', affiliation: profile.affiliation ?? '', role: profile.role ?? '',
+    name: profile.name ?? '', nickname: profile.nickname ?? '', github: profile.github ?? '', affiliation: profile.affiliation ?? '', role: profile.role ?? '',
     seeking: profile.seeking ?? '', seeking_count: Number(profile.seeking_count) || 1, locale: (['zh', 'en', 'ja', 'fr'] as Locale[]).includes(profile.locale as Locale) ? profile.locale as Locale : locale.value,
     astro_level: Number(profile.astro_level ?? 0), ai_level: Number(profile.ai_level ?? 0),
     city: profile.city ?? '', contact: profile.contact ?? '', blurb: profile.blurb ?? '',
@@ -40,10 +40,12 @@ onMounted(async () => {
 async function save() {
   if (!me.value) return
   if (!form.value.name.trim()) { flash.error(t('auth.errors.name_required')); return }
+  const nickname = form.value.nickname.trim()
+  if (Array.from(nickname).length > 40) { flash.error(t('auth.errors.nickname_too_long')); return }
   busy.value = true
   try {
     const { error } = await supabase.from('profiles').update({
-      name: form.value.name.trim(), github: form.value.github.trim().replace(/^@/, ''), affiliation: form.value.affiliation.trim(),
+      name: form.value.name.trim(), nickname, github: form.value.github.trim().replace(/^@/, ''), affiliation: form.value.affiliation.trim(),
       role: form.value.role.trim(), locale: form.value.locale,
       seeking: form.value.seeking, seeking_count: form.value.seeking ? form.value.seeking_count : 0, looking_for_team: form.value.seeking !== '',
       astro_level: form.value.astro_level, ai_level: form.value.ai_level,
@@ -53,6 +55,7 @@ async function save() {
     if (error) throw error
     setLocale(form.value.locale)
     await refreshMe()
+    form.value.nickname = nickname
     flash.success(t('flash.profile_saved'))
   } catch (e) { flash.error(describeError(e, i18n)) }
   finally { busy.value = false }
@@ -81,6 +84,7 @@ async function changePassword() {
         <form @submit.prevent="save" novalidate>
           <div class="grid-form">
             <label class="field"><span>{{ t('auth.name') }}</span><input data-testid="profile-name" v-model="form.name" type="text" required maxlength="120"></label>
+            <label class="field"><span>{{ t('auth.nickname') }} · {{ t('common.optional') }}</span><input data-testid="profile-nickname" v-model="form.nickname" type="text" autocomplete="nickname" aria-describedby="profile-nickname-hint"><small id="profile-nickname-hint" class="help">{{ t('auth.nickname_hint') }}</small></label>
             <label class="field"><span>{{ t('auth.github') }}</span><input v-model="form.github" type="text" maxlength="120"></label>
             <label class="field"><span>{{ t('auth.affiliation') }}</span><input v-model="form.affiliation" type="text" maxlength="200"></label>
             <label class="field"><span>{{ t('profile.role') }}</span>

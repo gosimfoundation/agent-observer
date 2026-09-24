@@ -18,7 +18,7 @@ const watcher = useSubmissionWatch(load, () => rows.value.some(r => PENDING_STAT
 
 async function load() {
   if (!team.value) { rows.value = []; return }
-  const { data } = await supabase.from('submissions').select(`${SUBMISSION_SELECT}, profiles(name)`).eq('team_id', team.value.id).order('created_at', { ascending: false }).limit(200)
+  const { data } = await supabase.from('submissions').select(`${SUBMISSION_SELECT}, profiles(name,nickname)`).eq('team_id', team.value.id).order('created_at', { ascending: false }).limit(200)
   rows.value = data ?? []
 }
 
@@ -50,7 +50,7 @@ onMounted(async () => {
             <td class="r m" :class="{ 'text-[#ff6b6b]': Number(s.penalty_total) > 0 }">{{ s.penalty_total != null ? '−' + num(s.penalty_total) : '—' }}</td>
             <td class="r m">{{ s.completed_tiles ?? '—' }}</td>
             <td class="xs">{{ s.termination_reason ? String(s.termination_reason).split(';').map((r: string) => t(`subs.termination_reason.${r}`)).join(' · ') : '—' }}</td>
-            <td class="text-sm">{{ s.profiles?.name ?? '—' }}</td>
+            <td class="text-sm">{{ s.profiles?.nickname || s.profiles?.name || '—' }}</td>
           </tr>
         </tbody>
       </table>

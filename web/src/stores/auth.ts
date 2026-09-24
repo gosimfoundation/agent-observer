@@ -7,7 +7,7 @@ export interface MeTeam {
   project_idea: string | null; github_repo: string | null; max_size: number; is_locked: boolean; member_count: number
 }
 export interface Me {
-  id: string; email: string; name: string; github: string | null; affiliation: string | null; role: string | null
+  id: string; email: string; name: string; nickname: string; github: string | null; affiliation: string | null; role: string | null
   looking_for_team: boolean; locale: string | null; is_admin: boolean; is_banned: boolean; team: MeTeam | null
   astro_level: number; ai_level: number; city: string | null; contact: string | null
   heard_from: string | null; blurb: string | null; show_on_wall: boolean; seeking: string; seeking_count: number

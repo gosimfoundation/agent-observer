@@ -793,7 +793,7 @@ details.plain summary { cursor: pointer; }
 .wall-card:hover { border-color: rgba(251,191,36,.4); transform: translateY(-3px); }
 .wall-card-lg { padding: 1.5rem 1.6rem; }
 .wall-card-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.wall-card-head h3 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.02em; color: #f7f9ff; }
+.wall-card-head h3 { min-width: 0; overflow-wrap: anywhere; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.02em; color: #f7f9ff; }
 .wall-looking { display: inline-flex; align-items: center; gap: .4rem; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: #34d399; white-space: nowrap; }
 .wall-looking .live-dot { background: #34d399; }
 .wall-comp { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: #fbbf24; border: 1px solid rgba(251,191,36,.5); padding: .2rem .5rem; white-space: nowrap; }

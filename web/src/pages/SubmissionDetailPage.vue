@@ -37,7 +37,7 @@ const evaluations = computed(() => ((sub.value?.evaluations ?? []) as any[]).sli
 const watcher = useSubmissionWatch(load, () => pending.value)
 
 async function load() {
-  const { data, error } = await supabase.from('submissions').select(`${SUBMISSION_SELECT}, profiles(name)`).eq('id', id.value).maybeSingle()
+  const { data, error } = await supabase.from('submissions').select(`${SUBMISSION_SELECT}, profiles(name,nickname)`).eq('id', id.value).maybeSingle()
   if (error || !data) { missing.value = true; return }
   sub.value = data
   for (const ev of evaluations.value) {
@@ -136,7 +136,7 @@ onMounted(async () => {
           <dl class="kv mt-6">
             <dt>{{ t('subs.file') }}</dt><dd class="m text-sm">{{ sub.original_filename }}</dd>
             <dt>{{ t('subs.sha') }}</dt><dd class="m xs break-all">{{ sub.sha256 }}</dd>
-            <dt>{{ t('subs.by') }}</dt><dd>{{ sub.profiles?.name ?? '—' }}</dd>
+            <dt>{{ t('subs.by') }}</dt><dd>{{ sub.profiles?.nickname || sub.profiles?.name || '—' }}</dd>
             <template v-if="sub.notes"><dt>{{ t('submit.notes') }}</dt><dd class="whitespace-pre-line">{{ sub.notes }}</dd></template>
           </dl>
           <div v-if="sub.status === 'queued'" class="mt-5"><button type="button" class="btn sm danger" :disabled="busy" @click="cancel">{{ t('subs.cancel') }}</button></div>
