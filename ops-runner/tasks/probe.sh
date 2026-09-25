@@ -22,17 +22,35 @@ if [ -n "$key" ] && [ -n "${SUPABASE_URL:-}" ]; then
 fi
 
 if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+  source ops-runner/lib.sh
   curl -s --max-time 20 "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}" \
     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" > /tmp/project.json || true
-  python3 - <<'PY'
+  org="$(python3 - <<'PY'
 import json
 try:
     d = json.load(open('/tmp/project.json'))
 except Exception as exc:
-    print('management project: unreadable', type(exc).__name__)
+    print('management project: unreadable', type(exc).__name__, file=__import__('sys').stderr)
 else:
-    print('management project:', {k: d.get(k) for k in ('name', 'region', 'status', 'organization_id')})
+    print('management project:', {k: d.get(k) for k in ('name', 'region', 'status', 'organization_id')}, file=__import__('sys').stderr)
+    print(d.get('organization_id') or '')
 PY
+)"
+  if [ -n "$org" ]; then
+    curl -s --max-time 20 "https://api.supabase.com/v1/organizations/$org" \
+      -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" > /tmp/org.json || true
+    python3 -c "import json; d=json.load(open('/tmp/org.json')); print('organization plan:', d.get('plan'), '| fields:', sorted(d))" || true
+  fi
+  if load_project_keys; then echo "project api keys: loaded (masked)"; fi
+  for label_query in \
+    "current_competition|select public.current_competition() as value" \
+    "phases|select slug,starts_at,ends_at,is_active,counts_for_final from public.phases order by sort_order" \
+    "observer_settings|select p.slug,s.projects_enabled,s.local_sessions_enabled,s.daily_batches,s.access_team_id is not null as team_restricted from public.observer_phase_settings s join public.phases p on p.id=s.phase_id" \
+    "accounts|select (select count(*) from auth.users) as users,(select count(*) from public.teams) as teams" \
+    "installations|select organization,enabled from private.observer_installations order by organization" \
+    "beta_entry_function|select to_regprocedure('public.my_observer_phase()') is not null as deployed"; do
+    echo "sql ${label_query%%|*}: $(sql "${label_query#*|}" 2>&1 | head -c 1500)"
+  done
 fi
 
 if [ -n "${KIMI_API_KEY:-}" ]; then
