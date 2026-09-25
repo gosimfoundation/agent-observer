@@ -895,13 +895,7 @@
   "eggs": {
     "mid_autumn": {
       "title": "Joyeuse fête de la Mi-Automne !",
-      "body": "Ce soir, la Lune est trop brillante pour le ciel profond : les observatoires font une pause gâteaux de lune.",
-      "rabbit": "Lâcher le lapin de jade 🐇",
-      "close": "Fermer",
-      "sky_title": "Ce soir, la Lune est dans la région {region}",
-      "sky_body": "Le ciel du relevé est découpé en 8 régions de 45° d'ascension droite. Le point brillant indique où se trouve la vraie Lune ce soir.",
-      "sky_numbers": "La Lune en ce moment : AD {ra}°, Déc {dec}°, éclairée à {lit} %",
-      "sky_label": "Bande du relevé en ascension droite de 0° à 360°, régions R00 à R07 ; la lueur marque la Lune de ce soir"
+      "close": "Fermer"
     }
   }
 }

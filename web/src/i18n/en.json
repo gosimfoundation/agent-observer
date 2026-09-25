@@ -2383,13 +2383,7 @@
   "eggs": {
     "mid_autumn": {
       "title": "Happy Mid-Autumn Festival!",
-      "body": "The moon is too bright for deep-sky work tonight, so the observatories have stopped for mooncakes.",
-      "rabbit": "Release the jade rabbit 🐇",
-      "close": "Close",
-      "sky_title": "Tonight the Moon is in region {region}",
-      "sky_body": "The survey sky is split into 8 regions, 45° of right ascension each. The bright dot is where the real Moon is tonight.",
-      "sky_numbers": "The Moon right now: RA {ra}°, Dec {dec}°, {lit}% lit",
-      "sky_label": "Survey strip of right ascension from 0° to 360°, regions R00 to R07; the glow marks where the Moon is tonight"
+      "close": "Close"
     }
   }
 }
