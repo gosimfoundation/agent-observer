@@ -829,7 +829,7 @@
       "relay_selected": "Les clés ne seront pas enregistrées. Gardez cette page ouverte pendant les évaluations.",
       "keep_open": "Gardez cette page ouverte jusqu'à la fin de chaque évaluation, y compris l'adaptation automatique. La fermer efface la clé ; pour vous reconnecter, saisissez-la de nouveau.",
       "relay_running": "Une évaluation est en cours : connectez votre clé ici et gardez cette page ouverte jusqu'à la fin.",
-      "connect": "Utiliser pour cette session",
+      "connect": "Connecter (clé non enregistrée)",
       "disconnect": "Se déconnecter et effacer la clé",
       "connected": "Connecté pour cette session de page.",
       "working": "Appel de votre API…",

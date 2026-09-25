@@ -1717,7 +1717,7 @@
       "relay_selected": "Keys will not be saved. Keep this page open during evaluations.",
       "keep_open": "Keep this page open until each evaluation finishes, including automatic adaptation. Closing it clears the key; reconnecting requires entering it again.",
       "relay_running": "An evaluation is running: connect your key here and keep this page open until it finishes.",
-      "connect": "Use for this session",
+      "connect": "Connect (key not saved)",
       "disconnect": "Disconnect and clear key",
       "connected": "Connected for this page session.",
       "working": "Calling your API…",
