@@ -1,0 +1,1 @@
+[{"slug": "online", "projects_enabled": true, "local_sessions_enabled": false, "runtime_seconds": 3600, "daily_batches": 10}, {"slug": "practice-projects", "projects_enabled": true, "local_sessions_enabled": false, "runtime_seconds": 7200, "daily_batches": 5}]
