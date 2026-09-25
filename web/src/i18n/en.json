@@ -264,7 +264,7 @@
           "desc": "Observe a tile, or wait. One action per slot, and the reason for it."
         }
       ],
-      "closing": "You don't need an astronomy background. During the October 1–4 online training, international astronomers and agent experts run practice sessions.",
+      "closing": "You don't need an astronomy background. During the October 1–4 online training, international astronomers and agent experts run practice sessions, and you can rehearse the competition flow on the Playground complete-project track.",
       "cardKicker": "How the challenge arrives",
       "cardTitle": "One Survey Mission Card",
       "cardLede": "Every round of the challenge starts from a mission card. Everything that round holds you to is written on it:",
@@ -322,7 +322,7 @@
         {
           "n": "03",
           "title": "Submit for evaluation",
-          "desc": "Practice accepts locally generated decisions.csv. Competition accepts complete projects and official local-session CSVs; all teams use the same frozen scorer."
+          "desc": "Practice accepts locally generated decisions.csv, or a complete project ranked on its own board. Competition accepts complete projects and official local-session CSVs; all teams use the same frozen scorer."
         }
       ],
       "timeline": [
@@ -410,7 +410,7 @@
       "items": [
         {
           "title": "Projects and CSV",
-          "desc": "Practice still accepts decisions.csv. Competition accepts a complete project from a public repository or private ZIP, or the CSV exported by an official local session."
+          "desc": "Practice accepts decisions.csv, or a complete project on a separate board (5 per team per day). Competition accepts a complete project from a public repository or private ZIP, or the CSV exported by an official local session."
         },
         {
           "title": "Limits",
@@ -543,7 +543,7 @@
         },
         {
           "title": "Enter the online competition",
-          "desc": "October 5–7: submit a complete project or connect the local runner. Future weather stays private; rehearse anomaly mechanics with finals-preview.",
+          "desc": "October 5–7: submit a complete project or connect the local runner. Future weather stays private. Before then, rehearse the same flow on the Playground complete-project track and the anomaly mechanics with finals-preview.",
           "desc_gated": "October 5–7: complete projects and local-session CSVs use the same live information. The score is the mean of all scenarios in one batch.",
           "time": "Oct 5",
           "to": "/brief#section-7"
@@ -751,7 +751,7 @@
         "title": "Three stages from training to awards",
         "paragraphs": [
           "The event has three stages: online training from October 1–4, online competition from October 5–7, and Awards Day at GOSIM Shenzhen on October 17.",
-          "Training covers the simulator and participant protocol; details will be announced. Competition accepts complete projects and official local-session CSVs. The server reveals current information step by step and scores each complete multi-scenario batch."
+          "Training covers the simulator and participant protocol; details will be announced. During training, rehearse the competition flow on the Playground complete-project track: scenarios come from Playground data, 5 evaluations per team per day, your own model key only, and a separate board. Competition accepts complete projects and official local-session CSVs. The server reveals current information step by step and scores each complete multi-scenario batch."
         ],
         "rounds": [
           {
@@ -759,7 +759,7 @@
             "name": "Online Training",
             "dates": "Oct 1–4",
             "format": "Online",
-            "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
+            "challenge": "Learn the shared simulator, mission cards, and the observer interface, prepare with public development scenarios, and rehearse the competition flow on the Playground complete-project track.",
             "participants": "Open worldwide to individuals and teams."
           },
           {
@@ -1153,7 +1153,7 @@
         "name": "Online Training",
         "dates": "Oct 1–4",
         "format": "Online",
-        "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
+        "challenge": "Learn the shared simulator, mission cards, and the observer interface, prepare with public development scenarios, and rehearse the competition flow on the Playground complete-project track.",
         "participants": "Open worldwide to individuals and teams."
       },
       {
@@ -1964,7 +1964,7 @@
       },
       {
         "q": "How many submissions can I make?",
-        "a": "Practice: 50 per team per day. Competition: 10 complete batches per team per day, each covering every scenario. The best complete batch counts; practice continues to rank each scenario separately."
+        "a": "Practice: 50 CSV submissions and 5 complete-project evaluations per team per day (separate boards). Competition: 10 complete batches per team per day, each covering every scenario. The best complete batch counts; practice continues to rank each scenario separately."
       },
       {
         "q": "Is the leaderboard score the final result?",
@@ -2001,7 +2001,7 @@
       },
       {
         "q": "Where do I rehearse the finals mechanics?",
-        "a": "Re-download the starter kit and double-click run_finals_preview (or run local_runner --scenario scenarios/finals-preview). This seven-night scenario has the full mechanics on and ships its anomaly-tag file so local scoring works; the sample agent scores about 8214 and finds and reports the instrument fault on its own. Practice scenarios (demo-week, dev-reference…) keep the old rules — nothing to re-adapt.",
+        "a": "Re-download the starter kit and double-click run_finals_preview (or run local_runner --scenario scenarios/finals-preview). This seven-night scenario has the full mechanics on and ships its anomaly-tag file so local scoring works; the sample agent scores about 8214 and finds and reports the instrument fault on its own. Practice scenarios (demo-week, dev-reference…) keep the old rules — nothing to re-adapt. To rehearse the competition submission and cloud run, use the Playground complete-project track (its scenarios have no anomaly mechanics).",
         "gated": true
       }
     ]

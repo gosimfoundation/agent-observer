@@ -10,6 +10,7 @@
 | 阶段 | 日期（UTC） | 提交 | 榜单 |
 |---|---|---|---|
 | Playground | 注册起至颁奖日 | decisions.csv，每队每天 50 次 | 仅供参考 |
+| Playground · 完整项目 | 同上 | 完整项目，每队每天 5 次 | 单独榜单，仅供参考 |
 | 线上比赛 | 2026-10-04 16:00 至 2026-10-07 15:59（UTC+8 为 10 月 5–7 日） | 完整项目或本地会话 CSV，每队每天 10 批 | 决定奖项 |
 | 颁奖日 | 2026-10-17，GOSIM 深圳 | 无 | 公布最终结果 |
 
@@ -17,10 +18,10 @@
 
 ## 3. 提交内容
 
-1. **练习赛结果文件。** Playground 继续接收列为 `decision_id, slot_id, action, tile_id, program, request_id, reason` 的 `decisions.csv`，由冻结的评分器评分。已有提交、成绩与回放保留，练习榜规则不变。
+1. **练习赛结果文件。** Playground 继续接收列为 `decision_id, slot_id, action, tile_id, program, request_id, reason` 的 `decisions.csv`，由冻结的评分器评分。已有提交、成绩与回放保留，练习榜规则不变。Playground 另设完整项目赛道：流程与正式赛相同，题目由练习赛数据生成，每队每天 5 次，只能使用本队自己的模型密钥，成绩进单独榜单。开赛前（包括 10 月 1–4 日培训期间）建议用它演练正式赛流程。
 2. **正式赛完整项目。** 提交公开 GitHub 仓库链接，或上传私有 ZIP 项目。项目语言不限；Python 仅是平台运行器。平台固定源码版本、检查启动配置并运行公开测试；需要适配时，大模型只生成可审阅的接口文件，经选手确认后才用于正式评测。无需强制调用大模型。
 3. **正式赛本地 CSV。** 在项目页启动本地会话，下载运行器，在自己电脑上运行项目，再上传该会话导出的 `decisions.csv`。服务器逐步提供当前可见信息与真实观测结果；CSV 必须与服务器实际执行的决策一致。云端项目使用相同接口，未来天气与异常答案不提供下载。
-4. CSV 不超过 20 MB，项目 ZIP 不超过 50 MB。练习场景仍使用赛初的 `participant-agent-protocol-v1` 合约；异常机制（`participant-agent-protocol-v2`）在正式比赛启用，入门包的 `finals-preview` 可用于公开演练。
+4. CSV 不超过 20 MB，项目 ZIP 不超过 50 MB。练习场景仍使用赛初的 `participant-agent-protocol-v1` 合约；异常机制（`participant-agent-protocol-v2`）在正式比赛启用，入门包的 `finals-preview` 可用于在本地演练异常机制。
 
 ## 4. 本地运行
 
