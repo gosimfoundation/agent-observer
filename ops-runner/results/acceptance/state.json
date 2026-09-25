@@ -1,0 +1,126 @@
+{
+ "cases": {
+  "python-zip-kimi": {
+   "revision_id": "29076833-cf2a-42bb-89e2-345b7f815e85",
+   "provider": "kimi",
+   "done": true,
+   "result": "public_test_failed",
+   "status": "preparing",
+   "error": ""
+  },
+  "repo-glm": {
+   "revision_id": "4602dbd7-2bd4-452c-9409-b9651dfcfe79",
+   "provider": "glm",
+   "done": true,
+   "result": "public_test_failed",
+   "status": "preparing",
+   "error": ""
+  },
+  "rust-zip": {
+   "revision_id": "b561011a-122e-4846-a762-988ac760373b",
+   "provider": null,
+   "done": true,
+   "result": "public_test_failed",
+   "status": "preparing",
+   "error": ""
+  }
+ },
+ "log": [
+  {
+   "t": "13:29:36",
+   "event": "key_saved",
+   "provider": "kimi",
+   "base": "https://api.kimi.com/coding/v1",
+   "model": "kimi-for-coding",
+   "hint_len": 4
+  },
+  {
+   "t": "13:29:41",
+   "event": "submitted",
+   "case": "python-zip-kimi",
+   "how": "python"
+  },
+  {
+   "t": "13:31:20",
+   "event": "failed",
+   "case": "python-zip-kimi",
+   "status": "preparing",
+   "error": "",
+   "jobs": [
+    {
+     "kind": "prepare",
+     "status": "succeeded",
+     "code": "succeeded"
+    },
+    {
+     "kind": "engine",
+     "status": "claimed",
+     "code": "claimed"
+    },
+    {
+     "kind": "execute",
+     "status": "claimed",
+     "code": "claimed"
+    }
+   ]
+  },
+  {
+   "t": "13:31:23",
+   "event": "key_saved",
+   "provider": "glm",
+   "base": "https://open.bigmodel.cn/api/paas/v4",
+   "model": "glm-4.5-flash",
+   "hint_len": 4
+  },
+  {
+   "t": "13:31:25",
+   "event": "submitted",
+   "case": "repo-glm",
+   "how": "repository"
+  },
+  {
+   "t": "13:33:03",
+   "event": "failed",
+   "case": "repo-glm",
+   "status": "preparing",
+   "error": "",
+   "jobs": [
+    {
+     "kind": "prepare",
+     "status": "succeeded",
+     "code": "succeeded"
+    }
+   ]
+  },
+  {
+   "t": "13:33:07",
+   "event": "submitted",
+   "case": "rust-zip",
+   "how": "rust"
+  },
+  {
+   "t": "13:35:17",
+   "event": "failed",
+   "case": "rust-zip",
+   "status": "preparing",
+   "error": "",
+   "jobs": [
+    {
+     "kind": "prepare",
+     "status": "succeeded",
+     "code": "succeeded"
+    },
+    {
+     "kind": "engine",
+     "status": "dispatched",
+     "code": "dispatched"
+    },
+    {
+     "kind": "execute",
+     "status": "dispatched",
+     "code": "dispatched"
+    }
+   ]
+  }
+ ]
+}

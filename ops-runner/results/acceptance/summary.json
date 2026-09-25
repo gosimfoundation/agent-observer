@@ -1,0 +1,23 @@
+{
+ "python-zip-kimi": {
+  "result": "public_test_failed",
+  "score": null,
+  "public_test_score": null,
+  "runs": null,
+  "error": ""
+ },
+ "repo-glm": {
+  "result": "public_test_failed",
+  "score": null,
+  "public_test_score": null,
+  "runs": null,
+  "error": ""
+ },
+ "rust-zip": {
+  "result": "public_test_failed",
+  "score": null,
+  "public_test_score": null,
+  "runs": null,
+  "error": ""
+ }
+}
