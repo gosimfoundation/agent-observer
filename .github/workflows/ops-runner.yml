@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # Tasks may commit their results back to this branch only.
+  contents: write
 
 concurrency:
   group: ops-runner
