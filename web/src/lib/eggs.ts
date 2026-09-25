@@ -48,11 +48,16 @@ function isoDate(date: Date, timeZone?: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
 }
 
-/** True on the festival day in China or in the visitor's own time zone; `?egg=midautumn` previews it. */
+/** Days the greeting stays up: the festival day and the two days after it. */
+const MID_AUTUMN_DAYS = 3
+
+/** True from the festival day through two days later, in China or in the visitor's own time zone; `?egg=midautumn` previews it. */
 export function isMidAutumnToday(date = new Date()): boolean {
   try {
     if (new URLSearchParams(window.location.search).get('egg') === 'midautumn') return true
-    return MID_AUTUMN.includes(isoDate(date, 'Asia/Shanghai')) || MID_AUTUMN.includes(isoDate(date))
+    const days = new Set(MID_AUTUMN.flatMap(day => Array.from({ length: MID_AUTUMN_DAYS }, (_, i) =>
+      new Date(Date.parse(day + 'T00:00:00Z') + i * 86_400_000).toISOString().slice(0, 10))))
+    return days.has(isoDate(date, 'Asia/Shanghai')) || days.has(isoDate(date))
   } catch {
     return false
   }
