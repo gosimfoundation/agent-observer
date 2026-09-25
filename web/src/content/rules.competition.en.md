@@ -28,8 +28,7 @@ All participants use the same Participate page; the platform selects the active 
 2. Model calls are optional. Participants provide their own API and quota; organizer model credits are not provided. Keys are submitted over HTTPS, stored encrypted on the server, used only for evaluation and verification, and never written to projects, run records or logs. They are deleted once the results have been verified. Do not place keys in project sources.
 3. External compute and external services are allowed, including your own model APIs and servers. The platform container limits (2 CPU cores, 2 GB memory) apply only to the part that runs on the platform.
 4. Every decision must be made automatically by your program. Human participation in, or substitution for, decisions is prohibited.
-5. External services must stay available during evaluation and verification. Results affected by external outages, timeouts or rate limits are scored as they occur and are not re-run.
-6. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
+5. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
 
 For model calls, enter a supported HTTPS endpoint, model and key in Participate and save them; the page does not need to stay open during evaluation. You can replace or delete a saved key at any time.
 
