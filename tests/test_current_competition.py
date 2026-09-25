@@ -62,9 +62,10 @@ def test_private_beta_entry_reachable_only_for_its_access_team(database):
     assert rpc(uri,'my_observer_phase',role='authenticated',user=other) is None
     with pytest.raises(psycopg.Error,match='permission denied'):
         rpc(uri,'my_observer_phase',role='anon')
+    # Organizers outside the access team keep the public entry (they test as that team).
     admin,_=identity(uri)
     query(uri,'update public.profiles set is_admin=true where id=%s',(admin,))
-    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin)==beta
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin) is None
     query(uri,'update public.profiles set is_banned=true where team_id=%s',(team,))
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
     query(uri,'update public.profiles set is_banned=false where team_id=%s',(team,))
@@ -94,7 +95,7 @@ def test_beta_entry_isolates_parallel_teams_and_follows_team_changes(database):
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member_b)==phase_b
     admin,_=identity(uri)
     query(uri,'update public.profiles set is_admin=true where id=%s',(admin,))
-    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin)==min(phase_a,phase_b)
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin) is None
     # Moving a member between acceptance teams switches their entry; leaving
     # every acceptance team removes it.
     query(uri,'update public.profiles set team_id=%s where id=%s',(team_b,member_a))

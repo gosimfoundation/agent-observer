@@ -15,7 +15,7 @@ export async function loadCompetition(force=false) {
       fetched=Date.now()
     }
     // Team-restricted beta entry: the RPC is granted to signed-in users only and
-    // answers with a phase just for its access team (or an administrator). The
+    // answers with a phase just for its access team. The
     // previous value stays until the fresh answer avoids entry flicker.
     let beta: string|null = null
     const {data:{session}}=await supabase.auth.getSession()
