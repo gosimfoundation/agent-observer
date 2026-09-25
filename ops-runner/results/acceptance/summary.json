@@ -1,23 +1,45 @@
 {
  "python-zip-kimi": {
-  "result": "public_test_failed",
-  "score": null,
-  "public_test_score": null,
-  "runs": null,
-  "error": ""
+  "result": "scored",
+  "score": 107.6793285,
+  "public_test_score": -25499.771405,
+  "runs": [
+   {
+    "status": "scored",
+    "score": 163.559298,
+    "error": ""
+   },
+   {
+    "status": "scored",
+    "score": 51.799359,
+    "error": ""
+   }
+  ],
+  "error": null
  },
  "repo-glm": {
-  "result": "public_test_failed",
+  "result": "failed",
   "score": null,
-  "public_test_score": null,
-  "runs": null,
-  "error": ""
+  "public_test_score": -19298.1,
+  "runs": [
+   {
+    "status": "scored",
+    "score": 70.038995,
+    "error": ""
+   },
+   {
+    "status": "failed",
+    "score": null,
+    "error": "engine_job_failed"
+   }
+  ],
+  "error": null
  },
  "rust-zip": {
-  "result": "public_test_failed",
+  "result": null,
   "score": null,
-  "public_test_score": null,
+  "public_test_score": -19294.5,
   "runs": null,
-  "error": ""
+  "error": null
  }
 }

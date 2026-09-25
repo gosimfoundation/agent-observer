@@ -2,15 +2,51 @@
  "cases": {
   "python-zip-kimi": {
    "revision_id": "29076833-cf2a-42bb-89e2-345b7f815e85",
-   "provider": "kimi"
+   "provider": "kimi",
+   "batch_id": "60a0b6a0-f129-47f8-b94c-6e4e9d0a837c",
+   "public_test_score": -25499.771405,
+   "done": true,
+   "result": "scored",
+   "score": 107.6793285,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 163.559298,
+     "error": ""
+    },
+    {
+     "status": "scored",
+     "score": 51.799359,
+     "error": ""
+    }
+   ]
   },
   "repo-glm": {
    "revision_id": "4602dbd7-2bd4-452c-9409-b9651dfcfe79",
-   "provider": "glm"
+   "provider": "glm",
+   "batch_id": "9d0334ce-08bf-4e70-b0bf-dbbda40bea32",
+   "public_test_score": -19298.1,
+   "done": true,
+   "result": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 70.038995,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ]
   },
   "rust-zip": {
    "revision_id": "b561011a-122e-4846-a762-988ac760373b",
-   "provider": null
+   "provider": null,
+   "batch_id": "87a4f9d9-31d1-464e-9a26-ef3ab564f837",
+   "public_test_score": -19294.5
   }
  },
  "log": [
@@ -113,6 +149,84 @@
   {
    "event": "reset",
    "note": "earlier failures were a detection bug (tests still running); resuming same revisions"
+  },
+  {
+   "t": "13:37:16",
+   "event": "key_saved",
+   "provider": "kimi",
+   "base": "https://api.kimi.com/coding/v1",
+   "model": "kimi-for-coding",
+   "hint_len": 4
+  },
+  {
+   "t": "13:37:17",
+   "event": "evaluating",
+   "case": "python-zip-kimi",
+   "public_test": -25499.771405
+  },
+  {
+   "t": "13:49:33",
+   "event": "finished",
+   "case": "python-zip-kimi",
+   "status": "scored",
+   "score": 107.6793285,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 163.559298,
+     "error": ""
+    },
+    {
+     "status": "scored",
+     "score": 51.799359,
+     "error": ""
+    }
+   ]
+  },
+  {
+   "t": "13:49:39",
+   "event": "key_saved",
+   "provider": "glm",
+   "base": "https://open.bigmodel.cn/api/paas/v4",
+   "model": "glm-4.5-flash",
+   "hint_len": 4
+  },
+  {
+   "t": "13:49:40",
+   "event": "evaluating",
+   "case": "repo-glm",
+   "public_test": -19298.1
+  },
+  {
+   "t": "14:10:48",
+   "event": "finished",
+   "case": "repo-glm",
+   "status": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 70.038995,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ]
+  },
+  {
+   "t": "14:10:52",
+   "event": "evaluating",
+   "case": "rust-zip",
+   "public_test": -19294.5
+  },
+  {
+   "t": "14:21:10",
+   "event": "error",
+   "case": "rust-zip",
+   "error": "batch still running"
   }
  ]
 }
