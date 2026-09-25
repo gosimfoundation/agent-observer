@@ -101,3 +101,36 @@ def test_acceptance_scenario_guard_refuses_formal_and_lab_material(database):
           (private,'observer-scenarios/bundle.zip','b'*64))
     checked=mod.check_scenario(str(private),'x')
     assert checked['slug']=='synthetic-a' and checked['bundle_digest']=='b'*64
+
+
+def test_same_as_reuses_formal_scenarios_with_their_calibration(database):
+    uri=database;install(uri,storage_present=True)
+    team=make_hidden_team(uri,'Acceptance Seeds')
+    online=uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh,counts_for_final) values(%s,'formal-copy','Formal','正式',true)",(online,))
+    scenarios,profiles=[],{}
+    for index in range(2):
+        scenario=uuid.uuid4()
+        query(uri,"insert into public.scenarios(id,slug,name,is_active) values(%s,%s,'Formal',true)",(scenario,f'eval-{index}'))
+        query(uri,'insert into public.phase_scenarios values(%s,%s)',(online,scenario))
+        query(uri,'insert into private.observer_scenario_bundles(scenario_id,storage_path,digest) values(%s,%s,%s)',
+              (scenario,f'observer-scenarios/eval-{index}.zip',str(index)*64))
+        profile=query(uri,"""insert into private.observer_calibration_profiles(scenario_id,bundle_digest,profile) values(%s,%s,
+            jsonb_build_object('schema_version','observer-calibration-profile-v1','panel_version','observer-reference-panel-v1',
+            'template_digest',repeat('c',64),'bounds','{}'::jsonb)) returning id""",(scenario,str(index)*64))[0][0]
+        query(uri,'insert into private.observer_scenario_calibration values(%s,%s,%s)',(online,scenario,profile))
+        profiles[str(scenario)]=str(profile)
+    # Without --same-as, formal material is still refused.
+    try:
+        mod.check_scenario(next(iter(profiles)),'x');raise SystemError('formal scenario accepted')
+    except mod.CheckError:pass
+    checked=[mod.check_scenario(s,'x','formal-copy') for s in sorted(profiles)]
+    copied=mod.source_calibration('formal-copy',checked)
+    assert copied==profiles
+    plan=mod.plan_phase(mod.check_team(str(team)),checked,Args,copied)
+    for statement in plan['statements']:query(uri,statement)
+    rows=query(uri,'select scenario_id::text,profile_id::text from private.observer_scenario_calibration where phase_id=%s',(plan['phase_id'],))
+    assert dict(rows)==profiles
+    assert all(c['calibrated'] and c['profile_matches_bundle'] for c in plan['calibration'])
+    limits=query(uri,'select model_call_limit,model_token_limit from public.observer_phase_settings where phase_id=%s',(plan['phase_id'],))[0]
+    assert limits==(10000,10000000)
