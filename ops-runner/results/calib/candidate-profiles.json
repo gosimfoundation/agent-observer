@@ -1,0 +1,100 @@
+[
+ {
+  "slug": "dev-fortnight",
+  "storage_path": "f4ec5e2f-f7c6-40bb-a46a-c132914ccd36/fd47bf09358528de799548830e28d8aedefb81eaff1bd72afa64d7bf987392dc.zip",
+  "bundle_digest": "fd47bf09358528de799548830e28d8aedefb81eaff1bd72afa64d7bf987392dc",
+  "profile": {
+   "schema_version": "observer-calibration-profile-v1",
+   "panel_version": "observer-reference-panel-v1",
+   "template_digest": "55026949e51841b3b21e0d16483fd038087d66a9caab4f64dffe1d629438b8a0",
+   "training_samples": 20,
+   "bounds": {
+    "span": [
+     22297.0945513,
+     25286.955180733334
+    ],
+    "open_fraction": [
+     0.755593220338983,
+     0.8475423728813558
+    ],
+    "gain_rate": [
+     9999.37098785,
+     10009.99310075
+    ],
+    "required_first": [
+     9999.37098785,
+     10009.99310075
+    ],
+    "requests_first": [
+     9980.0137985,
+     10001.25802435
+    ]
+   },
+   "study_digest": "2760f4130a83156c555a13ef70e40f26d4ee5425233b0a0d809928401e1ba50c",
+   "validation_samples": 10,
+   "accepted_validation": {
+    "count": 8,
+    "raw_holdout_range": [
+     2548.121121,
+     4487.067552
+    ],
+    "fixed_scale_holdout_sd": 241.21716043730774,
+    "adjusted_holdout_sd": 30.625449890817887,
+    "adjusted_holdout_mean": 9663.113398875,
+    "required_missing_range": [
+     3,
+     4
+    ]
+   }
+  }
+ },
+ {
+  "slug": "dev-reference",
+  "storage_path": "fffd5f23-868c-4ce1-a4a0-6c76a0abbb64/1248ca484a4c3e349a366873351eb8a1922ed37541345d8c51439af91c54dc86.zip",
+  "bundle_digest": "1248ca484a4c3e349a366873351eb8a1922ed37541345d8c51439af91c54dc86",
+  "profile": {
+   "schema_version": "observer-calibration-profile-v1",
+   "panel_version": "observer-reference-panel-v1",
+   "template_digest": "bd03b5d4c70cf4988843d0592c9999f3ce8ad834a25c9d45cfff5aab6e383f79",
+   "training_samples": 20,
+   "bounds": {
+    "span": [
+     41739.13928853333,
+     43906.9351213
+    ],
+    "open_fraction": [
+     0.9462222502522704,
+     0.9592772452068618
+    ],
+    "gain_rate": [
+     9998.70891835,
+     10001.544133649999
+    ],
+    "required_first": [
+     9998.70891835,
+     10001.544133649999
+    ],
+    "requests_first": [
+     9996.911732749999,
+     10002.58216425
+    ]
+   },
+   "study_digest": "54b66f7d7767330bd53209ec49fc9fc6af050778e29555e26db6ad9640dbccfe",
+   "validation_samples": 10,
+   "accepted_validation": {
+    "count": 6,
+    "raw_holdout_range": [
+     10831.57851,
+     12413.693365
+    ],
+    "fixed_scale_holdout_sd": 115.25412840201372,
+    "adjusted_holdout_sd": 5.453096399231818,
+    "adjusted_holdout_mean": 10067.1378885,
+    "required_missing_range": [
+     0,
+     0
+    ]
+   }
+  }
+ }
+]

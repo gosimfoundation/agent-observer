@@ -1,0 +1,157 @@
+{
+ "report": {
+  "dev-fortnight": {
+   "bounds": {
+    "span": [
+     22297.0945513,
+     25286.955180733334
+    ],
+    "open_fraction": [
+     0.755593220338983,
+     0.8475423728813558
+    ],
+    "gain_rate": [
+     9999.37098785,
+     10009.99310075
+    ],
+    "required_first": [
+     9999.37098785,
+     10009.99310075
+    ],
+    "requests_first": [
+     9980.0137985,
+     10001.25802435
+    ]
+   },
+   "summary": {
+    "training_seeds": 20,
+    "validation_seeds": 10,
+    "all_validation": {
+     "count": 10,
+     "raw_holdout_range": [
+      1553.886545,
+      5648.209551
+     ],
+     "fixed_scale_holdout_sd": 437.3247683111836,
+     "adjusted_holdout_sd": 74.75822126969425,
+     "adjusted_holdout_mean": 9678.477528899999,
+     "required_missing_range": [
+      3,
+      4
+     ]
+    },
+    "accepted_validation": {
+     "count": 8,
+     "raw_holdout_range": [
+      2548.121121,
+      4487.067552
+     ],
+     "fixed_scale_holdout_sd": 241.21716043730774,
+     "adjusted_holdout_sd": 30.625449890817887,
+     "adjusted_holdout_mean": 9663.113398875,
+     "required_missing_range": [
+      3,
+      4
+     ]
+    },
+    "production_ready": false
+   },
+   "reviewed": {
+    "ok": true,
+    "accepted_validation": {
+     "count": 8,
+     "raw_holdout_range": [
+      2548.121121,
+      4487.067552
+     ],
+     "fixed_scale_holdout_sd": 241.21716043730774,
+     "adjusted_holdout_sd": 30.625449890817887,
+     "adjusted_holdout_mean": 9663.113398875,
+     "required_missing_range": [
+      3,
+      4
+     ]
+    }
+   }
+  },
+  "dev-reference": {
+   "bounds": {
+    "span": [
+     41739.13928853333,
+     43906.9351213
+    ],
+    "open_fraction": [
+     0.9462222502522704,
+     0.9592772452068618
+    ],
+    "gain_rate": [
+     9998.70891835,
+     10001.544133649999
+    ],
+    "required_first": [
+     9998.70891835,
+     10001.544133649999
+    ],
+    "requests_first": [
+     9996.911732749999,
+     10002.58216425
+    ]
+   },
+   "summary": {
+    "training_seeds": 20,
+    "validation_seeds": 10,
+    "all_validation": {
+     "count": 10,
+     "raw_holdout_range": [
+      10625.756574,
+      12413.693365
+     ],
+     "fixed_scale_holdout_sd": 142.47491126735417,
+     "adjusted_holdout_sd": 10.620267886017258,
+     "adjusted_holdout_mean": 10070.1906632,
+     "required_missing_range": [
+      0,
+      0
+     ]
+    },
+    "accepted_validation": {
+     "count": 6,
+     "raw_holdout_range": [
+      10831.57851,
+      12413.693365
+     ],
+     "fixed_scale_holdout_sd": 115.25412840201372,
+     "adjusted_holdout_sd": 5.453096399231818,
+     "adjusted_holdout_mean": 10067.1378885,
+     "required_missing_range": [
+      0,
+      0
+     ]
+    },
+    "production_ready": false
+   },
+   "reviewed": {
+    "ok": true,
+    "accepted_validation": {
+     "count": 6,
+     "raw_holdout_range": [
+      10831.57851,
+      12413.693365
+     ],
+     "fixed_scale_holdout_sd": 115.25412840201372,
+     "adjusted_holdout_sd": 5.453096399231818,
+     "adjusted_holdout_mean": 10067.1378885,
+     "required_missing_range": [
+      0,
+      0
+     ]
+    }
+   }
+  }
+ },
+ "dry_run": {
+  "rc": 0,
+  "stdout": "{\"phase_id\": \"249c223b-2ec8-4f0a-924e-7af3c4e3eb44\", \"reviewed_scenarios\": 2, \"applied\": false}\n",
+  "stderr": ""
+ }
+}
