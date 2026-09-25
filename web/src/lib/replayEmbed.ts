@@ -77,7 +77,7 @@ header{flex-wrap:wrap;gap:8px 14px;padding:10px 14px}.header-rule{display:none}
 .brand{flex-wrap:wrap;min-width:0}.subtitle{line-height:1.5;overflow-wrap:anywhere}
 main{grid-template-columns:minmax(0,1fr)}
 #sky-wrap{height:clamp(260px,70vw,420px);order:-1}
-footer{grid-template-columns:auto minmax(0,1fr);gap:10px 14px;padding:12px 14px}
+footer{grid-template-columns:auto minmax(0,1fr);gap:10px 14px;padding:12px 14px;position:sticky;bottom:0;z-index:4}
 .progress-block{grid-column:1/-1;justify-content:space-between}
 }`
 
