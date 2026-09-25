@@ -1,0 +1,767 @@
+[
+ {
+  "file": "visitor-home.zh.desktop.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 5.13,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.zh.desktop.jpg",
+  "path": "/start",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/start?lang=zh",
+  "status": 404,
+  "seconds": 2.83,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-brief.zh.desktop.jpg",
+  "path": "/brief",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/brief?lang=zh",
+  "status": 404,
+  "seconds": 3.91,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-rules.zh.desktop.jpg",
+  "path": "/rules",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/rules?lang=zh",
+  "status": 404,
+  "seconds": 2.72,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-docs.zh.desktop.jpg",
+  "path": "/docs",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/docs?lang=zh",
+  "status": 404,
+  "seconds": 2.94,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-faq.zh.desktop.jpg",
+  "path": "/faq",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/faq?lang=zh",
+  "status": 404,
+  "seconds": 2.76,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-resources.zh.desktop.jpg",
+  "path": "/resources",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/resources?lang=zh",
+  "status": 404,
+  "seconds": 2.79,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-leaderboard.zh.desktop.jpg",
+  "path": "/leaderboard",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/leaderboard?lang=zh",
+  "status": 404,
+  "seconds": 3.67,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-announcements.zh.desktop.jpg",
+  "path": "/announcements",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/announcements?lang=zh",
+  "status": 404,
+  "seconds": 2.77,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-teammates.zh.desktop.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/teammates?lang=zh",
+  "status": 404,
+  "seconds": 3.93,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register.zh.desktop.jpg",
+  "path": "/register",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/register?lang=zh",
+  "status": 404,
+  "seconds": 2.97,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register_mode-login.zh.desktop.jpg",
+  "path": "/register?mode=login",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/register?mode=login&lang=zh",
+  "status": 404,
+  "seconds": 2.43,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-no-such-page.zh.desktop.jpg",
+  "path": "/no-such-page",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/no-such-page?lang=zh",
+  "status": 404,
+  "seconds": 2.43,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.zh.desktop.jpg",
+  "path": "/dashboard",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/dashboard?lang=zh",
+  "status": 404,
+  "seconds": 3.01,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-compete.zh.desktop.jpg",
+  "path": "/compete",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/compete?lang=zh",
+  "status": 404,
+  "seconds": 3.03,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-team.zh.desktop.jpg",
+  "path": "/team",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/team?lang=zh",
+  "status": 404,
+  "seconds": 3.62,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-notifications.zh.desktop.jpg",
+  "path": "/notifications",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/notifications?lang=zh",
+  "status": 404,
+  "seconds": 3.02,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-submissions.zh.desktop.jpg",
+  "path": "/submissions",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/submissions?lang=zh",
+  "status": 404,
+  "seconds": 2.96,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-profile.zh.desktop.jpg",
+  "path": "/profile",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/profile?lang=zh",
+  "status": 404,
+  "seconds": 2.71,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-teammates.zh.desktop.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/teammates?lang=zh",
+  "status": 404,
+  "seconds": 3.03,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-home.zh.desktop.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 3.6,
+  "errors": []
+ },
+ {
+  "file": "visitor-home.zh.mobile.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 5.03,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.zh.mobile.jpg",
+  "path": "/start",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/start?lang=zh",
+  "status": 404,
+  "seconds": 2.76,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-brief.zh.mobile.jpg",
+  "path": "/brief",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/brief?lang=zh",
+  "status": 404,
+  "seconds": 2.75,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-rules.zh.mobile.jpg",
+  "path": "/rules",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/rules?lang=zh",
+  "status": 404,
+  "seconds": 2.74,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-docs.zh.mobile.jpg",
+  "path": "/docs",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/docs?lang=zh",
+  "status": 404,
+  "seconds": 2.41,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-faq.zh.mobile.jpg",
+  "path": "/faq",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/faq?lang=zh",
+  "status": 404,
+  "seconds": 2.94,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-resources.zh.mobile.jpg",
+  "path": "/resources",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/resources?lang=zh",
+  "status": 404,
+  "seconds": 2.77,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-leaderboard.zh.mobile.jpg",
+  "path": "/leaderboard",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/leaderboard?lang=zh",
+  "status": 404,
+  "seconds": 3.06,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-announcements.zh.mobile.jpg",
+  "path": "/announcements",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/announcements?lang=zh",
+  "status": 404,
+  "seconds": 2.67,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-teammates.zh.mobile.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/teammates?lang=zh",
+  "status": 404,
+  "seconds": 2.96,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register.zh.mobile.jpg",
+  "path": "/register",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/register?lang=zh",
+  "status": 404,
+  "seconds": 2.39,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register_mode-login.zh.mobile.jpg",
+  "path": "/register?mode=login",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/register?mode=login&lang=zh",
+  "status": 404,
+  "seconds": 2.87,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-no-such-page.zh.mobile.jpg",
+  "path": "/no-such-page",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/no-such-page?lang=zh",
+  "status": 404,
+  "seconds": 2.41,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.zh.mobile.jpg",
+  "path": "/dashboard",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/dashboard?lang=zh",
+  "status": 404,
+  "seconds": 3.04,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-compete.zh.mobile.jpg",
+  "path": "/compete",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/compete?lang=zh",
+  "status": 404,
+  "seconds": 3.61,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-team.zh.mobile.jpg",
+  "path": "/team",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/team?lang=zh",
+  "status": 404,
+  "seconds": 3.65,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-notifications.zh.mobile.jpg",
+  "path": "/notifications",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/notifications?lang=zh",
+  "status": 404,
+  "seconds": 3.58,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-submissions.zh.mobile.jpg",
+  "path": "/submissions",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/submissions?lang=zh",
+  "status": 404,
+  "seconds": 2.73,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-profile.zh.mobile.jpg",
+  "path": "/profile",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/profile?lang=zh",
+  "status": 404,
+  "seconds": 4.02,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-teammates.zh.mobile.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/teammates?lang=zh",
+  "status": 404,
+  "seconds": 3.91,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-home.zh.mobile.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 4.2,
+  "errors": []
+ },
+ {
+  "file": "visitor-home.en.desktop.jpg",
+  "path": "/",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/?lang=en",
+  "status": 200,
+  "seconds": 3.86,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.en.desktop.jpg",
+  "path": "/start",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/start?lang=en",
+  "status": 404,
+  "seconds": 2.75,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-brief.en.desktop.jpg",
+  "path": "/brief",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/brief?lang=en",
+  "status": 404,
+  "seconds": 2.68,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-rules.en.desktop.jpg",
+  "path": "/rules",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/rules?lang=en",
+  "status": 404,
+  "seconds": 2.71,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-docs.en.desktop.jpg",
+  "path": "/docs",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/docs?lang=en",
+  "status": 404,
+  "seconds": 2.42,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-faq.en.desktop.jpg",
+  "path": "/faq",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/faq?lang=en",
+  "status": 404,
+  "seconds": 2.71,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-resources.en.desktop.jpg",
+  "path": "/resources",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/resources?lang=en",
+  "status": 404,
+  "seconds": 2.75,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-leaderboard.en.desktop.jpg",
+  "path": "/leaderboard",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/leaderboard?lang=en",
+  "status": 404,
+  "seconds": 3.63,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-announcements.en.desktop.jpg",
+  "path": "/announcements",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/announcements?lang=en",
+  "status": 404,
+  "seconds": 2.65,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-teammates.en.desktop.jpg",
+  "path": "/teammates",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/teammates?lang=en",
+  "status": 404,
+  "seconds": 2.99,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register.en.desktop.jpg",
+  "path": "/register",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/register?lang=en",
+  "status": 404,
+  "seconds": 2.92,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-register_mode-login.en.desktop.jpg",
+  "path": "/register?mode=login",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/register?mode=login&lang=en",
+  "status": 404,
+  "seconds": 2.38,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "visitor-no-such-page.en.desktop.jpg",
+  "path": "/no-such-page",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/no-such-page?lang=en",
+  "status": 404,
+  "seconds": 2.38,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.en.desktop.jpg",
+  "path": "/dashboard",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/dashboard?lang=en",
+  "status": 404,
+  "seconds": 2.91,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-compete.en.desktop.jpg",
+  "path": "/compete",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/compete?lang=en",
+  "status": 404,
+  "seconds": 3.03,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-team.en.desktop.jpg",
+  "path": "/team",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/team?lang=en",
+  "status": 404,
+  "seconds": 3.6,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-notifications.en.desktop.jpg",
+  "path": "/notifications",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/notifications?lang=en",
+  "status": 404,
+  "seconds": 2.98,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-submissions.en.desktop.jpg",
+  "path": "/submissions",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/submissions?lang=en",
+  "status": 404,
+  "seconds": 2.61,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-profile.en.desktop.jpg",
+  "path": "/profile",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/profile?lang=en",
+  "status": 404,
+  "seconds": 2.66,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-teammates.en.desktop.jpg",
+  "path": "/teammates",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/teammates?lang=en",
+  "status": 404,
+  "seconds": 3.02,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 ()"
+  ]
+ },
+ {
+  "file": "member-home.en.desktop.jpg",
+  "path": "/",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/?lang=en",
+  "status": 200,
+  "seconds": 3.59,
+  "errors": []
+ }
+]
