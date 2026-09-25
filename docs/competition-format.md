@@ -15,7 +15,7 @@ versions and evaluation batches. A prominent Submit button links to that workspa
 | Scenario | existing public scenarios | a new secret random seed per team and attempt, calibrated difficulty |
 | Ranking | best score per scenario, unchanged | best complete batch, mean calibrated score over all scenarios |
 | Model | optional | optional; participant supplies API and quota, no organizer credits |
-| Personal credentials | never include in results | HTTPS only, browser/request memory only, never persisted |
+| Personal credentials | never include in results | HTTPS only; team's choice: saved encrypted on the server (default, deleted after verification) or kept only in the open page |
 
 Formal evaluation accepts a decision only for its current sequence, records it,
 then publishes the next observation. Private seeds, frozen generator/calibration
@@ -23,7 +23,7 @@ versions and immutable decisions support independent reconstruction and scoring.
 CSV remains an exported result artifact, not a formal submission format.
 
 See `randomized-evaluation.md` for calibration and
-`ephemeral-personal-models.md` for the personal API flow. Existing scores and
+`model-api-keys.md` for the personal API flow. Existing scores and
 submissions are not deleted or rewritten by the migration.
 
 ## The coverage term

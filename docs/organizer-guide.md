@@ -143,6 +143,18 @@ python -m worker.main gen-scenario --slug eval-a --seed <新种子> --days 30 --
 **不要重新执行 `seed`**：练习场景（demo-week / dev-fortnight / dev-reference）已在存储中冻结，
 与入门包捆绑副本逐字节一致；生成模板升级后重新生成会破坏这一致性。入门包测试用固定校验值锁死了这两份副本。
 
+## 比赛结果核验后删除选手模型密钥
+
+正式赛中，队伍可选择把模型密钥加密保存在服务器上（默认），或不保存、评测期间保持页面打开。
+结果核验完成后，用 service role 执行（例如在 SQL 编辑器中）：
+
+```sql
+select public.observer_purge_provider_keys();  -- 返回删除的密钥数量
+select count(*) from private.observer_providers where team_id is not null and encrypted_key <> '';  -- 应为 0
+```
+
+只删除选手的密钥，不影响主办方接口；调用记录保留。可以重复执行，没有剩余时返回 0。详见 `docs/model-api-keys.md`。
+
 ## 两个新开关（设置页）
 
 - **新机制是否公开**（`mechanics_public`）：关掉后，官网上的"正式赛新机制"教程章节、3 条 FAQ、新手页演练步、通关路线里的相关措辞会全部隐藏（内容保留，随时可开）。注意：入门包本身和规则/文档页的深处描述不受此开关控制。
