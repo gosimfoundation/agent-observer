@@ -452,7 +452,9 @@ select:focus {
 
 .cosmos-footer {
   position: relative;
-  overflow: hidden;
+  /* Clip sideways only: the 900 S fact opens upward above the footer and must stay visible. */
+  overflow-x: clip;
+  overflow-y: visible;
   color: #f5f5f5;
   background: #000000;
   border-top: 1px solid rgba(255,255,255,.22) !important;
