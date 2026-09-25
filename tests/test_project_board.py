@@ -1,7 +1,7 @@
 """New board aggregates one complete evaluation without exposing private evidence."""
 import uuid
 from psycopg.types.json import Jsonb
-from test_project_database import database,setup,query,rpc  # noqa: F401
+from test_project_database import database,setup,query,rpc,identity  # noqa: F401
 
 
 def test_board_uses_one_complete_batch_and_respects_private_phase(setup):
@@ -30,7 +30,7 @@ def test_board_uses_one_complete_batch_and_respects_private_phase(setup):
     assert rpc(uri,'observer_board',s['phase'],100,role='authenticated',user=s['user'])[0]['total_score']==60
 
 
-def test_public_practice_replay_survives_private_finals_opening(setup):
+def test_champion_trace_is_private_in_every_phase_state(setup):
     s=setup;uri=s['uri'];practice=uuid.uuid4();sky=uuid.uuid4();slug=str(sky)
     query(uri,"insert into public.phases(id,slug,name_en,name_zh,sort_order) values(%s,%s,'Practice','练习赛',49)",(practice,str(practice)))
     query(uri,"insert into public.scenarios(id,slug,name,weather_public,tiles_public) values(%s,%s,'Public sky',true,true)",(sky,slug))
@@ -41,18 +41,29 @@ def test_public_practice_replay_survives_private_finals_opening(setup):
     public_path=f"{s['team']}/sub-{submission}/{slug}/report.json"
     private_path=f"private/sub-999999/{s['scenario']}/report.json"
     query(uri,"insert into storage.objects(bucket_id,name) values('results',%s),('results',%s)",(public_path,private_path))
-    # A new formal phase has no legacy submissions. Its opening and closing
-    # must neither erase the existing public replay nor expose private output.
-    query(uri,"update public.phases set counts_for_final=true,sort_order=1,starts_at=now()+interval '1 day' where id=%s",(s['phase'],))
+    outsider, _ = identity(uri)
+    teammate, _ = identity(uri, team=s['team'])
+    admin, _ = identity(uri)
+    query(uri,'update public.profiles set is_admin=true where id=%s',(admin,))
+    artifact_paths = [public_path, public_path.replace('report.json','decisions.csv'),
+                      public_path.replace('report.json','decision_replay.html')]
+    for path in artifact_paths[1:]:
+        query(uri,"insert into storage.objects(bucket_id,name) values('results',%s)",(path,))
+    # Even a public-scenario champion remains private before/during/after finals.
+    query(uri,"update public.phases set counts_for_final=true,sort_order=1 where id=%s",(s['phase'],))
     for schedule in ("starts_at=now()+interval '1 day'", "starts_at=now()-interval '1 day'",
                      "starts_at=now()-interval '2 days',ends_at=now()-interval '1 day'"):
         query(uri,'update public.phases set '+schedule+' where id=%s',(s['phase'],))
-        champion=rpc(uri,'champion_run',role='anon')
-        assert champion['submission_id']==submission and champion['report_path']==public_path
-        assert champion['score']==21085.3
-        assert query(uri,'select name from storage.objects where name in (%s,%s)',(public_path,private_path),role='anon')==[(public_path,)]
-    assert query(uri,'select * from public.leaderboard(null,1,null)',role='anon')==[]
+        for role, user in [('anon',None),('authenticated',outsider)]:
+            assert rpc(uri,'champion_run',role=role,user=user) is None
+            assert rpc(uri,'champion_report_path',role=role,user=user) is None
+            assert query(uri,"select name from storage.objects where bucket_id='results' and name=any(%s)",
+                         (artifact_paths+[private_path],),role=role,user=user)==[]
+        for user in (s['user'],teammate,admin):
+            visible=query(uri,"select name from storage.objects where bucket_id='results' and name=any(%s)",
+                          (artifact_paths,),role='authenticated',user=user)
+            assert {v[0] for v in visible} == set(artifact_paths)
     assert query(uri,'select score from public.submissions where id=%s',(submission,))==[(21085.3,)]
-    query(uri,'update public.scenarios set weather_public=false where id=%s',(sky,))
-    assert rpc(uri,'champion_run',role='anon') is None
-    assert query(uri,'select name from storage.objects where name in (%s,%s)',(public_path,private_path),role='anon')==[]
+    # Public ranking still works; only the private trace is withheld.
+    assert query(uri,'select total_score from public.leaderboard(%s,1,%s)',
+                 (str(practice),slug),role='anon')==[(21085.3,)]

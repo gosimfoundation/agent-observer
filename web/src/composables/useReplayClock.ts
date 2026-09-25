@@ -4,14 +4,9 @@ import { outcomeClass, type OutcomeClass } from '../lib/report'
 import { prefersReducedMotion, type SkySite, type SkyTile } from '../lib/skymap'
 
 /**
- * One shared clock for the replay the homepage console renders. It boots on the bundled demo run and is
- * swapped live for the current champion's real submission once that loads (setReplayData) — the arrays
- * below are live module bindings, so per-frame readers pick the swap up immediately; anything cached at
- * setup time should re-derive from replayMeta.version.
- *
- * Progress maps onto EVENTS, not onto wall-clock time. A real competition run is mostly waiting: the
- * current champion spends 7,854 of its 7,944 actions idle, so spreading the loop evenly over the 7,928
- * slots put every exposure on screen for about ten milliseconds and left the narration stuck on "waiting".
+ * Shared clock for the bundled organizer example. Participant traces must never
+ * be loaded into the public homepage, even for a leaderboard winner.
+ * Progress maps onto events so long runs of waiting remain legible.
  * Instead each exposure now owns an equal, legible share of the loop, and each run of waiting between two
  * exposures — three slots or six hundred — collapses into one short beat that shows the sim time just
  * before the next exposure starts. The result is a steady pace where something visible happens throughout.
