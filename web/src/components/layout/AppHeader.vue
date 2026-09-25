@@ -23,7 +23,7 @@ const flash = useFlash()
 const mobileOpen = ref(false)
 const nextLocaleLabel = computed(() => ({ zh: 'EN', en: '日本語', ja: 'FR', fr: '中文' } as const)[locale.value])
 const fullMoon = isFullMoonToday()
-const { current, next, usingFallback, countdown } = usePhaseClock()
+const { current, next, nextLine, usingFallback, countdown } = usePhaseClock()
 const pad = (n: number) => String(n).padStart(2, '0')
 const phasePill = computed(() => {
   if (current.value) return { text: `${pick(current.value.name_en, current.value.name_zh)} · ${t('leaderboard.status.open')}`, cls: 'open' }
@@ -116,7 +116,7 @@ async function logout() {
           <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
           <span v-if="unreadTeamNotifications" class="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white" data-testid="notification-dot">{{ unreadTeamNotifications > 99 ? '99+' : unreadTeamNotifications }}</span>
         </router-link>
-        <router-link v-if="phasePill" to="/leaderboard" class="pill header-phase-pill" :class="phasePill.cls" data-testid="phase-pill">{{ phasePill.text }}</router-link>
+        <router-link v-if="phasePill" to="/leaderboard" class="pill header-phase-pill" :class="phasePill.cls" :title="nextLine || undefined" data-testid="phase-pill">{{ phasePill.text }}</router-link>
         <span v-if="fullMoon" class="moon-chip hidden md:inline-flex" :title="pick('Full moon tonight.', '今晚满月。')">🌕</span>
         <button data-testid="lang-toggle" type="button" @click="toggleLocale" class="inline-flex h-10 min-w-10 items-center justify-center border border-white/25 px-2 font-mono text-xs uppercase text-white/55 transition-colors hover:border-white/60 hover:text-white">
           {{ nextLocaleLabel }}
@@ -131,6 +131,7 @@ async function logout() {
     </div>
 
     <div v-if="mobileOpen" class="border-t border-white/20 bg-[#070708] px-5 py-4 lg:hidden">
+      <p v-if="nextLine" class="mb-2 font-mono text-[.68rem] leading-relaxed tracking-[.06em] text-white/60" data-testid="menu-next-phase">{{ nextLine }}</p>
       <router-link v-for="item in items" :key="item.to" :to="item.to" class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white">{{ t(item.key) }}</router-link>
       <router-link v-if="isLoggedIn" to="/dashboard" class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white">{{ t('nav.dashboard') }}</router-link>
       <router-link v-if="isAdmin" to="/admin" class="block border-b border-white/10 py-3 text-base text-white/60 transition-colors hover:text-white">{{ t('nav.admin') }}</router-link>

@@ -5,8 +5,10 @@ import { competition } from '../../stores/competition'
 import { useAuth } from '../../stores/auth'
 import { useI18n } from '../../composables/useI18n'
 import { fmtUtc, num } from '../../lib/format'
-const props=withDefaults(defineProps<{limit?:number}>(),{limit:50})
-const {team}=useAuth(), {pick,t}=useI18n()
+import { useQuestFlags } from '../../composables/useQuestFlags'
+// `quiet` keeps the new-submission button secondary while the dashboard quest leads.
+const props=withDefaults(defineProps<{limit?:number;quiet?:boolean}>(),{limit:50,quiet:false})
+const {team}=useAuth(), {pick,t}=useI18n(), {remember}=useQuestFlags()
 type Batch={id:string;status:string;score:number|null;created_at:string}
 const rows=ref<Batch[]>([]),loading=ref(true),error=ref(false)
 let timer:number|undefined
@@ -33,9 +35,9 @@ onUnmounted(()=>window.clearInterval(timer))
       <thead><tr><th>{{ t('subs.when') }}</th><th>{{ t('common.status') }}</th><th>{{ t('subs.score') }}</th><th>{{ pick('Details','详情') }}</th></tr></thead>
       <tbody><tr v-for="row in rows" :key="row.id" :data-batch-id="row.id">
         <td class="m xs">{{ fmtUtc(row.created_at) }}</td><td>{{ statuses[row.status]??row.status }}</td><td>{{ num(row.score) }}</td>
-        <td><router-link class="accent-l" :to="'/compete#batch-'+row.id">{{ pick('View progress and results','查看进度与结果') }}</router-link></td>
+        <td><router-link class="accent-l" :to="'/compete#batch-'+row.id" @click="remember('review','competition')">{{ pick('View progress and results','查看进度与结果') }}</router-link></td>
       </tr></tbody>
     </table></div>
-    <p class="mt-5"><router-link class="btn primary sm" to="/compete">{{ t('dash.new_submission') }} →</router-link></p>
+    <p class="mt-5"><router-link class="btn sm" :class="{ primary: !props.quiet }" to="/compete">{{ t('dash.new_submission') }} →</router-link></p>
   </section>
 </template>

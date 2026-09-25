@@ -154,12 +154,14 @@ onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect() })
       <div v-if="cursorShown" class="sky-meridian-hit" :style="{ left: meridianLeft }" aria-hidden="true" @pointerenter="e => { if (e.pointerType === 'mouse') lstOpen = true }" @pointerleave="lstOpen = false"></div>
       <div v-if="lstOpen && cursorShown" class="sky-lst" :style="{ left: meridianLeft }">{{ tf('hero.console.lst', { lst: hud.lst }) }}</div>
       <div v-if="tourOpen" class="sky-tour" role="dialog" aria-modal="false" :aria-label="t('hero.console.tour_title')">
-        <div
-          class="sky-tour-spot"
-          :class="`is-${currentStep}`"
-          :style="currentStep === 'meridian' ? { left: `calc(${meridianLeft} - 3%)` } : undefined"
-          aria-hidden="true"
-        ></div>
+        <!-- The spotlight's shade stops at the sky map; unclipped it darkened the whole hero, title and buttons included. -->
+        <div class="sky-tour-shade" aria-hidden="true">
+          <div
+            class="sky-tour-spot"
+            :class="`is-${currentStep}`"
+            :style="currentStep === 'meridian' ? { left: `calc(${meridianLeft} - 3%)` } : undefined"
+          ></div>
+        </div>
         <div class="sky-tour-card" :class="`at-${currentStep}`">
           <p class="sky-tour-step">{{ tourStep + 1 }} / {{ TOUR_STEPS.length }}</p>
           <p class="sky-tour-text">{{ t(`hero.console.tour.${currentStep}`) }}</p>
@@ -257,6 +259,7 @@ onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect() })
 .sky-canvas { display: block; width: 100%; aspect-ratio: 3 / 2; min-height: 200px; }
 
 .sky-tour { position: absolute; inset: 0; background: rgba(2,5,12,.55); }
+.sky-tour-shade { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 /* the spotlight boxes track the canvas padding in lib/skymap.ts (left 30, right 10, top 16, bottom 18) */
 .sky-tour-spot { position: absolute; border: 1px solid #78a6ff; box-shadow: 0 0 0 9999px rgba(2,5,12,.55); }
 .sky-tour-spot.is-axes { left: 0; right: 0; bottom: 0; height: 22%; }
