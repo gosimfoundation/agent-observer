@@ -227,6 +227,9 @@ backend-only exception. A participant cannot authorize a new destination by
 changing a request or project manifest. Credentials are AES-GCM encrypted, bound
 to the provider ID, and decrypted only by the backend.
 
+Formal runs (see `model-api-keys.md`) ignore the provider prefix: they use only
+the team's saved key, or the team's open-page relay, and never organizer credits.
+
 Reservations are atomic against both per-run and shared daily provider budgets.
 Unknown usage or failed requests after forwarding consume their reserved upper
 bound. Expired reservations are settled conservatively by the reconciler, which

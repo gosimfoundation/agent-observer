@@ -5,24 +5,35 @@
 3. Organizers, evaluation-platform maintainers, and their immediate collaborators are excluded from awards. Their teams are marked hidden on the boards.
 4. Team names and content must follow the code of conduct (section 8).
 
-## 2. Current competition
+## 2. Schedule
 
-The current schedule and submission quota are shown above. All participants use the same Participate page; the platform selects the active competition. Awards Day is October 17, 2026 at GOSIM Shenzhen.
+All participants use the same Participate page; the platform selects the active competition.
+
+| Stage | Time (UTC+8) | What happens |
+|---|---|---|
+| Competition | Oct 5 00:00 – Oct 7 23:59 | Submit and evaluate projects; the board updates live |
+| Verification and results | After the competition | Organizers verify the top teams, then publish the final standings |
+| Awards Day | Oct 17 | GOSIM Shenzhen |
 
 ## 3. What you submit
 
 1. Submit a complete project from a public GitHub repository or a private ZIP up to 50 MB. Any language is allowed. Review and confirm the fixed source revision, launch settings and proposed adapter after the platform checks them.
 2. Formal competition accepts complete projects only. CSV files and local CSV sessions are not accepted.
 3. Each evaluation receives current observations one round at a time. The server records each decision before releasing the next observation. Future weather and hidden anomaly answers remain private.
-4. The displayed daily quota applies to complete batches. Every batch covers all configured scenarios.
+4. Every team has the same daily quota of complete batches, shown on the page. Every batch covers all configured scenarios.
 
 ## 4. Execution and model APIs
 
 1. Python is the platform runner, not a language restriction. The confirmed project runs in its specified container.
-2. Model calls are optional. Participants provide their own API and quota; organizer model credits are not provided. Credentials are encrypted in transit, used only in memory during execution and never written to databases, files or logs. Do not place keys in project sources.
-3. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
+2. Model calls are optional. Participants provide their own API and quota; organizer model credits are not provided. Any provider works: the API must be OpenAI-compatible and its address a public https:// address on the default port (443), not an IP address or an internal address. Keys are submitted over HTTPS and never written to projects, run records or logs. Do not place keys in project sources. You choose how your key is handled:
+   - **Save encrypted (default)**: the key is stored encrypted on the server, used only for evaluation and verification, and deleted once the results have been verified. The page does not need to stay open during evaluation.
+   - **Do not save**: the key stays only in your open Participate page and is never stored on the server. Keep that page open until every evaluation finishes; model calls fail while it is closed. **If your team is among the top teams and is verified, you must also open the page at the agreed time during verification.**
+   You can change this choice at any time; switching from "save encrypted" to "do not save" deletes the stored key immediately.
+3. External compute and external services are allowed, including your own model APIs and servers. The platform container limits (2 CPU cores, 2 GB memory) apply only to the part that runs on the platform.
+4. Every decision must be made automatically by your program. Human participation in, or substitution for, decisions is prohibited.
+5. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
 
-For model calls, enter a supported HTTPS endpoint, model and key in Participate and keep that page open, including during automatic adaptation. Closing the page or disconnecting clears the key; reconnecting requires entering it again.
+For model calls, enter a supported HTTPS endpoint, model and key in Participate and choose "save encrypted" or "do not save" (item 2). You can replace or delete a saved key at any time.
 
 ## 5. Scoring
 
@@ -47,7 +58,7 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 
 1. Only scored, non-excluded submissions count, combined as in section 5, item 9. Ranking is by score, descending; on an exact tie the earlier submission ranks first.
 2. The Online Competition board is live. Organizers may freeze the board during the final hours and publish the final standings after verification.
-3. Before awards are confirmed, organizers may ask the top teams for their agent code and a short description of the approach, and regenerate the decisions.csv with it. Results that cannot be reproduced are removed.
+3. Before awards are confirmed, organizers verify the top teams by re-running their ranked version on new hidden scenarios, and may ask for the complete code, the versions and configuration of the external services and models used, and the call records from evaluation. Keep those external services and your saved key available until verification ends; teams that chose not to save their key must open the Participate page at the agreed time during verification. Results that cannot run, that are clearly inconsistent with the ranked score, or that involved human intervention are removed.
 4. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.
 
 ## 7. Awards

@@ -1,4 +1,5 @@
 """The deployment transaction must roll back an accidental legacy data edit."""
+import hashlib
 import importlib.util
 from pathlib import Path
 import sys
@@ -30,8 +31,14 @@ def test_deployment_records_hashes_is_repeatable_and_rolls_back_legacy_changes(t
         monkeypatch.setattr(deploy,'query',query)
         monkeypatch.setattr(sys,'argv',['deploy-observer-backend.py','--apply'])
         deploy.main();deploy.main()
-        count=len(list((ROOT/'supabase/migrations').glob('20260925*_*.sql')))
+        files=deploy.observer_migrations(ROOT);count=len(files)
+        # Later-dated Observer migrations are applied too; legacy event ones never are.
+        assert {p.stem[:8] for p in files}>={'20260925','20260926'}
+        assert all(p.stem>='20260925000100' for p in files)
         assert query('select count(*) as n from private.observer_migrations')[0]['n']==count
+        recorded={r['version']:r['digest'] for r in query('select version,digest from private.observer_migrations')}
+        assert recorded=={p.stem:hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+        assert query("select to_regclass('private.observer_team_models') is not null as present")==[{'present':True}]
         assert query("select name_en from public.phases where slug='protected'")==[{'name_en':'Original'}]
         path=tmp_path/'supabase/migrations';path.mkdir(parents=True)
         (path/'20260925009999_accidental.sql').write_text("update public.phases set name_en='Oops' where slug='protected';")

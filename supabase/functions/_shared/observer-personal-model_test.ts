@@ -15,7 +15,7 @@ Deno.test("personal API key only reaches the selected HTTPS provider and is reda
   const data = input();
   let calls = 0;
   const result = await fulfillPersonalModel(data, "team-user", {
-    allowedBases: new Set(["https://personal.example/v1"]),
+    trustedBases: new Set(["https://personal.example/v1"]),
     rpc: async (name, args) => {
       receipts.push({ name, args });
       return "private-topic";
@@ -42,7 +42,7 @@ Deno.test("personal API key only reaches the selected HTTPS provider and is reda
 Deno.test("wrong owner, duplicate claims and unapproved addresses never call a provider", async () => {
   let calls = 0;
   const deps = {
-    allowedBases: new Set(["https://personal.example/v1"]),
+    trustedBases: new Set(["https://personal.example/v1"]),
     rpc: async () => {
       throw new Error("denied");
     },
@@ -57,6 +57,9 @@ Deno.test("wrong owner, duplicate claims and unapproved addresses never call a p
     fulfillPersonalModel({ ...input(), base_url: "http://personal.example/v1" }, "owner", deps)
   );
   await assertRejects(() => fulfillPersonalModel({ ...input(), base_url: "https://127.0.0.1/" }, "owner", deps));
+  // A public-looking name that resolves inside is refused like an internal address.
+  const inside = { ...deps, resolve: () => Promise.resolve(["192.168.0.10"]) };
+  await assertRejects(() => fulfillPersonalModel({ ...input(), base_url: "https://api.team.com/v1" }, "owner", inside));
   assertEquals(calls, 0);
 });
 Deno.test("provider failure does not disclose its body, key or exception", async () => {
@@ -64,7 +67,7 @@ Deno.test("provider failure does not disclose its body, key or exception", async
   const data = input();
   assertEquals(
     await fulfillPersonalModel(data, "owner", {
-      allowedBases: new Set([data.base_url]),
+      trustedBases: new Set([data.base_url]),
       rpc: async () => "topic",
       fetch: (() => {
         throw new Error(key);

@@ -1,4 +1,6 @@
 /** Model proxy core. No model credential ever reaches the participant process. */
+import { publicBase, type Resolver } from "./observer-public-base.ts";
+
 export class ProxyError extends Error {
   constructor(public status: number, public code: string) {
     super(code);
@@ -152,6 +154,87 @@ function redact(value: any, key: string): any {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replaceAll(key, "[REDACTED]"), redact(v, key)]));
   }
   return value;
+}
+
+export const MAX_TEAM_RESPONSE = 192 * 1024;
+export type TeamProxyDependencies = {
+  rpc: Rpc;
+  fetch: typeof fetch;
+  decrypt: (ciphertext: string, providerId: string) => Promise<string>;
+  // Exact organizer-configured bases, trusted as they are; any other base must be public HTTPS.
+  trustedBases: Set<string>;
+  resolve?: Resolver | null;
+  timeoutMs?: number;
+};
+
+/** Formal runs: the team's saved API, decrypted only in this request's memory.
+ * The database picks the provider; the project cannot select another one, and
+ * no organizer provider is ever substituted when none is saved.
+ */
+export async function teamChatCompletion(request: Request, deps: TeamProxyDependencies): Promise<Response> {
+  const { run, token } = capability(request.headers.get("authorization"));
+  const checked = validateChat(await boundedJson(request, 65536));
+  const requestedId = request.headers.get("idempotency-key");
+  if (requestedId && !UUID.test(requestedId)) throw new ProxyError(400, "invalid_idempotency_key");
+  const call = requestedId ?? crypto.randomUUID();
+  const reservation = await deps.rpc("observer_reserve_team_model", {
+    p_run: run,
+    p_token: token,
+    p_call: call,
+    p_digest: await digest("team\n" + JSON.stringify(checked.body)),
+    p_tokens: checked.reservedTokens,
+  });
+  if (!reservation?.reserved) throw new ProxyError(409, "model_request_already_received");
+  let actualTokens: number | null = null;
+  let upstreamAttempted = false;
+  let key = "";
+  try {
+    const base = await publicBase(reservation.base_url, deps.trustedBases, deps.resolve);
+    if (
+      !base || typeof reservation.model !== "string" || !reservation.model || reservation.model.length > 256 ||
+      typeof reservation.provider_id !== "string" || !UUID.test(reservation.provider_id)
+    ) throw new ProxyError(503, "provider_not_authorized");
+    key = await deps.decrypt(String(reservation.encrypted_key ?? ""), reservation.provider_id);
+    if (!key) throw new ProxyError(503, "provider_configuration_error");
+    upstreamAttempted = true;
+    const response = await deps.fetch(base + "/chat/completions", {
+      method: "POST",
+      redirect: "error",
+      headers: { "content-type": "application/json", "authorization": "Bearer " + key },
+      // The saved model replaces the project's model name.
+      body: JSON.stringify({ ...checked.body, model: reservation.model }),
+      signal: AbortSignal.timeout(deps.timeoutMs ?? 120000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new ProxyError(502, "model_provider_error");
+    }
+    let result: unknown;
+    try {
+      result = await boundedJson(response, MAX_TEAM_RESPONSE);
+    } catch (error) {
+      if (error instanceof ProxyError && error.code === "body_too_large") {
+        throw new ProxyError(502, "model_response_too_large");
+      }
+      throw new ProxyError(502, "invalid_provider_response");
+    }
+    if (!object(result) || !Array.isArray(result.choices)) throw new ProxyError(502, "invalid_provider_response");
+    const usage = result.usage?.total_tokens;
+    if (Number.isSafeInteger(usage) && usage >= 0 && usage <= checked.reservedTokens) actualTokens = usage;
+    return new Response(JSON.stringify(redact(result, key)), {
+      status: 200,
+      headers: { "content-type": "application/json", "cache-control": "no-store", "x-observer-request-id": call },
+    });
+  } catch (error) {
+    if (!upstreamAttempted) actualTokens = 0;
+    // Provider bodies, headers, redirects and exception text never leave here.
+    if (error instanceof ProxyError) throw error;
+    throw new ProxyError(502, "model_provider_unavailable");
+  } finally {
+    key = "";
+    // A failed settlement leaves the reservation for the conservative reconciler.
+    await deps.rpc("observer_settle_model", { p_call: call, p_actual_tokens: actualTokens });
+  }
 }
 
 export async function chatCompletion(request: Request, deps: ProxyDependencies): Promise<Response> {

@@ -1,6 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { capability, chatCompletion, decryptCredential, ProxyError } from "../_shared/observer-model.ts";
-
+import {
+  capability,
+  chatCompletion,
+  decryptCredential,
+  ProxyError,
+  teamChatCompletion,
+} from "../_shared/observer-model.ts";
 import { personalChat } from "../_shared/observer-personal-model.ts";
 import { exchangeModelBroadcast } from "../_shared/observer-model-broadcast.ts";
 
@@ -22,6 +27,8 @@ const knownErrors: Record<string, [number, string]> = {
   provider_model_quota: [429, "provider_model_quota"],
   model_not_available: [403, "model_not_available"],
   request_id_conflict: [409, "request_id_conflict"],
+  team_model_not_configured: [403, "team_model_not_configured"],
+  personal_api_required: [403, "team_model_not_configured"],
 };
 
 Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async (request) => {
@@ -38,22 +45,27 @@ Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async
       }
       return data;
     };
+    const decrypt = (value: string, provider: string) =>
+      decryptCredential(value, provider, Deno.env.get("OBSERVER_KEY_ENCRYPTION_KEY") ?? "");
     const scope = capability(request.headers.get("authorization"));
     const route = await rpc("observer_model_route", { p_run: scope.run, p_token: scope.token });
-    const response = route.personal
+    // Formal runs use the team's choice: its saved key server-side (default), or
+    // the relay to its open page. Neither ever falls back to organizer credits.
+    const response = !route.personal
+      ? await chatCompletion(request, {
+        rpc,
+        fetch,
+        decrypt,
+        allowedBases: bases("OBSERVER_MODEL_BASES"),
+        allowedHttpBases: bases("OBSERVER_MODEL_HTTP_BASES"),
+        defaultProvider: Deno.env.get("OBSERVER_DEFAULT_MODEL_PROVIDER") ?? "",
+      })
+      : route.mode === "relay"
       ? await personalChat(request, route.topic, {
         rpc,
         exchange: (topic, call, payload) => exchangeModelBroadcast(service, topic, call, payload),
       })
-      : await chatCompletion(request, {
-        rpc,
-        fetch,
-        decrypt: (value, provider) =>
-          decryptCredential(value, provider, Deno.env.get("OBSERVER_KEY_ENCRYPTION_KEY") ?? ""),
-        allowedBases: bases("OBSERVER_MODEL_BASES"),
-        allowedHttpBases: bases("OBSERVER_MODEL_HTTP_BASES"),
-        defaultProvider: Deno.env.get("OBSERVER_DEFAULT_MODEL_PROVIDER") ?? "",
-      });
+      : await teamChatCompletion(request, { rpc, fetch, decrypt, trustedBases: bases("OBSERVER_MODEL_BASES") });
     for (const [name, value] of Object.entries(cors)) response.headers.set(name, value);
     return response;
   } catch (error) {

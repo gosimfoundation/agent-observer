@@ -1,5 +1,6 @@
 /** Personal credentials are never sent to database RPCs or Broadcast. */
 import { boundedJson, capability, ProxyError, type Rpc, validateChat } from "./observer-model.ts";
+import { publicBase, type Resolver } from "./observer-public-base.ts";
 export const MAX_PERSONAL_RESPONSE = 192 * 1024;
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
 export async function personalDigest(body: unknown) {
@@ -53,7 +54,9 @@ export async function fulfillPersonalModel(
   deps: {
     rpc: Rpc;
     fetch: typeof fetch;
-    allowedBases: Set<string>;
+    // Exact organizer-configured bases, trusted as they are; any other base must be public HTTPS.
+    trustedBases: Set<string>;
+    resolve?: Resolver | null;
     send: (topic: string, event: string, payload: unknown) => Promise<void>;
   },
 ) {
@@ -63,17 +66,8 @@ export async function fulfillPersonalModel(
     typeof input.model !== "string" || input.model.length < 1 || input.model.length > 256
   ) throw new ProxyError(400, "invalid_personal_model");
   const body = validateChat(input.body).body;
-  let base: URL;
-  try {
-    base = new URL(input.base_url);
-  } catch {
-    throw new ProxyError(400, "provider_not_authorized");
-  }
-  const normalized = base.href.replace(/\/$/, "");
-  if (
-    base.protocol !== "https:" || base.username || base.password || base.search || base.hash ||
-    !deps.allowedBases.has(normalized)
-  ) throw new ProxyError(400, "provider_not_authorized");
+  const normalized = await publicBase(input.base_url, deps.trustedBases, deps.resolve);
+  if (!normalized) throw new ProxyError(400, "provider_not_authorized");
   // Claim before billing: team, run and exact prompt digest must match.
   const topic = await deps.rpc("observer_claim_personal_model", {
     p_user: user,

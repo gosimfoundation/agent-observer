@@ -12,7 +12,9 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import socket
+import ssl
 import subprocess
 import sys
 import threading
@@ -64,6 +66,50 @@ def post(url,body,credential,*,timeout=30):
         return exc.code,json.load(exc)
 
 
+class _TeamProvider(BaseHTTPRequestHandler):
+    """Stub participant provider behind HTTPS. Records what the proxy sends."""
+    def do_POST(self):
+        length=int(self.headers.get("Content-Length") or 0)
+        body=json.loads(self.rfile.read(length) or b"{}")
+        auth=self.headers.get("Authorization","")
+        self.server.requests.append({"path":self.path,"auth":auth,"body":body})
+        mode=self.server.mode
+        if mode=="redirect":
+            self.send_response(307);self.send_header("Location","https://127.0.0.1:9/v1/chat/completions")
+            self.send_header("Content-Length","0");self.end_headers();return
+        if mode=="reject":
+            code,payload=401,{"error":{"message":"rejected "+auth}}
+        else:
+            code,payload=200,{"choices":[{"message":{"role":"assistant","content":"echo "+auth if mode=="echo" else "OK"}}],
+                              "usage":{"prompt_tokens":12,"completion_tokens":5,"total_tokens":17}}
+        data=json.dumps(payload).encode()
+        self.send_response(code);self.send_header("Content-Type","application/json")
+        self.send_header("Content-Length",str(len(data)));self.end_headers();self.wfile.write(data)
+    def log_message(self,*_args): pass
+
+
+def https_team_provider(root):
+    """HTTPS stub signed by a throwaway test CA. None when openssl is unavailable."""
+    openssl=shutil.which("openssl")
+    if not openssl:
+        return None
+    def run(*args):
+        subprocess.run([openssl,*map(str,args)],check=True,capture_output=True)
+    ec=("-newkey","ec","-pkeyopt","ec_paramgen_curve:prime256v1","-nodes")
+    run("req","-x509",*ec,"-keyout",root/"ca.key","-out",root/"ca.pem","-days","2","-subj","/CN=observer-test-ca")
+    run("req",*ec,"-keyout",root/"provider.key","-out",root/"provider.csr","-subj","/CN=127.0.0.1")
+    (root/"provider.ext").write_text("subjectAltName=IP:127.0.0.1,DNS:localhost\nbasicConstraints=CA:FALSE\n"
+                                     "keyUsage=digitalSignature\nextendedKeyUsage=serverAuth\n")
+    run("x509","-req","-in",root/"provider.csr","-CA",root/"ca.pem","-CAkey",root/"ca.key","-CAcreateserial",
+        "-out",root/"provider.pem","-days","2","-extfile",root/"provider.ext")
+    server=ThreadingHTTPServer(("127.0.0.1",0),_TeamProvider)
+    context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);context.load_cert_chain(root/"provider.pem",root/"provider.key")
+    server.socket=context.wrap_socket(server.socket,server_side=True)
+    server.requests=[];server.mode="ok"
+    threading.Thread(target=server.serve_forever,daemon=True).start()
+    return server,f"https://127.0.0.1:{server.server_port}/v1",root/"ca.pem"
+
+
 @pytest.fixture(scope="module")
 def edge_stack(tmp_path_factory):
     root=tmp_path_factory.mktemp("observer-edge")
@@ -91,6 +137,11 @@ def edge_stack(tmp_path_factory):
     bases=[base]
     if os.environ.get("OBSERVER_LIVE_MODEL_BASE"):
         bases.append(os.environ["OBSERVER_LIVE_MODEL_BASE"].rstrip("/"))
+    team=https_team_provider(root)
+    if team:
+        bases.append(team[1])
+        # Trusted only by these Edge processes; they reach nothing else over TLS.
+        env["DENO_CERT"]=str(team[2])
     env.update({"SUPABASE_URL":harness.url,"SUPABASE_SERVICE_ROLE_KEY":service_key(),"SUPABASE_ANON_KEY":anon_key(),
                 "OBSERVER_KEY_ENCRYPTION_KEY":encoded,"OBSERVER_DEFAULT_MODEL_PROVIDER":str(provider),
                 "OBSERVER_MODEL_BASES":",".join([*bases,"https://personal.example/v1"]),"OBSERVER_MODEL_HTTP_BASES":",".join(b for b in bases if b.startswith("http://"))})
@@ -128,13 +179,15 @@ def edge_stack(tmp_path_factory):
                 pytest.fail("Edge service did not start")
             urls[name]=url
         yield {"harness":harness,"urls":urls,"provider":provider,"requests":model_requests,
-               "upstream_key":upstream_key,"master":encoded}
+               "upstream_key":upstream_key,"master":encoded,"team_provider":team[0] if team else None,
+               "team_base":team[1] if team else None,"logs":root}
     finally:
         for process,log in processes:
             process.terminate()
             try: process.wait(timeout=5)
             except subprocess.TimeoutExpired: process.kill(); process.wait()
             log.close()
+        if team: team[0].shutdown(); team[0].server_close()
         upstream.shutdown(); upstream.server_close(); harness.stop()
 
 
@@ -212,16 +265,45 @@ def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run
     assert post(url,{'action':'list'},'invalid-token')[0]==401
     status,listed=post(url,{'action':'list'},token)
     assert status==200,listed
-    base=listed['data']['model_bases'][0]
-    key='only-the-organizer-proxy-can-read-this-key'
-    status,saved=post(url,{'action':'save_provider','name':'My API','base_url':base,
+    assert listed['data']['team_model']=={'mode':'stored','saved':None}
+    https_base=next(b for b in listed['data']['model_bases'] if b.startswith('https://'))
+    http_base=next(b for b in listed['data']['model_bases'] if b.startswith('http://'))
+    key='only-the-trusted-proxy-can-read-this-key-7Qx2'
+    # The retired multi-provider settings still cannot store a key.
+    status,saved=post(url,{'action':'save_provider','name':'My API','base_url':https_base,
         'key':key,'models':['test-model'],'daily_token_limit':5000},token)
     assert status==410 and saved['error']=='ephemeral_credentials_required'
+    # Formal keys go only to approved HTTPS bases, never the organizer's HTTP test base.
+    for base in (http_base,'https://unapproved.test/v1'):
+        status,refused=post(url,{'action':'save_team_model','base_url':base,'model':'m','key':key},token)
+        assert status==400 and refused['error']=='model_destination_not_enabled'
     assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
+    status,saved=post(url,{'action':'save_team_model','base_url':https_base+'/','model':'team-model','key':key},token)
+    assert status==200,saved
+    assert saved['data']['team_model']['saved']['key_hint']=='7Qx2' and key not in json.dumps(saved)
+    stored=query(uri,'''select p.encrypted_key,p.base_url from private.observer_team_models m
+        join private.observer_providers p on p.id=m.provider_id where m.team_id=%s''',(s['team'],))
+    assert len(stored)==1 and stored[0][0].startswith('v1.') and key not in stored[0][0] and stored[0][1]==https_base
     status,listed=post(url,{'action':'list'},token)
-    assert status==200 and key not in json.dumps(listed)
-    assert post(url,{'action':'save_provider','name':'Bypass','base_url':'https://unapproved.test/v1',
-        'key':key,'models':['test-model'],'daily_token_limit':5000},token)[0]==410
+    assert status==200 and key not in json.dumps(listed) and stored[0][0] not in json.dumps(listed)
+    assert listed['data']['team_model']['saved']['model']=='team-model'
+    status,foreign=post(url,{'action':'list'},other_token)
+    assert status==200 and foreign['data']['team_model']=={'mode':'stored','saved':None}
+    assert post(url,{'action':'delete_team_model'},other_token)[1]['data']=={'deleted':False}
+    assert post(url,{'action':'set_team_model_mode','mode':'relay'},other_token)[1]['data']=={'mode':'relay'}
+    assert post(url,{'action':'list'},token)[1]['data']['team_model']['saved'] is not None
+    # Choosing not to save a key deletes the saved key immediately.
+    assert post(url,{'action':'set_team_model_mode','mode':'relay'},token)[1]['data']=={'mode':'relay'}
+    assert post(url,{'action':'list'},token)[1]['data']['team_model']=={'mode':'relay','saved':None}
+    assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
+    assert post(url,{'action':'model_routes'},token)[1]['data']==[]
+    assert post(url,{'action':'set_team_model_mode','mode':'organizer'},token)[1]['error']=='invalid_team_model_mode'
+    # Saving a key again selects the stored mode; the team can also delete it.
+    assert post(url,{'action':'save_team_model','base_url':https_base,'model':'team-model','key':key},token)[0]==200
+    assert post(url,{'action':'list'},token)[1]['data']['team_model']['mode']=='stored'
+    assert post(url,{'action':'delete_team_model'},token)[1]['data']=={'deleted':True}
+    assert post(url,{'action':'list'},token)[1]['data']['team_model']=={'mode':'stored','saved':None}
+    assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
     status,submitted=post(url,{'action':'submit_repository','title':'Complete project','url':'https://github.com/owner/repo.git'},token)
     assert status==200,submitted
     revision=submitted['data']['revision_id']
@@ -232,6 +314,69 @@ def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run
     foreign=post(url,{'action':'list'},other_token)[1]['data']['projects']
     assert any(r['id']==revision for p in own for r in p['observer_revisions'])
     assert not any(r['id']==revision for p in foreign for r in p['observer_revisions'])
+
+
+def test_formal_run_calls_the_saved_https_provider_without_page_or_organizer_fallback(run_setup):
+    s=run_setup;stack=s['stack'];uri=s['uri'];provider=stack['team_provider']
+    if provider is None:
+        pytest.skip('openssl is required for the HTTPS provider stub')
+    portal=stack['urls']['observer-portal'];model_url=stack['urls']['observer-model']+'/v1/chat/completions'
+    token=user_token(str(s['user']),f"{s['user']}@example.test")
+    credential=f"obs_{s['run']}.{s['participant']}"
+    # The run becomes formal, like the competition phase. No page is open anywhere.
+    query(uri,'update public.phases set counts_for_final=true where id=%s',(s['phase'],))
+    query(uri,'update private.observer_sessions set call_limit=10 where run_id=%s',(s['run'],))
+    body={'model':'project-default','messages':[{'role':'user','content':'Reply OK'}],'max_tokens':32}
+    organizer=len(stack['requests'])
+    status,response=post(model_url,body,credential)
+    assert status==403 and response['error']['code']=='team_model_not_configured'
+    assert len(stack['requests'])==organizer and provider.requests==[]
+    key='formal-team-key-'+secrets.token_hex(16)
+    status,saved=post(portal,{'action':'save_team_model','base_url':stack['team_base'],'model':'team-model-v1','key':key},token)
+    assert status==200,saved
+    provider.mode='echo'
+    try:
+        status,response=post(model_url,body,credential)
+        assert status==200,response
+        sent=provider.requests[-1]
+        assert (sent['path'],sent['auth'])==('/v1/chat/completions','Bearer '+key)
+        assert sent['body']['model']=='team-model-v1' and sent['body']['max_tokens']==32
+        assert s['participant'] not in json.dumps(sent)
+        assert key not in json.dumps(response) and '[REDACTED]' in response['choices'][0]['message']['content']
+        assert query(uri,'select tokens_used,calls_used,calls_active from private.observer_sessions where run_id=%s',
+                     (s['run'],))==[(17,1,0)]
+        # Redirects are never followed and provider rejections are never forwarded.
+        for mode,code in (('redirect','model_provider_unavailable'),('reject','model_provider_error')):
+            provider.mode=mode;count=len(provider.requests)
+            status,response=post(model_url,body,credential)
+            assert (status,response['error']['code'])==(502,code),response
+            assert key not in json.dumps(response) and len(provider.requests)==count+1
+    finally:
+        provider.mode='ok'
+    # Deleting the key stops formal model use immediately; nothing falls back.
+    assert post(portal,{'action':'delete_team_model'},token)[1]['data']=={'deleted':True}
+    count=len(provider.requests)
+    status,response=post(model_url,body,credential)
+    assert status==403 and response['error']['code']=='team_model_not_configured'
+    assert len(provider.requests)==count and len(stack['requests'])==organizer
+    # Relay mode: the call waits for the team's open page. This harness has no
+    # Realtime service, so the relay fails closed without any server-side call.
+    post(portal,{'action':'save_team_model','base_url':stack['team_base'],'model':'team-model-v1','key':key},token)
+    assert post(portal,{'action':'set_team_model_mode','mode':'relay'},token)[1]['data']=={'mode':'relay'}
+    assert query(uri,'select count(*) from private.observer_team_models where team_id=%s',(s['team'],))==[(0,)]
+    status,response=post(model_url,body,credential,timeout=150)
+    assert status in (502,503) and response['error']['code'] in ('model_relay_unavailable','personal_api_not_connected'),response
+    assert len(provider.requests)==count and len(stack['requests'])==organizer
+    relay=query(uri,'select status from private.observer_personal_model_calls where run_id=%s',(s['run'],))
+    assert relay==[('timeout',)]
+    # The plaintext key was never persisted in any table or written to an Edge log.
+    tables=query(uri,"""select table_schema,table_name from information_schema.tables
+        where table_schema in ('public','private') and table_type='BASE TABLE'""")
+    for schema,table in tables:
+        rows=query(uri,f'select coalesce(string_agg(t::text,chr(10)),\'\') from "{schema}"."{table}" t')[0][0]
+        assert key not in rows,(schema,table)
+    for log in stack['logs'].glob('*.log'):
+        assert key not in log.read_text()
 
 
 def test_real_portal_signed_zip_upload_and_retry(run_setup):

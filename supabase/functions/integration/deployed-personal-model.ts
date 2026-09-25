@@ -19,6 +19,8 @@ const portal = async (body: Record<string, unknown>) => {
   if (!response.ok) throw new Error("portal_failed_" + response.status + "_" + value.error);
   return value.data;
 };
+// The relay serves only teams that chose not to save a key (this deletes a saved key).
+await portal({ action: "set_team_model_mode", mode: "relay" });
 const routes = await portal({ action: "model_routes" });
 const route = routes.find((r: { run_id: string }) => r.run_id === run);
 if (!route) throw new Error("No personal route for the disposable run");

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '../../stores/auth'
 import { portal, uploadProjectFile, type PortalData, type ProjectRevision } from '../../lib/observerPortal'
 import { usePersonalModel } from '../../composables/usePersonalModel'
 import { competition } from '../../stores/competition'
-const { pick, t } = useI18n()
+const { pick, t, tf, locale } = useI18n()
 const { team, refreshMe } = useAuth()
 const personal=usePersonalModel()
 const data = ref<PortalData | null>(null)
+// Suggestions only: any public https:// address works (the server refuses IPs and internal names).
 const personalBases=computed(()=>data.value?.model_bases.filter(base=>base.startsWith('https://'))??[])
 const loading = ref(true), busy = ref(false), error = ref(''), notice = ref('')
 const form = ref({ title: '', kind: 'repository', url: '' })
@@ -16,6 +17,15 @@ const selectedFile = ref<File | null>(null), review = ref<ProjectRevision | null
 const reviewPanel = ref<HTMLElement | null>(null)
 const phaseId = ref(''), confirmed = ref(false), notes = ref(''), codeUrl = ref('')
 const diagnostics = ref<{ kind: string; status: string; code: string; log: string }[] | null>(null)
+// Formal model calls use the team's choice: a key saved encrypted on the server
+// (default; no page needs to stay open) or the relay to this open page.
+const modelMode = computed(() => data.value?.team_model?.mode ?? 'stored')
+const savedModel = computed(() => data.value?.team_model?.saved ?? null)
+const modeChoice = ref<'stored' | 'relay'>('stored'), replacingKey = ref(false)
+const modelForm = ref({ base_url: '', model: '', key: '' })
+const relayRunning = computed(() => modelMode.value === 'relay' && (data.value?.batches ?? []).some(b => ['queued', 'running'].includes(b.status)))
+watch(modelMode, mode => { if (mode === 'stored') personal.clear() })
+const sentences = (...parts: string[]) => parts.join(['zh', 'ja'].includes(locale.value) ? '' : ' ')
 let timer: ReturnType<typeof setInterval> | undefined
 const words = computed(() => pick({
   title: 'Agent projects', intro: 'Submit a complete project, test its interface, then confirm the exact version for evaluation.',
@@ -68,6 +78,10 @@ const activePhases = computed(() => (data.value?.phases ?? []).filter(p => (p.ph
 const projectsOpen = computed(() => activePhases.value.some(p => p.projects_enabled))
 const openPhases = computed(() => activePhases.value.filter(p => !p.phases.starts_at || Date.parse(p.phases.starts_at) <= Date.now()))
 const selectedPhase = computed(() => openPhases.value.find(p => p.phase_id === phaseId.value))
+const modelLimits = computed(() => {
+  const p = activePhases.value[0]
+  return p && p.model_call_limit > 0 ? { calls: p.model_call_limit.toLocaleString(), tokens: p.model_token_limit.toLocaleString() } : null
+})
 const statuses = computed(() => pick<Record<string, string>>({ queued:'Queued', preparing:'Preparing', reviewable:'Ready for review', approved:'Confirmed',
   failed:'Failed', starting:'Starting', ready:'Ready', running:'Running', awaiting_csv:'Waiting for CSV', scored:'Scored', cancelled:'Cancelled' },
   { queued:'排队中', preparing:'准备中', reviewable:'等待确认', approved:'已确认', failed:'失败', starting:'启动中', ready:'已就绪',
@@ -85,13 +99,14 @@ function errorMessage(e: unknown) {
     wrong_file_type: pick('Choose a file with the required extension.', '请选择要求的文件类型。'),
     file_too_large: pick('The file is empty or exceeds the size limit.', '文件为空或超过大小限制。'),
     invalid_repository_url: pick('Enter a public https://github.com/owner/repository URL.', '请输入公开 GitHub 仓库的完整地址。'),
-    model_destination_not_enabled: pick('This API endpoint is not enabled by the organizers.', '这个 API 地址尚未由主办方启用。'),
+    model_destination_not_enabled: t('submit.model_api.endpoint_refused'),
+    invalid_team_model: t('submit.model_api.invalid'),
   }
   return messages[code] ?? words.value.failed
 }
 async function reload() {
   data.value = await portal<PortalData>('list')
-  if(!personal.endpoint.value)personal.endpoint.value=personalBases.value[0]??''
+  modeChoice.value = modelMode.value
   await personal.refresh()
   // Bind evaluations to the entry phase (beta entry first), never to whatever
   // order the database happened to return.
@@ -123,6 +138,21 @@ function approve() { if (review.value && confirmed.value) void action(async () =
 function evaluate(revision_id: string) { void action(async () => {
   await portal('evaluate', { phase_id: phaseId.value, revision_id })
 }, words.value.queued) }
+function chooseMode() {
+  const mode = modeChoice.value, hadKey = !!savedModel.value
+  if (mode === modelMode.value) return
+  // Choosing the relay deletes a saved key on the server immediately.
+  void action(async () => {
+    try { await portal('set_team_model_mode', { mode }) } catch (e) { modeChoice.value = modelMode.value; throw e }
+    replacingKey.value = false
+  }, mode === 'relay' ? sentences(t('submit.model_api.relay_selected'), ...(hadKey ? [t('submit.model_api.deleted_notice')] : []))
+    : t('submit.model_api.stored_selected'))
+}
+function saveModel() { void action(async () => {
+  try { await portal('save_team_model', { ...modelForm.value }) } finally { modelForm.value.key = '' }
+  replacingKey.value = false
+}, t('submit.model_api.saved_notice')) }
+function deleteModel() { void action(async () => { await portal('delete_team_model') }, t('submit.model_api.deleted_notice')) }
 function download(run_id: string) { downloadFile('download_result', { run_id }, 'observer-result.zip') }
 function downloadProject(revision_id: string) { downloadFile('download_project', { revision_id }, 'observer-project.zip') }
 function downloadFile(command: string, fields: Record<string, unknown>, filename: string) { void action(async () => {
@@ -149,19 +179,53 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       <p v-if="error" class="errors" role="alert" data-testid="project-error">{{ error }}</p>
       <p v-if="notice" role="status" class="mb-4">{{ notice }}</p>
       <p v-if="!projectsOpen" class="panel">{{ words.closed }}</p>
-      <details class="panel mb-6" data-testid="personal-model-settings">
-        <summary>{{ pick('Use your own model API (optional)','使用自己的模型 API（可选）') }}</summary>
-        <p class="help mt-3">{{ pick('No model credits are provided. The key stays only in this page’s memory. Keep this page open during model calls; closing it clears the key.','平台不提供模型额度，密钥只留在当前页面内存中。模型调用期间请保持本页打开，关闭后密钥会清除。') }}</p>
-        <form class="mt-4" @submit.prevent="action(personal.connect)">
-          <label class="field"><span>{{ pick('API address','API 地址') }}</span><select v-model="personal.endpoint.value" :disabled="personal.connected.value" required><option v-for="base in personalBases" :key="base">{{ base }}</option></select></label>
-          <label class="field"><span>{{ pick('Model','模型') }}</span><input v-model="personal.model.value" :disabled="personal.connected.value" maxlength="256" required></label>
-          <label class="field"><span>API key</span><input v-model="personal.key.value" type="password" autocomplete="off" :disabled="personal.connected.value" maxlength="8192" required data-testid="personal-api-key"></label>
-          <p v-if="!personalBases.length" class="help">{{ pick('No supported HTTPS API address is configured yet. A deterministic project needs no API.','尚未配置受支持的 HTTPS API 地址，确定性算法不需要 API。') }}</p>
-          <button v-if="!personal.connected.value" class="btn sm" :disabled="busy||!personalBases.length">{{ pick('Use for this session','仅本次使用') }}</button>
-          <button v-else type="button" class="btn sm" @click="personal.clear">{{ pick('Disconnect and clear key','断开并清除密钥') }}</button>
-          <p v-if="personal.connected.value" class="help mt-3" role="status">{{ personal.status.value==='failed'?pick('The model call failed. Check your API and quota.','模型调用失败，请检查 API 和额度。'):personal.status.value==='working'?pick('Calling your API…','正在调用你的 API…'):pick('Connected for this page session.','已连接，仅本页会话有效。') }}</p>
+      <section class="panel mb-6" data-testid="model-api-settings">
+        <h2 id="model-api">{{ t('submit.model_api.title') }}</h2>
+        <p class="help mt-3">{{ t('submit.model_api.intro') }}</p>
+        <fieldset class="mt-4" :disabled="busy">
+          <legend class="sr-only">{{ t('submit.model_api.choice') }}</legend>
+          <label class="check"><input v-model="modeChoice" type="radio" name="model-key-mode" value="stored" aria-describedby="model-mode-stored-help" data-testid="model-mode-stored" @change="chooseMode">{{ t('submit.model_api.stored') }}</label>
+          <p id="model-mode-stored-help" class="help mb-3">{{ t('submit.model_api.stored_help') }}</p>
+          <label class="check"><input v-model="modeChoice" type="radio" name="model-key-mode" value="relay" aria-describedby="model-mode-relay-help" data-testid="model-mode-relay" @change="chooseMode">{{ t('submit.model_api.relay') }}</label>
+          <p id="model-mode-relay-help" class="help">{{ savedModel ? sentences(t('submit.model_api.relay_help'), t('submit.model_api.relay_deletes')) : t('submit.model_api.relay_help') }}</p>
+        </fieldset>
+        <p class="help mt-4">{{ t('submit.model_api.usage') }}</p>
+        <template v-if="modelMode === 'stored'">
+          <p v-if="modelLimits" class="help">{{ tf('submit.model_api.limits', modelLimits) }}</p>
+          <div v-if="savedModel && !replacingKey" class="mt-4" data-testid="team-model-saved">
+            <h3>{{ t('submit.model_api.saved_title') }}</h3>
+            <p class="help break-all">{{ savedModel.base_url }} · {{ savedModel.model }}</p>
+            <p class="help" data-testid="team-model-hint">{{ savedModel.key_hint ? tf('submit.model_api.key_ending', { hint: savedModel.key_hint }) : t('submit.model_api.key_hidden') }} · {{ tf('submit.model_api.saved_at', { time: new Date(savedModel.saved_at).toLocaleString() }) }}</p>
+            <div class="flex flex-wrap gap-3 mt-3">
+              <button type="button" class="btn sm" :disabled="busy" @click="replacingKey = true">{{ t('submit.model_api.replace') }}</button>
+              <button type="button" class="btn sm" :disabled="busy" @click="deleteModel">{{ t('submit.model_api.delete') }}</button>
+            </div>
+          </div>
+          <form v-else class="mt-4" data-testid="team-model-form" @submit.prevent="saveModel">
+            <p v-if="!savedModel" class="help">{{ t('submit.model_api.none') }}</p>
+            <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><input v-model="modelForm.base_url" type="url" required pattern="https://.+" maxlength="1000" list="model-base-suggestions" placeholder="https://api.moonshot.cn/v1" autocomplete="off" spellcheck="false" aria-describedby="team-model-endpoint-help" data-testid="team-model-endpoint"></label>
+            <p id="team-model-endpoint-help" class="help">{{ t('submit.model_api.endpoint_hint') }}</p>
+            <label class="field"><span>{{ t('submit.model_api.model') }}</span><input v-model="modelForm.model" type="text" maxlength="256" required autocomplete="off"></label>
+            <label class="field"><span>{{ t('submit.model_api.key') }}</span><input v-model="modelForm.key" type="password" autocomplete="new-password" maxlength="8192" required data-testid="team-model-key"></label>
+            <div class="flex flex-wrap gap-3">
+              <button class="btn sm" :disabled="busy">{{ t('submit.model_api.save') }}</button>
+              <button v-if="savedModel" type="button" class="btn sm" :disabled="busy" @click="replacingKey = false; modelForm.key = ''">{{ t('submit.model_api.cancel') }}</button>
+            </div>
+          </form>
+        </template>
+        <form v-else class="mt-4" data-testid="personal-model-settings" @submit.prevent="action(personal.connect)">
+          <p v-if="relayRunning && !personal.connected.value" class="errors" role="alert">{{ t('submit.model_api.relay_running') }}</p>
+          <p class="help">{{ t('submit.model_api.keep_open') }}</p>
+          <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><input v-model="personal.endpoint.value" type="url" :disabled="personal.connected.value" required pattern="https://.+" maxlength="1000" list="model-base-suggestions" placeholder="https://api.moonshot.cn/v1" autocomplete="off" spellcheck="false" aria-describedby="personal-model-endpoint-help" data-testid="personal-model-endpoint"></label>
+          <p id="personal-model-endpoint-help" class="help">{{ t('submit.model_api.endpoint_hint') }}</p>
+          <label class="field"><span>{{ t('submit.model_api.model') }}</span><input v-model="personal.model.value" type="text" :disabled="personal.connected.value" maxlength="256" required></label>
+          <label class="field"><span>{{ t('submit.model_api.key') }}</span><input v-model="personal.key.value" type="password" autocomplete="off" :disabled="personal.connected.value" maxlength="8192" required data-testid="personal-api-key"></label>
+          <button v-if="!personal.connected.value" class="btn sm" :disabled="busy">{{ t('submit.model_api.connect') }}</button>
+          <button v-else type="button" class="btn sm" @click="personal.clear">{{ t('submit.model_api.disconnect') }}</button>
+          <p v-if="personal.connected.value" class="help mt-3" role="status">{{ personal.status.value==='failed'?t('submit.model_api.call_failed'):personal.status.value==='working'?t('submit.model_api.working'):t('submit.model_api.connected') }}</p>
         </form>
-      </details>
+        <datalist id="model-base-suggestions"><option v-for="base in personalBases" :key="base" :value="base"></option></datalist>
+      </section>
       <p class="mb-5"><button type="button" class="btn sm" :disabled="busy" @click="action(reload)">{{ words.refresh }}</button></p>
       <form v-if="projectsOpen" class="panel mb-6" @submit.prevent="submit">
         <h2 id="prepare">1 · {{ words.newProject }}</h2>

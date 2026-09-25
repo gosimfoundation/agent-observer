@@ -797,7 +797,45 @@
     }
   },
   "submit": {
-    "title": "Participer"
+    "title": "Participer",
+    "model_api": {
+      "title": "API de modèle (facultatif)",
+      "intro": "Aucun crédit de modèle n'est fourni, et les projets déterministes n'ont pas besoin d'API. Choisissez comment la plateforme traite votre clé :",
+      "choice": "Traitement de votre clé de modèle",
+      "stored": "Enregistrer chiffrée (recommandé)",
+      "stored_help": "La clé est stockée chiffrée sur le serveur ; vous pouvez fermer cette page pendant l'évaluation. Elle est supprimée une fois les résultats vérifiés.",
+      "relay": "Ne pas enregistrer",
+      "relay_help": "La clé reste uniquement dans cette page et n'est jamais stockée sur le serveur. Gardez cette page ouverte jusqu'à la fin de chaque évaluation ; les appels de modèle échouent lorsqu'elle est fermée. Si votre équipe est vérifiée parmi les premières, vous devrez aussi ouvrir cette page au moment convenu avec les organisateurs.",
+      "relay_deletes": "Ce choix supprime la clé enregistrée.",
+      "usage": "Votre projet continue d'utiliser OPENAI_BASE_URL et OPENAI_API_KEY fournis pour chaque exécution ; les appels vont à votre point d'accès et à votre modèle.",
+      "limits": "Chaque exécution permet jusqu'à {calls} appels de modèle et {tokens} jetons, un appel à la fois.",
+      "saved_title": "API de modèle enregistrée",
+      "key_ending": "Clé se terminant par {hint}",
+      "key_hidden": "Clé masquée",
+      "saved_at": "Enregistrée le {time}",
+      "none": "Aucune clé enregistrée pour l'instant.",
+      "endpoint": "Point d'accès de l'API",
+      "endpoint_hint": "Toute adresse https:// publique convient (API compatible OpenAI, port par défaut). Les adresses IP et les adresses internes sont refusées. Les suggestions sont des fournisseurs courants.",
+      "endpoint_refused": "Cette adresse d'API est refusée. Utilisez une adresse https:// publique sur le port par défaut, dont le nom se résout, et non une adresse IP ou interne.",
+      "model": "Modèle",
+      "key": "Clé d'API",
+      "save": "Enregistrer la clé chiffrée",
+      "replace": "Remplacer la clé",
+      "delete": "Supprimer la clé enregistrée",
+      "cancel": "Annuler",
+      "saved_notice": "Clé enregistrée chiffrée.",
+      "deleted_notice": "Clé enregistrée supprimée.",
+      "stored_selected": "Les clés seront enregistrées chiffrées sur le serveur.",
+      "relay_selected": "Les clés ne seront pas enregistrées. Gardez cette page ouverte pendant les évaluations.",
+      "keep_open": "Gardez cette page ouverte jusqu'à la fin de chaque évaluation, y compris l'adaptation automatique. La fermer efface la clé ; pour vous reconnecter, saisissez-la de nouveau.",
+      "relay_running": "Une évaluation est en cours : connectez votre clé ici et gardez cette page ouverte jusqu'à la fin.",
+      "connect": "Utiliser pour cette session",
+      "disconnect": "Se déconnecter et effacer la clé",
+      "connected": "Connecté pour cette session de page.",
+      "working": "Appel de votre API…",
+      "call_failed": "L'appel du modèle a échoué. Vérifiez votre API et votre quota.",
+      "invalid": "Vérifiez le point d'accès, le modèle et la clé."
+    }
   },
   "dash": {
     "quest": {

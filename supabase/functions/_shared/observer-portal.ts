@@ -1,6 +1,7 @@
 import { fulfillPersonalModel } from "./observer-personal-model.ts";
 import { sendModelBroadcast } from "./observer-model-broadcast.ts";
-import { boundedJson, decryptCredential, ProxyError } from "./observer-model.ts";
+import { boundedJson, decryptCredential, encryptCredential, ProxyError } from "./observer-model.ts";
+import { publicBase, type Resolver } from "./observer-public-base.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { sourceRepository } from "./observer-github.ts";
 
@@ -11,12 +12,16 @@ type Dependencies = {
   masterKey: string;
   modelBases: string[];
   httpBases: string[];
+  /** DNS lookups for participant bases; tests replace it. */
+  resolve?: Resolver | null;
   artifactDownload?: (reference: string) => Promise<string>;
 };
 const known = new Set([
   "team_required",
   "model_request_already_received",
   "request_id_conflict",
+  "invalid_team_model",
+  "invalid_team_model_mode",
   "competition_project_required",
   "projects_not_enabled",
   "invalid_repository_url",
@@ -57,6 +62,10 @@ function text(value: unknown, max: number, empty = false): string {
   }
   return value.trim();
 }
+/** Recognition hint only: never more than the last four characters of a long key. */
+export function keyHint(key: string): string {
+  return key.length >= 16 ? key.slice(-4) : "";
+}
 
 export async function portalRequest(request: Request, d: Dependencies): Promise<unknown> {
   const body = await boundedJson(request, 98304);
@@ -73,13 +82,16 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
   };
   const staging = d.service.storage.from("observer-staging");
   switch (body.action) {
+    // Relay mode only: the open page answers its team's model calls with a key
+    // that exists only in that page. The routes are empty in stored mode.
     case "model_routes":
       return await userRpc("observer_personal_model_routes");
     case "personal_model":
       return await fulfillPersonalModel(body, d.userId, {
         rpc: serviceRpc,
         fetch,
-        allowedBases: new Set(d.modelBases),
+        trustedBases: new Set(d.modelBases),
+        resolve: d.resolve,
         send: (topic, event, payload) => sendModelBroadcast(d.service, topic, event, payload),
       });
     case "diagnostics":
@@ -116,6 +128,7 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
         projects: results[1].data,
         batches: results[2].data,
         providers: await userRpc("observer_list_providers"),
+        team_model: await userRpc("observer_team_model"),
         model_bases: d.modelBases,
       };
     }
@@ -196,7 +209,40 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
       return { accepted: true };
     }
     case "save_provider":
+      // The former multi-provider settings stay retired; teams use save_team_model.
       throw new ProxyError(410, "ephemeral_credentials_required");
+    case "save_team_model": {
+      let key = typeof body.key === "string" ? body.key.trim() : "";
+      body.key = "";
+      // Any public HTTPS base (or an exact organizer-configured one); never HTTP, an IP or an internal name.
+      const base = await publicBase(body.base_url, new Set(d.modelBases), d.resolve);
+      if (!base) throw new ProxyError(400, "model_destination_not_enabled");
+      const model = typeof body.model === "string" ? body.model.trim() : "";
+      if (
+        !model || model.length > 256 || /\p{Cc}/u.test(model) ||
+        key.length < 8 || key.length > 8192 || /[\s\p{Cc}]/u.test(key)
+      ) throw new ProxyError(400, "invalid_team_model");
+      const id = crypto.randomUUID();
+      // Encrypted here, bound to its provider ID; the database only receives ciphertext.
+      const encrypted = await encryptCredential(key, id, d.masterKey);
+      const hint = keyHint(key);
+      key = "";
+      await serviceRpc("observer_save_team_model", {
+        p_user: d.userId,
+        p_provider: id,
+        p_base: base,
+        p_model: model,
+        p_encrypted_key: encrypted,
+        p_key_hint: hint,
+      });
+      return { team_model: await userRpc("observer_team_model") };
+    }
+    case "delete_team_model":
+      return { deleted: await userRpc("observer_delete_team_model") };
+    case "set_team_model_mode":
+      if (body.mode !== "stored" && body.mode !== "relay") throw new ProxyError(400, "invalid_team_model_mode");
+      // Choosing "relay" deletes any saved key in the same database transaction.
+      return { mode: await userRpc("observer_set_team_model_mode", { p_mode: body.mode }) };
     case "disable_provider":
       await userRpc("observer_disable_provider", { p_id: uuid(body.id) });
       return { accepted: true };
