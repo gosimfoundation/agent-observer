@@ -10,9 +10,12 @@ import { downloadObject } from '../lib/storage'
 import { useFlash } from '../stores/flash'
 import { competition } from '../stores/competition'
 import PageHead from '../components/layout/PageHead.vue'
+import { useQuestFlags } from '../composables/useQuestFlags'
 
 const { t, pick } = useI18n()
 const flash = useFlash()
+// A signed-in download counts as the dashboard quest's kit step.
+const { remember } = useQuestFlags()
 const scenarios = ref<Scenario[]>([])
 const loading = ref(true)
 const busy = ref<string | null>(null)
@@ -71,7 +74,7 @@ onMounted(async () => {
             <span class="label accent">{{ kit[0].n }}</span>
             <h3 class="mt-3">{{ t(kit[0].title) }}</h3>
             <p>{{ t(kit[0].desc) }}</p>
-            <p class="mt-5"><a class="btn primary" :href="kit[0].href" download>{{ t(kit[0].label) }} ↓</a></p>
+            <p class="mt-5"><a class="btn primary" :href="kit[0].href" download @click="remember('prepare')">{{ t(kit[0].label) }} ↓</a></p>
           </article>
         </div>
       </div>

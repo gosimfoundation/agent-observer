@@ -121,7 +121,13 @@
     "minutes": "min",
     "seconds": "s",
     "countdown_aria": "Compte à rebours avant la phase suivante",
-    "none_scheduled": "Aucune phase à venir pour l'instant"
+    "none_scheduled": "Aucune phase à venir pour l'instant",
+    "starts_on": "début le {date}",
+    "left_days": "dans {n} jours",
+    "left_day": "dans 1 jour",
+    "left_hours": "dans {n} h",
+    "left_soon": "commence bientôt",
+    "next_line": "Phase suivante : {name} · {day} · {left}"
   },
   "cta": {
     "title": "La prochaine observation, c'est vous et votre agent qui la décidez",
@@ -767,6 +773,27 @@
       "team_unavailable": "Cette équipe n’est plus disponible.",
       "invitation_not_found": "Cette demande ne vous est pas adressée.",
       "invitation_finished": "Cette demande a déjà été traitée."
+    },
+    "solo": "Participer en solo (1 clic)",
+    "solo_lede": "En solo ? Créez en un clic une équipe d’une personne à votre nom. Vous pourrez ensuite augmenter la taille et inviter des coéquipiers.",
+    "solo_done": "Équipe solo « {name} » créée. Vous pouvez commencer.",
+    "directory": {
+      "title": "Équipes",
+      "lede": "Choisissez une équipe pour envoyer une demande. Vous la rejoignez dès que son capitaine accepte.",
+      "search": "Rechercher une équipe",
+      "show_all": "Tout afficher ({n})",
+      "recruiting": "{n} recrutent",
+      "empty": "Aucune équipe ne correspond",
+      "create_own": "Créer votre équipe",
+      "go_solo": "Participer en solo",
+      "more": "Afficher {n} de plus",
+      "request": "Demander à rejoindre",
+      "requested": "Demande envoyée · voir le suivi",
+      "sign_in": "Se connecter pour demander",
+      "yours": "Votre équipe",
+      "paused": "Recrutement fermé",
+      "full": "Complète",
+      "in_team": "Déjà dans une équipe"
     }
   },
   "submit": {
@@ -810,12 +837,71 @@
       "invalid": "Vérifiez le point d'accès, le modèle et la clé."
     }
   },
+  "dash": {
+    "quest": {
+      "title": "Premiers pas",
+      "progress": "{done}/{total} terminées",
+      "done_step": "terminé",
+      "next_action": "Étape suivante : {action}",
+      "done_title": "Tout est prêt",
+      "done_text": "Continuez à améliorer votre agent et à soumettre pour grimper au classement.",
+      "done_board": "Voir le classement",
+      "practice": {
+        "team": {
+          "title": "Former une équipe (ou jouer en solo)",
+          "hint": "Jusqu’à 3 personnes par équipe ; en solo, vous formez une équipe d’une personne.",
+          "action": "Former une équipe"
+        },
+        "prepare": {
+          "title": "Télécharger le kit de démarrage",
+          "hint": "Décompressez-le et lancez l’agent d’exemple pour produire votre premier decisions.csv en local.",
+          "action": "Télécharger le kit"
+        },
+        "submit": {
+          "title": "Première soumission",
+          "hint": "Téléversez decisions.csv sur la page Participer ; la plateforme la note automatiquement.",
+          "action": "Soumettre"
+        },
+        "review": {
+          "title": "Voir le rejeu et le score",
+          "hint": "Voyez ce que chaque décision a observé, puis améliorez votre stratégie.",
+          "action": "Voir le rejeu et le score"
+        }
+      },
+      "competition": {
+        "team": {
+          "title": "Former une équipe",
+          "hint": "Jusqu’à 3 personnes par équipe ; vous pouvez aussi concourir seul.",
+          "action": "Former une équipe"
+        },
+        "prepare": {
+          "title": "Préparer votre projet (kit et documentation)",
+          "hint": "Appuyez-vous sur le projet d’exemple complet et la documentation de l’interface pour coder votre agent dans le langage de votre choix.",
+          "action": "Ouvrir le kit et la documentation"
+        },
+        "submit": {
+          "title": "Soumettre le projet et lancer une évaluation",
+          "hint": "Téléversez un dépôt ou un ZIP sur Participer, confirmez la version, puis lancez l’évaluation.",
+          "action": "Aller à Participer"
+        },
+        "review": {
+          "title": "Voir le score et le rejeu",
+          "hint": "Une fois l’évaluation terminée, examinez le détail du score et le rejeu pour savoir quoi améliorer.",
+          "action": "Voir le score et le rejeu"
+        }
+      }
+    }
+  },
   "eggs": {
     "mid_autumn": {
       "title": "Joyeuse fête de la Mi-Automne !",
       "body": "Ce soir, la Lune est trop brillante pour le ciel profond : les observatoires font une pause gâteaux de lune.",
       "rabbit": "Lâcher le lapin de jade 🐇",
-      "close": "Fermer"
+      "close": "Fermer",
+      "sky_title": "Ce soir, la Lune est dans la région {region}",
+      "sky_body": "Le ciel du relevé est découpé en 8 régions de 45° d'ascension droite. Dans le score, la lumière de la Lune dégrade la qualité des observations proches d'elle, d'autant plus qu'elle est pleine et proche. Observer {region} ce soir, c'est la pire affaire. Prenez d'abord un gâteau de lune.",
+      "sky_numbers": "La Lune en ce moment : AD {ra}°, Déc {dec}°, éclairée à {lit} %",
+      "sky_label": "Bande du relevé en ascension droite de 0° à 360°, régions R00 à R07 ; la lueur marque la Lune de ce soir"
     }
   }
 }

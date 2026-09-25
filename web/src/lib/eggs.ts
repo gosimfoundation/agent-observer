@@ -18,6 +18,29 @@ export function isFullMoonToday(): boolean {
   return Math.abs(moonPhase() - 0.5) < 0.017
 }
 
+/**
+ * Where the Moon is on the sky and how much of it is lit, with the same low-precision
+ * formulas as challenge/tile_geometry_simulator.py, so it matches the moonlight the scoring uses.
+ */
+export function moonSky(date = new Date()): { ra: number; dec: number; illumination: number } {
+  const r = Math.PI / 180
+  const deg = (x: number) => ((x % 360) + 360) % 360
+  const days = date.getTime() / 86_400_000 + 2440587.5 - 2451545.0
+  const obliquity = (23.439 - 0.0000004 * days) * r
+  const lon = deg(218.316 + 13.176396 * days) * r + 6.289 * r * Math.sin(deg(134.963 + 13.064993 * days) * r)
+  const lat = 5.128 * r * Math.sin(deg(93.272 + 13.22935 * days) * r)
+  const y = Math.sin(lon) * Math.cos(lat) * Math.cos(obliquity) - Math.sin(lat) * Math.sin(obliquity)
+  const z = Math.sin(lon) * Math.cos(lat) * Math.sin(obliquity) + Math.sin(lat) * Math.cos(obliquity)
+  const ra = deg(Math.atan2(y, Math.cos(lon) * Math.cos(lat)) / r)
+  const dec = Math.asin(z) / r
+  const anomaly = deg(357.528 + 0.9856003 * days) * r
+  const sunLon = deg(280.46 + 0.9856474 * days + 1.915 * Math.sin(anomaly) + 0.02 * Math.sin(2 * anomaly)) * r
+  const sunRa = Math.atan2(Math.cos(obliquity) * Math.sin(sunLon), Math.cos(sunLon))
+  const sunDec = Math.asin(Math.sin(obliquity) * Math.sin(sunLon))
+  const cosSep = Math.sin(sunDec) * Math.sin(dec * r) + Math.cos(sunDec) * Math.cos(dec * r) * Math.cos(sunRa - ra * r)
+  return { ra, dec, illumination: (1 - Math.max(-1, Math.min(1, cosSep))) / 2 }
+}
+
 /** Mid-Autumn Festival (the 15th day of the 8th lunar month), as calendar dates in China. */
 const MID_AUTUMN = ['2026-09-25', '2027-09-15', '2028-10-03', '2029-09-22', '2030-09-12']
 

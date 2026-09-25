@@ -18,7 +18,6 @@ provideTheme()
   <a href="#main-content" class="skip-link">{{ t('a11y.skip') }}</a>
   <ScrollProgress />
   <BrowserNotice />
-  <RegisterFloat />
   <AppHeader />
   <AnnouncementBanner />
   <div id="main-content" tabindex="-1">
@@ -30,6 +29,8 @@ provideTheme()
     </router-view>
   </div>
   <AppFooter />
+  <!-- after the footer: its spacer must be the last thing in the page flow -->
+  <RegisterFloat />
   <FlashContainer />
   <MidAutumnEgg />
 </template>

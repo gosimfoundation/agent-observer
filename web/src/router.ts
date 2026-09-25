@@ -52,6 +52,13 @@ const router = createRouter({
   },
 })
 
+// Static deep links are published as <route>/index.html, so GitHub Pages answers /rules with a
+// redirect to /rules/. Keep one canonical path for the exact-path checks across the app.
+router.beforeEach((to: RouteLocationNormalized) => {
+  if (to.path.length > 1 && to.path.endsWith('/')) return { path: to.path.replace(/\/+$/, '') || '/', query: to.query, hash: to.hash, replace: true }
+  return true
+})
+
 router.beforeEach(async (to: RouteLocationNormalized) => {
   await loadCompetition()
   if (!to.meta.auth) return true

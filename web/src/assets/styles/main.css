@@ -505,7 +505,8 @@ button:disabled { cursor: not-allowed; }
 .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .75rem; color: #315efb; }
 .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
 
-.page-head { padding: clamp(3rem, 6vw, 6rem) 0 clamp(2rem, 4vw, 3.5rem); border-bottom: 1px solid rgba(255,255,255,.2); }
+/* Vertical padding only: the head keeps .wrap's side padding and lines up with the page content. */
+.page-head { padding-top: clamp(3rem, 6vw, 6rem); padding-bottom: clamp(2rem, 4vw, 3.5rem); border-bottom: 1px solid rgba(255,255,255,.2); }
 .page-head h1 { font-size: clamp(2.4rem, 4.9vw, 4.9rem); font-weight: 600; letter-spacing: -.05em; line-height: 1.04; max-width: 16ch; text-wrap: balance; color: #f5f5f5; }
 .page-head .lede { margin-top: 1.5rem; }
 .section { position: relative; overflow: hidden; border-top: 1px solid rgba(255,255,255,.18); padding: clamp(3.5rem, 6vw, 7rem) 0; }
@@ -970,10 +971,24 @@ a:focus-visible, button:focus-visible, [role="tab"]:focus-visible, input:focus-v
 .poster-kicker.kicker-xl { font-size: 1.35rem; letter-spacing: .2em; }
 .poster-kicker.kicker-xl::before { width: 3.2rem; }
 
-.register-float { position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 55; min-height: 52px; padding: .9rem 1.6rem;
-  box-shadow: 0 10px 34px rgba(63,94,251,.45); animation: register-pulse 3.2s ease-in-out infinite; }
-@keyframes register-pulse { 0%, 100% { box-shadow: 0 10px 34px rgba(63,94,251,.45); } 50% { box-shadow: 0 10px 44px rgba(124,92,255,.6); } }
-@media (prefers-reduced-motion: reduce) { .register-float { animation: none; } }
+/* Visitors on phones get a compact register bar on the bottom edge (from md up the header has the
+   button, so the bar is never rendered there). A spacer of the same height ends the page while the
+   bar is shown, so no content, score or button is ever left underneath it. */
+:root { --register-bar-h: 3.75rem; }
+.register-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; display: flex;
+  height: calc(var(--register-bar-h) + env(safe-area-inset-bottom, 0px));
+  padding: .5rem max(1rem, env(safe-area-inset-right, 0px)) calc(.5rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+  border-top: 1px solid rgba(120,166,255,.35); background: rgba(6,10,22,.94);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.register-bar .register-float { flex: 1; min-height: 0; padding: .5rem 1rem; box-shadow: 0 6px 22px rgba(63,94,251,.35); }
+.register-bar-spacer { height: calc(var(--register-bar-h) + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) { .register-bar, .register-bar-spacer { display: none; } }
+/* Toasts rise above the bar instead of covering it. */
+body:has(.register-bar) .flash-stack { bottom: calc(var(--register-bar-h) + env(safe-area-inset-bottom, 0px) + .75rem); }
+/* Team page: the one-click solo option, set apart from the create-team form below it. */
+.solo-callout { padding-bottom: 1.25rem; border-bottom: 1px dashed rgba(255,255,255,.14); }
 
 .team-cell { display: inline-flex; align-items: center; gap: .55rem; max-width: 11rem; vertical-align: middle; }
 /* Chinese has no spaces, so a name in a narrow cell breaks one character to a line. Keep it whole. */

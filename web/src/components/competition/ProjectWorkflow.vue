@@ -73,7 +73,7 @@ const words = computed(() => pick({
   confirmed: '已确认版本。', queued: '已加入评测队列。', failed: '操作未完成，请刷新后重试。', working: '处理中…',
   team: '请先加入或创建队伍。', phaseUnavailable: '当前没有开放的评测赛程。',
 }))
-const activePhases = computed(() => (data.value?.phases ?? []).filter(p => p.phase_id===competition.phaseId && p.phases.is_active &&
+const activePhases = computed(() => (data.value?.phases ?? []).filter(p => (p.phase_id===competition.phaseId||p.phase_id===competition.betaPhaseId) && p.phases.is_active &&
   (!p.phases.ends_at || Date.parse(p.phases.ends_at) > Date.now())))
 const projectsOpen = computed(() => activePhases.value.some(p => p.projects_enabled))
 const openPhases = computed(() => activePhases.value.filter(p => !p.phases.starts_at || Date.parse(p.phases.starts_at) <= Date.now()))
@@ -108,7 +108,10 @@ async function reload() {
   data.value = await portal<PortalData>('list')
   modeChoice.value = modelMode.value
   await personal.refresh()
-  if (!openPhases.value.some(p => p.phase_id === phaseId.value)) phaseId.value = openPhases.value[0]?.phase_id ?? ''
+  // Bind evaluations to the entry phase (beta entry first), never to whatever
+  // order the database happened to return.
+  const preferred=competition.betaPhaseId??competition.phaseId
+  if (!openPhases.value.some(p => p.phase_id === phaseId.value)) phaseId.value = openPhases.value.find(p => p.phase_id===preferred)?.phase_id ?? openPhases.value[0]?.phase_id ?? ''
 }
 async function action(work: () => Promise<void>, success = words.value.done) {
   if (busy.value) return

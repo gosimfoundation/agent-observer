@@ -2,7 +2,7 @@
 import EvaluationHistory from '../components/dashboard/EvaluationHistory.vue'
 import { competition } from '../stores/competition'
 import UserAvatar from '../components/UserAvatar.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '../composables/useI18n'
 import { appUrl } from '../composables/api'
@@ -16,6 +16,9 @@ import DashShell from '../components/layout/DashShell.vue'
 import StatusPill from '../components/layout/StatusPill.vue'
 import SkeletonRows from '../components/layout/SkeletonRows.vue'
 import CreditsPanel from '../components/dashboard/CreditsPanel.vue'
+import QuestPanel from '../components/dashboard/QuestPanel.vue'
+import { useQuestFlags } from '../composables/useQuestFlags'
+import { questProgress } from '../lib/quest'
 
 const { t, tf, pick } = useI18n()
 const route = useRoute()
@@ -26,7 +29,32 @@ const quota = ref<Record<string, number>>({})
 const submissions = ref<any[]>([])
 const members = ref<any[]>([])
 const loading = ref(true)
+// Formal-competition progress for the quest: the latest evaluation batch and whether a project exists.
+const latestBatch = ref<string | null>(null)
+const projectCount = ref(0)
+const { flags, remember } = useQuestFlags()
+const quest = computed(() => questProgress({
+  hasTeam: Boolean(team.value),
+  prepared: Boolean(flags.value.prepare) || (competition.mode === 'competition' && projectCount.value > 0),
+  submitted: competition.mode === 'competition' ? Boolean(latestBatch.value) : submissions.value.length > 0,
+  reviewed: Boolean(flags.value.review),
+}))
+const questResultTo = computed(() => {
+  if (competition.mode === 'competition') return latestBatch.value ? `/compete#batch-${latestBatch.value}` : '/submissions'
+  const shown = submissions.value.find(s => s.status === 'scored') ?? submissions.value[0]
+  return shown ? `/submissions/${shown.id}` : '/submissions'
+})
 const watcher = useSubmissionWatch(loadSubmissions, () => submissions.value.some(s => PENDING_STATUSES.has(s.status)))
+
+async function loadFormalProgress() {
+  if (!team.value) return
+  const [batches, projects] = await Promise.all([
+    supabase.from('observer_batches').select('id').eq('team_id', team.value.id).eq('purpose', 'formal').order('created_at', { ascending: false }).limit(1),
+    supabase.from('observer_projects').select('id', { count: 'exact', head: true }).eq('team_id', team.value.id),
+  ])
+  latestBatch.value = batches.data?.[0]?.id ?? null
+  projectCount.value = projects.count ?? 0
+}
 
 async function loadSubmissions() {
   if (!team.value) return
@@ -40,6 +68,7 @@ onMounted(async () => {
   try {
     phases.value = await loadPhases()
     if (team.value) {
+      const formal = competition.mode === 'competition' ? loadFormalProgress().catch(() => undefined) : Promise.resolve()
       await loadSubmissions()
       const [{ data: memberRows }, ...counts] = await Promise.all([
         supabase.rpc('team_members', { p_team_id: team.value.id }),
@@ -55,6 +84,7 @@ onMounted(async () => {
       ])
       members.value = memberRows ?? []
       quota.value = Object.fromEntries(counts)
+      await formal
       watcher.start(team.value.id)
     }
   } finally { loading.value = false }
@@ -66,13 +96,9 @@ onMounted(async () => {
     <div v-if="loading" class="dash-grid"><div class="panel"><SkeletonRows :rows="5" :cols="5" :label="t('dash.loading')" /></div><div class="panel"><SkeletonRows :rows="3" :cols="2" :label="t('dash.loading')" /></div></div>
     <div v-else class="dash-grid">
       <div>
-        <div v-if="!team" class="panel">
-          <div class="hd"><h2>{{ t('dash.no_team_title') }}</h2></div>
-          <p class="text2">{{ t('dash.no_team') }}</p>
-          <p class="mt-5"><router-link class="btn primary sm" to="/team">{{ t('nav.team') }} →</router-link></p>
-        </div>
-        <EvaluationHistory v-else-if="competition.mode==='competition'" :limit="5" />
-        <div v-else class="panel">
+        <QuestPanel class="mb-8" :mode="competition.mode" :progress="quest" :result-to="questResultTo" />
+        <EvaluationHistory v-if="team && competition.mode==='competition'" :limit="5" :quiet="!quest.finished" />
+        <div v-else-if="team" class="panel">
           <div class="hd"><h2>{{ t('dash.recent') }}</h2><router-link class="label accent" to="/submissions">{{ t('dash.all_submissions') }} →</router-link></div>
           <div v-if="submissions.length" class="table-wrap">
             <table class="data-table">
@@ -90,7 +116,7 @@ onMounted(async () => {
             </table>
           </div>
           <p v-else class="text2">{{ t('subs.empty') }}</p>
-          <p class="mt-5"><router-link class="btn primary sm" to="/compete">{{ t('dash.new_submission') }} →</router-link></p>
+          <p class="mt-5"><router-link class="btn sm" :class="{ primary: quest.finished }" to="/compete">{{ t('dash.new_submission') }} →</router-link></p>
         </div>
 
         <div class="panel mt-8">
@@ -129,9 +155,9 @@ onMounted(async () => {
         <div class="panel mt-8">
           <div class="hd"><h2>{{ t('resources.kicker') }}</h2></div>
           <div class="flex flex-col gap-2">
-            <router-link class="btn sm primary" to="/start">{{ t('nav.start') }} →</router-link>
-            <a v-if="competition.mode==='practice'" class="btn sm" :href="appUrl('/downloads/agent-observer-starter-kit.zip')" download>{{ t('dash.quick.kit') }} ↓</a>
-            <router-link v-else class="btn sm" to="/resources">{{ t('dash.quick.kit') }} →</router-link>
+            <router-link class="btn sm" to="/start">{{ t('nav.start') }} →</router-link>
+            <a v-if="competition.mode==='practice'" class="btn sm" :href="appUrl('/downloads/agent-observer-starter-kit.zip')" download @click="remember('prepare')">{{ t('dash.quick.kit') }} ↓</a>
+            <router-link v-else class="btn sm" to="/resources" @click="remember('prepare')">{{ t('dash.quick.kit') }} →</router-link>
             <router-link class="btn sm" to="/docs">{{ t('dash.quick.docs') }} →</router-link>
             <a class="btn sm" :href="appUrl('/skill.md')" target="_blank" rel="noopener">SKILL.md →</a>
           </div>
