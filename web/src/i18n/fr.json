@@ -390,7 +390,7 @@
           "desc": "Observer une tuile, ou attendre. Une action par créneau, avec sa raison."
         }
       ],
-      "closing": "Aucun bagage en astronomie n'est requis. Pendant la formation en ligne du 1 au 4 octobre, des astronomes internationaux et des experts des agents animent des séances de pratique.",
+      "closing": "Aucun bagage en astronomie n'est requis. Pendant la formation en ligne du 1 au 4 octobre, des astronomes internationaux et des experts des agents animent des séances de pratique ; vous pouvez aussi répéter le déroulement de la compétition avec un projet complet sur le Playground.",
       "cardKicker": "Comment arrive le sujet",
       "cardTitle": "Une carte de mission de relevé",
       "cardLede": "Chaque manche commence par une carte de mission. Tout ce qui vous engage y est écrit :",
@@ -448,7 +448,7 @@
         {
           "n": "03",
           "title": "Soumettre pour évaluation",
-          "desc": "Exécutez votre agent sur votre machine et téléversez le decisions.csv qu'il produit. Le Playground et la compétition en ligne n'acceptent que ce fichier, et chaque équipe est notée par le même évaluateur figé."
+          "desc": "Au Playground, téléversez le decisions.csv produit sur votre machine, ou soumettez un projet complet (classement séparé). La compétition accepte un projet complet ou le CSV d'une session locale officielle. Chaque équipe est notée par le même évaluateur figé."
         }
       ],
       "timeline": [
@@ -508,7 +508,7 @@
       "items": [
         {
           "title": "Projets et CSV",
-          "desc": "Le Playground accepte toujours decisions.csv. La compétition accepte un projet complet par dépôt public ou ZIP privé, ou le CSV exporté par une session locale officielle."
+          "desc": "Le Playground accepte decisions.csv, ou un projet complet sur un classement séparé (5 par équipe et par jour). La compétition accepte un projet complet par dépôt public ou ZIP privé, ou le CSV exporté par une session locale officielle."
         },
         {
           "title": "Limites",

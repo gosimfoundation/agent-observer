@@ -25,6 +25,8 @@ python3 score_decisions.py --scenario scenarios/dev-reference --decisions run_ou
 
 CSV 列固定为 `decision_id, slot_id, action, tile_id, program, request_id, reason`。提交成功后进入详情页，查看评测状态、得分构成、完成情况和回放。每个场景分别排名，保留本队最高分。
 
+想按正式赛流程演练，在「参赛」页选「提交完整项目」，提交 GitHub 仓库或 ZIP。平台在云端逐轮运行你的程序，题目由练习赛数据生成。每队每天 5 次，只能用本队自己的模型密钥，成绩进单独的完整项目榜。正式赛在北京时间 10 月 5–7 日举行，10 月 1–4 日培训期间建议用这种方式把流程走一遍。
+
 ## 5. 数据与评分
 
 `config/` 包含规则配置；`outputs/reference/` 包含天区、目标、日历、时隙、天气、预报、事件和观测请求。公开文件可从资源页下载。当前练习场景使用原有 `participant-agent-protocol-v1` 合约，已有成绩与回放保持不变。

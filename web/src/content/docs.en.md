@@ -18,13 +18,15 @@ Two arenas: **the Playground** is for practice — submit freely, scores land in
 
 | | Practice | Online competition |
 |---|---|---|
-| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | `eval-a`, `eval-b` (30 nights each); current information released through the session, future weather private |
-| Submissions | results files (`decisions.csv`), 50 per team per day | complete projects or official local-session CSVs, 10 complete batches per team per day |
+| Scenarios | `demo-week` (7 nights), `dev-fortnight` (14 nights) and `dev-reference` (180 nights, the published example); weather, forecasts and events public | announced when the competition opens; current information released through the session, future weather private |
+| Submissions | results files (`decisions.csv`), 50 per team per day; or complete projects, 5 per team per day on a separate board | complete projects or official local-session CSVs, 10 complete batches per team per day |
 | Score | ranked per scenario; informational | mean of all scenarios in the same batch; best complete batch counts |
 
 For public practice data, `score_decisions.py` reproduces the platform report. Competition scores are computed by the trusted server; hidden weather and anomaly answers are never included in participant projects or downloads.
 
 Both phases use the same scorer and the same `score_config.json`, and the reports have the same format, so a strategy tuned in the Playground carries straight into the competition.
+
+**Rehearsing before the competition.** The Playground complete-project track runs the same flow as the competition: you submit a repository or ZIP and the platform runs it round by round in the cloud. Its scenarios are generated from Playground data and have no anomaly mechanics; each team gets 5 evaluations per day, uses its own model key only, and is ranked on a separate board. During the October 1–4 training, use it to go through the competition flow end to end; practice the anomaly mechanics locally with the starter kit's `finals-preview`.
 
 ### Competition project and local-session flow
 
@@ -71,7 +73,7 @@ Dashboard → Submit. Choose the phase, the scenario and the file; the page show
 
 ```
 python3 sac_submit.py --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
+python3 sac_submit.py --phase online --kind results --scenario <competition-scenario> --file run_output/decisions.csv --wait
 ```
 
 `sac_submit.py` reads `SAC_URL`, `SAC_KEY`, `SAC_EMAIL` and `SAC_PASSWORD` (see the Resources page) and `--wait` polls until the evaluation finishes.

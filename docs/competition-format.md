@@ -10,17 +10,21 @@ versions and evaluation batches. A prominent Submit button links to that workspa
 | | Current Playground | Formal competition after the administrator switches |
 |---|---|---|
 | Entry | `/compete` | `/compete` |
-| Input | locally generated `decisions.csv` | complete repository or private project ZIP; no CSV |
+| Input | locally generated `decisions.csv`; or a complete project on the separate `practice-projects` board (5 evaluations per team per day) | complete repository or private project ZIP; no CSV |
 | Execution | participant computer, original scorer | approved project version, platform-controlled sequential observations |
-| Scenario | existing public scenarios | a new secret random seed per team and attempt, calibrated difficulty |
+| Scenario | existing public scenarios; the complete-project board uses scenarios generated from them | a new secret random seed per team and attempt, calibrated difficulty |
 | Ranking | best score per scenario, unchanged | best complete batch, mean calibrated score over all scenarios |
-| Model | optional | optional; participant supplies API and quota, no organizer credits |
+| Model | optional; complete-project board: team's own key only | optional; participant supplies API and quota, no organizer credits |
 | Personal credentials | never include in results | HTTPS only; team's choice: saved encrypted on the server (default, deleted after verification) or kept only in the open page |
 
 Formal evaluation accepts a decision only for its current sequence, records it,
 then publishes the next observation. Private seeds, frozen generator/calibration
 versions and immutable decisions support independent reconstruction and scoring.
 CSV remains an exported result artifact, not a formal submission format.
+
+The formal phase (`online`) runs Beijing time 10-05 00:00 to 10-07 23:59; its scenario list stays hidden until then.
+Before that, including the October 1–4 training, teams rehearse the formal flow on the Playground
+complete-project board (`scripts/configure-observer-practice-projects.py`), which never uses formal scenarios.
 
 See `randomized-evaluation.md` for calibration and
 `model-api-keys.md` for the personal API flow. Existing scores and

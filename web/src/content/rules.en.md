@@ -10,6 +10,7 @@
 | Phase | Dates (UTC) | Submissions | Board |
 |---|---|---|---|
 | Practice | from registration until Awards Day | decisions.csv, 50 per team per day | informational |
+| Practice · complete projects | same | complete projects, 5 evaluations per team per day | separate board, informational |
 | Online Competition | 2026-10-04 16:00 to 2026-10-07 15:59 (Oct 5–7 in UTC+8) | complete projects or local-session CSVs, 10 batches per team per day | decides the awards |
 | Awards Day | 2026-10-17 at GOSIM Shenzhen | none | final results announced |
 
@@ -17,10 +18,10 @@ The live phase configuration table above this document is authoritative if the t
 
 ## 3. What you submit
 
-1. **Practice results.** The Playground still accepts `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, scored by the frozen scorer. Existing submissions, scores, replays and practice rankings remain unchanged.
+1. **Practice results.** The Playground still accepts `decisions.csv` with the columns `decision_id, slot_id, action, tile_id, program, request_id, reason`, scored by the frozen scorer. Existing submissions, scores, replays and practice rankings remain unchanged. The Playground also has a complete-project track: it runs the same flow as the competition on scenarios generated from Playground data, 5 evaluations per team per day, with the team's own model key only and a separate board. Before the competition, including the October 1–4 training, use it to rehearse the competition flow.
 2. **Complete competition projects.** Submit a public GitHub repository URL or a private project ZIP. Any project language is allowed; Python is only the platform runner. The platform fixes the source version, checks launch settings and runs a public preview. If adaptation is needed, a model proposes reviewable interface files that the participant must confirm before formal evaluation. Calling a model is optional.
 3. **Local competition CSVs.** Start a local session on the project page, download the runner, execute your project on your computer and upload the session's exported `decisions.csv`. The server reveals current information and actual observation results step by step. The CSV must match the decisions actually executed by the server. Cloud projects use the same interface; future weather and anomaly answers are not downloadable.
-4. CSV files are limited to 20 MB; project ZIPs to 50 MB. Practice scenarios retain their original `participant-agent-protocol-v1` contract. Competition scenarios use the anomaly mechanics in `participant-agent-protocol-v2`; the starter kit's `finals-preview` is available for public rehearsal.
+4. CSV files are limited to 20 MB; project ZIPs to 50 MB. Practice scenarios retain their original `participant-agent-protocol-v1` contract. Competition scenarios use the anomaly mechanics in `participant-agent-protocol-v2`; the starter kit's `finals-preview` lets you rehearse the anomaly mechanics locally.
 
 ## 4. Running locally
 

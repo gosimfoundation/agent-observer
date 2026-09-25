@@ -25,6 +25,8 @@ Open [Submit](/compete), choose the scenario you used locally and upload `run_ou
 
 The columns are `decision_id, slot_id, action, tile_id, program, request_id, reason`. After submission, inspect evaluation status, score components, completion and replay. Each scenario has separate standings using the team's best score.
 
+To rehearse the competition flow, choose Submit a complete project on Participate and submit a GitHub repository or ZIP. The platform runs your program round by round in the cloud on scenarios generated from Playground data. Each team gets 5 evaluations per day, uses its own model key only, and is ranked on a separate complete-project board. The competition runs October 5–7 (Beijing time); during the October 1–4 training, use this track to go through the flow once.
+
 ## 5. Data and scoring
 
 `config/` contains rules. `outputs/reference/` contains tiles, targets, calendar, slots, weather, forecasts, events and requests. Public files are downloadable from Resources. Current practice scenarios retain the original `participant-agent-protocol-v1` contract; existing scores and replays are preserved.

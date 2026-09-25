@@ -18,13 +18,15 @@
 
 | | Playground | 线上比赛 |
 |---|---|---|
-| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | `eval-a`、`eval-b`（各 30 晚）；通过会话逐步提供当前信息，未来天气不公开 |
-| 提交 | 结果文件（`decisions.csv`），每队每天 50 次 | 完整项目或官方本地会话 CSV，每队每天 10 个完整批次 |
+| 场景 | `demo-week`（7 晚演示）、`dev-fortnight`（14 晚）与 `dev-reference`（180 晚，公开示例）；天气、预报、事件全部公开 | 开赛时公布；通过会话逐步提供当前信息，未来天气不公开 |
+| 提交 | 结果文件（`decisions.csv`），每队每天 50 次；或完整项目，每队每天 5 次，单独榜单 | 完整项目或官方本地会话 CSV，每队每天 10 个完整批次 |
 | 得分 | 按场景分开排名，仅供参考 | 同一批全部场景的平均值，每队取最高分的完整批次 |
 
 公开练习数据可用 `score_decisions.py` 在本地复现评分。正式赛由服务器计算官方成绩，隐藏天气与异常答案不会放入选手项目或下载文件。
 
 两个阶段用同一个评分器和同一份 `score_config.json`，报告格式相同，因此 Playground 调出来的策略可以直接用于比赛。
+
+**赛前演练。** Playground 的「完整项目」赛道和正式赛走同一套流程：提交仓库或 ZIP，平台在云端逐轮运行。题目由练习赛数据生成，没有异常机制；每队每天 5 次，只能用本队自己的模型密钥，成绩进单独榜单。10 月 1–4 日培训期间建议用它把正式赛流程完整走一遍；异常机制用入门包的 `finals-preview` 在本地练习。
 
 ### 正式赛项目与本地会话
 
@@ -71,7 +73,7 @@ python3 fetch_scenario.py --list && python3 fetch_scenario.py dev-fortnight   # 
 
 ```
 python3 sac_submit.py --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
+python3 sac_submit.py --phase online --kind results --scenario <正式场景> --file run_output/decisions.csv --wait
 ```
 
 `sac_submit.py` 读取 `SAC_URL`、`SAC_KEY`、`SAC_EMAIL`、`SAC_PASSWORD`（见「资源」页），`--wait` 轮询直到评测结束。
