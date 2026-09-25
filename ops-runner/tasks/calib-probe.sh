@@ -2,7 +2,7 @@
 # Read-only: state of practice-projects scenarios, bundles, calibration and batches.
 set -euo pipefail
 source ops-runner/lib.sh
-out=ops-runner/results/calib/probe.json
+mkdir -p ops-runner/results/calib; out=ops-runner/results/calib/probe.json
 {
 echo '{"phase":'; sql "select p.id,p.slug,p.is_active,p.counts_for_final,s.* from public.phases p left join public.observer_phase_settings s on s.phase_id=p.id where p.slug in ('practice-projects','online')"
 echo ',"scenarios":'; sql "select s.id,s.slug,s.global_wallclock_seconds,b.storage_path,b.digest from public.phase_scenarios ps join public.phases ph on ph.id=ps.phase_id join public.scenarios s on s.id=ps.scenario_id left join private.observer_scenario_bundles b on b.scenario_id=s.id where ph.slug='practice-projects' order by s.slug"
