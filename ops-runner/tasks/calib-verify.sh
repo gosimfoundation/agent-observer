@@ -6,6 +6,7 @@ load_project_keys
 engine="$(tr -d '[:space:]' < ops-runner/calib/ENGINE_SHA)"
 git fetch -q origin "$engine"; git worktree add -q /tmp/main "$engine"
 rows="$(sql "select s.slug,b.storage_path,p.profile from private.observer_scenario_calibration c join public.phases ph on ph.id=c.phase_id join public.scenarios s on s.id=c.scenario_id join private.observer_scenario_bundles b on b.scenario_id=s.id join private.observer_calibration_profiles p on p.id=c.profile_id where ph.slug='practice-projects' order by s.slug")"
+if [ "$rows" = "[]" ]; then echo "no registered calibration; using candidate profiles"; rows="$(cat ops-runner/results/calib/candidate-profiles.json)"; fi
 PYTHONPATH=ops-runner/analysis timeout 85m python ops-runner/analysis/calib_verify.py "$rows" || echo "verify failed"
 git config user.name "ops-runner"; git config user.email "ops-runner@users.noreply.github.com"
 git add ops-runner/results/calib && git commit -q -m "Calibration verify results"

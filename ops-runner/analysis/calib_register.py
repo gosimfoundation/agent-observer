@@ -43,6 +43,20 @@ manifest = {'phase_id': phase['id'], 'scenarios': entries,
             'runner_versions': {i['organization']: i['approved_sha'] for i in installs}}
 (work / 'manifest.json').write_text(json.dumps(manifest))
 out = {'report': report}
+# The exact profiles configure-observer-calibration.py would register (it re-fits
+# and applies the preregistered validation criteria); saved for the verify task.
+cspec = importlib.util.spec_from_file_location('cfgcal', MAIN / 'scripts/configure-observer-calibration.py')
+cfgcal = importlib.util.module_from_spec(cspec); cspec.loader.exec_module(cfgcal)
+candidates = []
+for sc, entry in zip(scenarios, entries):
+    try:
+        prof = cfgcal.reviewed_profile(entry['template'], entry['study'])
+        candidates.append({'slug': sc['slug'], 'storage_path': sc['storage_path'], 'bundle_digest': sc['digest'], 'profile': prof})
+        report[sc['slug']]['reviewed'] = {'ok': True, 'accepted_validation': prof['accepted_validation']}
+    except Exception as error:
+        report[sc['slug']]['reviewed'] = {'ok': False, 'error': str(error)}
+    print(sc['slug'], 'reviewed', json.dumps(report[sc['slug']]['reviewed']), flush=True)
+Path('ops-runner/results/calib/candidate-profiles.json').write_text(json.dumps(candidates, indent=1))
 dry = subprocess.run([sys.executable, str(MAIN / 'scripts/configure-observer-calibration.py'), str(work / 'manifest.json')],
                      capture_output=True, text=True, cwd=MAIN)
 out['dry_run'] = {'rc': dry.returncode, 'stdout': dry.stdout[-2000:], 'stderr': dry.stderr[-2000:]}
