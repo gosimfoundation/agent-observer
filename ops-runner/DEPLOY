@@ -1,3 +1,3 @@
 ref=claude/stored-model-keys
-apply=0
+apply=1
 functions=observer-model observer-portal
