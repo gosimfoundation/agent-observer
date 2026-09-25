@@ -1,0 +1,653 @@
+[
+ {
+  "file": "visitor-home.zh.desktop.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 3.96,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.zh.desktop.jpg",
+  "path": "/start",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/start?lang=zh",
+  "status": 200,
+  "seconds": 2.76,
+  "errors": []
+ },
+ {
+  "file": "visitor-brief.zh.desktop.jpg",
+  "path": "/brief",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/brief?lang=zh",
+  "status": 200,
+  "seconds": 2.77,
+  "errors": []
+ },
+ {
+  "file": "visitor-rules.zh.desktop.jpg",
+  "path": "/rules",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/rules?lang=zh",
+  "status": 200,
+  "seconds": 2.61,
+  "errors": []
+ },
+ {
+  "file": "visitor-docs.zh.desktop.jpg",
+  "path": "/docs",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/docs?lang=zh",
+  "status": 200,
+  "seconds": 2.37,
+  "errors": []
+ },
+ {
+  "file": "visitor-faq.zh.desktop.jpg",
+  "path": "/faq",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/faq?lang=zh",
+  "status": 200,
+  "seconds": 2.58,
+  "errors": []
+ },
+ {
+  "file": "visitor-resources.zh.desktop.jpg",
+  "path": "/resources",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/resources?lang=zh",
+  "status": 200,
+  "seconds": 2.6,
+  "errors": []
+ },
+ {
+  "file": "visitor-leaderboard.zh.desktop.jpg",
+  "path": "/leaderboard",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/leaderboard?lang=zh",
+  "status": 200,
+  "seconds": 3.59,
+  "errors": []
+ },
+ {
+  "file": "visitor-announcements.zh.desktop.jpg",
+  "path": "/announcements",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/announcements?lang=zh",
+  "status": 200,
+  "seconds": 2.77,
+  "errors": []
+ },
+ {
+  "file": "visitor-teammates.zh.desktop.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/teammates?lang=zh",
+  "status": 200,
+  "seconds": 2.88,
+  "errors": []
+ },
+ {
+  "file": "visitor-register.zh.desktop.jpg",
+  "path": "/register",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/register?lang=zh",
+  "status": 200,
+  "seconds": 2.34,
+  "errors": []
+ },
+ {
+  "file": "visitor-register_mode-login.zh.desktop.jpg",
+  "path": "/register?mode=login",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/register?mode=login&lang=zh",
+  "status": 200,
+  "seconds": 2.34,
+  "errors": []
+ },
+ {
+  "file": "visitor-no-such-page.zh.desktop.jpg",
+  "path": "/no-such-page",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/no-such-page?lang=zh",
+  "status": 200,
+  "seconds": 2.36,
+  "errors": []
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.zh.desktop.jpg",
+  "path": "/dashboard",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/dashboard?lang=zh",
+  "status": 200,
+  "seconds": 2.82,
+  "errors": []
+ },
+ {
+  "file": "member-compete.zh.desktop.jpg",
+  "path": "/compete",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/compete?lang=zh",
+  "status": 200,
+  "seconds": 2.76,
+  "errors": []
+ },
+ {
+  "file": "member-team.zh.desktop.jpg",
+  "path": "/team",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/team?lang=zh",
+  "status": 200,
+  "seconds": 3.06,
+  "errors": []
+ },
+ {
+  "file": "member-notifications.zh.desktop.jpg",
+  "path": "/notifications",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/notifications?lang=zh",
+  "status": 200,
+  "seconds": 2.85,
+  "errors": []
+ },
+ {
+  "file": "member-submissions.zh.desktop.jpg",
+  "path": "/submissions",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/submissions?lang=zh",
+  "status": 200,
+  "seconds": 2.56,
+  "errors": []
+ },
+ {
+  "file": "member-profile.zh.desktop.jpg",
+  "path": "/profile",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/profile?lang=zh",
+  "status": 200,
+  "seconds": 2.74,
+  "errors": []
+ },
+ {
+  "file": "member-teammates.zh.desktop.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/teammates?lang=zh",
+  "status": 200,
+  "seconds": 2.98,
+  "errors": []
+ },
+ {
+  "file": "member-home.zh.desktop.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "desktop",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 3.68,
+  "errors": []
+ },
+ {
+  "file": "visitor-home.zh.mobile.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 3.84,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.zh.mobile.jpg",
+  "path": "/start",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/start?lang=zh",
+  "status": 200,
+  "seconds": 2.62,
+  "errors": []
+ },
+ {
+  "file": "visitor-brief.zh.mobile.jpg",
+  "path": "/brief",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/brief?lang=zh",
+  "status": 200,
+  "seconds": 2.57,
+  "errors": []
+ },
+ {
+  "file": "visitor-rules.zh.mobile.jpg",
+  "path": "/rules",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/rules?lang=zh",
+  "status": 200,
+  "seconds": 2.53,
+  "errors": []
+ },
+ {
+  "file": "visitor-docs.zh.mobile.jpg",
+  "path": "/docs",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/docs?lang=zh",
+  "status": 200,
+  "seconds": 2.32,
+  "errors": []
+ },
+ {
+  "file": "visitor-faq.zh.mobile.jpg",
+  "path": "/faq",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/faq?lang=zh",
+  "status": 200,
+  "seconds": 2.53,
+  "errors": []
+ },
+ {
+  "file": "visitor-resources.zh.mobile.jpg",
+  "path": "/resources",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/resources?lang=zh",
+  "status": 200,
+  "seconds": 2.58,
+  "errors": []
+ },
+ {
+  "file": "visitor-leaderboard.zh.mobile.jpg",
+  "path": "/leaderboard",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/leaderboard?lang=zh",
+  "status": 200,
+  "seconds": 2.86,
+  "errors": []
+ },
+ {
+  "file": "visitor-announcements.zh.mobile.jpg",
+  "path": "/announcements",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/announcements?lang=zh",
+  "status": 200,
+  "seconds": 2.53,
+  "errors": []
+ },
+ {
+  "file": "visitor-teammates.zh.mobile.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/teammates?lang=zh",
+  "status": 200,
+  "seconds": 2.72,
+  "errors": []
+ },
+ {
+  "file": "visitor-register.zh.mobile.jpg",
+  "path": "/register",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/register?lang=zh",
+  "status": 200,
+  "seconds": 2.3,
+  "errors": []
+ },
+ {
+  "file": "visitor-register_mode-login.zh.mobile.jpg",
+  "path": "/register?mode=login",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/register?mode=login&lang=zh",
+  "status": 200,
+  "seconds": 2.29,
+  "errors": []
+ },
+ {
+  "file": "visitor-no-such-page.zh.mobile.jpg",
+  "path": "/no-such-page",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/no-such-page?lang=zh",
+  "status": 200,
+  "seconds": 2.34,
+  "errors": []
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.zh.mobile.jpg",
+  "path": "/dashboard",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/dashboard?lang=zh",
+  "status": 200,
+  "seconds": 2.79,
+  "errors": []
+ },
+ {
+  "file": "member-compete.zh.mobile.jpg",
+  "path": "/compete",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/compete?lang=zh",
+  "status": 200,
+  "seconds": 2.78,
+  "errors": []
+ },
+ {
+  "file": "member-team.zh.mobile.jpg",
+  "path": "/team",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/team?lang=zh",
+  "status": 200,
+  "seconds": 3.56,
+  "errors": []
+ },
+ {
+  "file": "member-notifications.zh.mobile.jpg",
+  "path": "/notifications",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/notifications?lang=zh",
+  "status": 200,
+  "seconds": 2.76,
+  "errors": []
+ },
+ {
+  "file": "member-submissions.zh.mobile.jpg",
+  "path": "/submissions",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/submissions?lang=zh",
+  "status": 200,
+  "seconds": 2.56,
+  "errors": []
+ },
+ {
+  "file": "member-profile.zh.mobile.jpg",
+  "path": "/profile",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/profile?lang=zh",
+  "status": 200,
+  "seconds": 2.56,
+  "errors": []
+ },
+ {
+  "file": "member-teammates.zh.mobile.jpg",
+  "path": "/teammates",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/teammates?lang=zh",
+  "status": 200,
+  "seconds": 2.82,
+  "errors": []
+ },
+ {
+  "file": "member-home.zh.mobile.jpg",
+  "path": "/",
+  "lang": "zh",
+  "view": "mobile",
+  "final_url": "/?lang=zh",
+  "status": 200,
+  "seconds": 3.57,
+  "errors": []
+ },
+ {
+  "file": "visitor-home.en.desktop.jpg",
+  "path": "/",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/?lang=en",
+  "status": 200,
+  "seconds": 4.05,
+  "errors": []
+ },
+ {
+  "file": "visitor-start.en.desktop.jpg",
+  "path": "/start",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/start?lang=en",
+  "status": 200,
+  "seconds": 2.74,
+  "errors": []
+ },
+ {
+  "file": "visitor-brief.en.desktop.jpg",
+  "path": "/brief",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/brief?lang=en",
+  "status": 200,
+  "seconds": 2.53,
+  "errors": []
+ },
+ {
+  "file": "visitor-rules.en.desktop.jpg",
+  "path": "/rules",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/rules?lang=en",
+  "status": 200,
+  "seconds": 2.59,
+  "errors": []
+ },
+ {
+  "file": "visitor-docs.en.desktop.jpg",
+  "path": "/docs",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/docs?lang=en",
+  "status": 200,
+  "seconds": 2.31,
+  "errors": []
+ },
+ {
+  "file": "visitor-faq.en.desktop.jpg",
+  "path": "/faq",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/faq?lang=en",
+  "status": 200,
+  "seconds": 2.55,
+  "errors": []
+ },
+ {
+  "file": "visitor-resources.en.desktop.jpg",
+  "path": "/resources",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/resources?lang=en",
+  "status": 200,
+  "seconds": 2.56,
+  "errors": []
+ },
+ {
+  "file": "visitor-leaderboard.en.desktop.jpg",
+  "path": "/leaderboard",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/leaderboard?lang=en",
+  "status": 200,
+  "seconds": 3.06,
+  "errors": []
+ },
+ {
+  "file": "visitor-announcements.en.desktop.jpg",
+  "path": "/announcements",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/announcements?lang=en",
+  "status": 200,
+  "seconds": 2.58,
+  "errors": []
+ },
+ {
+  "file": "visitor-teammates.en.desktop.jpg",
+  "path": "/teammates",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/teammates?lang=en",
+  "status": 200,
+  "seconds": 3.58,
+  "errors": []
+ },
+ {
+  "file": "visitor-register.en.desktop.jpg",
+  "path": "/register",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/register?lang=en",
+  "status": 200,
+  "seconds": 2.32,
+  "errors": []
+ },
+ {
+  "file": "visitor-register_mode-login.en.desktop.jpg",
+  "path": "/register?mode=login",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/register?mode=login&lang=en",
+  "status": 200,
+  "seconds": 2.3,
+  "errors": []
+ },
+ {
+  "file": "visitor-no-such-page.en.desktop.jpg",
+  "path": "/no-such-page",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/no-such-page?lang=en",
+  "status": 200,
+  "seconds": 2.31,
+  "errors": []
+ },
+ {
+  "file": null,
+  "path": "login",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/dashboard"
+ },
+ {
+  "file": "member-dashboard.en.desktop.jpg",
+  "path": "/dashboard",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/dashboard?lang=en",
+  "status": 200,
+  "seconds": 2.75,
+  "errors": []
+ },
+ {
+  "file": "member-compete.en.desktop.jpg",
+  "path": "/compete",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/compete?lang=en",
+  "status": 200,
+  "seconds": 2.79,
+  "errors": []
+ },
+ {
+  "file": "member-team.en.desktop.jpg",
+  "path": "/team",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/team?lang=en",
+  "status": 200,
+  "seconds": 2.98,
+  "errors": []
+ },
+ {
+  "file": "member-notifications.en.desktop.jpg",
+  "path": "/notifications",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/notifications?lang=en",
+  "status": 200,
+  "seconds": 2.78,
+  "errors": []
+ },
+ {
+  "file": "member-submissions.en.desktop.jpg",
+  "path": "/submissions",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/submissions?lang=en",
+  "status": 200,
+  "seconds": 2.54,
+  "errors": []
+ },
+ {
+  "file": "member-profile.en.desktop.jpg",
+  "path": "/profile",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/profile?lang=en",
+  "status": 200,
+  "seconds": 2.53,
+  "errors": []
+ },
+ {
+  "file": "member-teammates.en.desktop.jpg",
+  "path": "/teammates",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/teammates?lang=en",
+  "status": 200,
+  "seconds": 3.58,
+  "errors": []
+ },
+ {
+  "file": "member-home.en.desktop.jpg",
+  "path": "/",
+  "lang": "en",
+  "view": "desktop",
+  "final_url": "/?lang=en",
+  "status": 200,
+  "seconds": 3.05,
+  "errors": []
+ }
+]
