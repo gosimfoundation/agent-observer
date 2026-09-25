@@ -40,13 +40,66 @@
      "score": null,
      "error": "engine_job_failed"
     }
+   ],
+   "diag": [
+    {
+     "run": "0f1dc099-57b8-46c9-8a5f-0f6395edef77",
+     "jobs": [
+      {
+       "kind": "engine",
+       "status": "failed",
+       "code": "scenario_preparation_timeout",
+       "log": ""
+      },
+      {
+       "kind": "execute",
+       "status": "failed",
+       "code": "invalid_or_expired_capability",
+       "log": "\n"
+      }
+     ]
+    }
    ]
   },
   "rust-zip": {
    "revision_id": "b561011a-122e-4846-a762-988ac760373b",
    "provider": null,
    "batch_id": "87a4f9d9-31d1-464e-9a26-ef3ab564f837",
-   "public_test_score": -19294.5
+   "public_test_score": -19294.5,
+   "done": true,
+   "result": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 70.643575,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ],
+   "diag": [
+    {
+     "run": "315a968f-1091-4015-a4a8-d32fce11a2fb",
+     "jobs": [
+      {
+       "kind": "engine",
+       "status": "failed",
+       "code": "scenario_preparation_timeout",
+       "log": ""
+      },
+      {
+       "kind": "execute",
+       "status": "failed",
+       "code": "invalid_or_expired_capability",
+       "log": "\n"
+      }
+     ]
+    }
+   ]
   }
  },
  "log": [
@@ -227,6 +280,57 @@
    "event": "error",
    "case": "rust-zip",
    "error": "batch still running"
+  },
+  {
+   "t": "14:31:54",
+   "event": "finished",
+   "case": "rust-zip",
+   "status": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 70.643575,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ]
+  },
+  {
+   "t": "14:31:58",
+   "event": "diagnostics",
+   "case": "repo-glm",
+   "run": "0f1dc099-57b8-46c9-8a5f-0f6395edef77",
+   "jobs": [
+    [
+     "engine",
+     "scenario_preparation_timeout"
+    ],
+    [
+     "execute",
+     "invalid_or_expired_capability"
+    ]
+   ]
+  },
+  {
+   "t": "14:32:00",
+   "event": "diagnostics",
+   "case": "rust-zip",
+   "run": "315a968f-1091-4015-a4a8-d32fce11a2fb",
+   "jobs": [
+    [
+     "engine",
+     "scenario_preparation_timeout"
+    ],
+    [
+     "execute",
+     "invalid_or_expired_capability"
+    ]
+   ]
   }
  ]
 }

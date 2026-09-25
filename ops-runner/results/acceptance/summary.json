@@ -36,10 +36,21 @@
   "error": null
  },
  "rust-zip": {
-  "result": null,
+  "result": "failed",
   "score": null,
   "public_test_score": -19294.5,
-  "runs": null,
+  "runs": [
+   {
+    "status": "scored",
+    "score": 70.643575,
+    "error": ""
+   },
+   {
+    "status": "failed",
+    "score": null,
+    "error": "engine_job_failed"
+   }
+  ],
   "error": null
  }
 }
