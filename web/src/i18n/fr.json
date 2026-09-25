@@ -275,17 +275,17 @@
     "eyebrow": "Hackathon GOSIM · Relevé du ciel intelligent",
     "system": "Agent Observateur",
     "subtitle": "巡天智能体",
-    "lede": "Construisez l'agent observateur des nuits de relevé : il lit l'état du ciel, raisonne comme un observateur principal et choisit la prochaine observation toutes les 900 secondes.",
+    "lede": "Écrivez un agent qui pilote un télescope de relevé pendant la nuit : il lit l'état du ciel, décide comme un observateur principal et choisit la prochaine observation toutes les 900 secondes.",
     "pipeline": [
       {
         "label": "Formation en ligne",
         "date": "1–4 oct.",
-        "note": "Rencontrez astronomes internationaux et experts des agents"
+        "note": "Séances avec des astronomes internationaux et des experts des agents"
       },
       {
         "label": "Compétition en ligne",
         "date": "5–7 oct.",
-        "note": "Modèle KIMI SOTA + prix généreux"
+        "note": "Modèle KIMI · 5 500 $ de prix"
       },
       {
         "label": "Remise des prix",
@@ -356,7 +356,7 @@
       },
       "weather_help": "Seeing : flou des étoiles, plus petit = plus net (secondes d'arc). Transparence : clarté de l'atmosphère, plus grand = mieux. Ciel : luminosité propre du ciel nocturne. Instrument : rendement de l'équipement à cet instant.",
       "seek": "Faites glisser la position du rejeu",
-      "top_score": "Partie du champion : {score} points · à battre",
+      "top_score": "Partie du champion : {score} points",
       "lst": "Direction visée par le télescope · heure du ciel {lst}"
     },
     "pipeline_intro": "Jalons"
@@ -365,10 +365,10 @@
     "vision": {
       "kicker": "01 / Vision",
       "title": "Un banc d'essai ouvert pour les relevés du ciel intelligents",
-      "lede": "Le ciel est trop vaste et le temps d'observation trop précieux pour pointer le télescope au hasard.",
+      "lede": "Il y a bien plus de tuiles que de temps d'observation : chaque pointage doit être choisi.",
       "paragraphs": [
         "Chaque nuit, un télescope de relevé fait face à des milliers de tuiles observables. La météo change, la visibilité des cibles change, les priorités scientifiques changent. Chaque décision de l'observateur humain pèse sur la qualité de l'échantillon cosmique final.",
-        "Nous construisons un banc d'essai ouvert : un agent lit l'état du ciel nocturne, raisonne comme un observateur expérimenté et décide la prochaine observation à chaque créneau de 900 secondes. Tous les participants reçoivent le même plan de relevé, le même rejeu météo, les mêmes requêtes, le même simulateur et le même barème — la seule variable est la stratégie."
+        "Nous construisons un banc d'essai ouvert : un agent lit l'état du ciel nocturne, raisonne comme un observateur expérimenté et décide la prochaine observation à chaque créneau de 900 secondes. Tous les participants reçoivent le même plan de relevé, le même rejeu météo, les mêmes requêtes, le même simulateur et le même barème ; les équipes ne diffèrent que par leur stratégie."
       ],
       "link": "Lire la présentation complète"
     },
@@ -390,7 +390,7 @@
           "desc": "Observer une tuile, ou attendre. Une action par créneau, avec sa raison."
         }
       ],
-      "closing": "Pas de bagage en astronomie ? Aucun souci : pendant la formation en ligne du 1 au 4 octobre, des astronomes internationaux et des experts des agents encadrent la pratique ensemble.",
+      "closing": "Aucun bagage en astronomie n'est requis. Pendant la formation en ligne du 1 au 4 octobre, des astronomes internationaux et des experts des agents animent des séances de pratique.",
       "cardKicker": "Comment arrive le sujet",
       "cardTitle": "Une carte de mission de relevé",
       "cardLede": "Chaque manche commence par une carte de mission. Tout ce qui vous engage y est écrit :",
@@ -599,14 +599,14 @@
     },
     "participants": {
       "kicker": "Mur des participants · LIVE",
-      "title": "Les participants sont les protagonistes",
+      "title": "Participants inscrits",
       "lede": "Chaque participant inscrit apparaît ici : niveau astronomie, niveau IA et recherche d'équipe.",
       "stat_total": "participants inscrits",
       "stat_teams": "équipes",
       "stat_looking": "cherchent des coéquipiers",
       "looking": "Cherche des coéquipiers",
       "in_team": "Équipe · {team}",
-      "empty_title": "Le mur des participants attend",
+      "empty_title": "Aucune carte pour l'instant",
       "empty_desc": "Cochez l'affichage de votre carte à l'inscription et vous apparaîtrez ici.",
       "cta_board": "Chercher des coéquipiers",
       "cta_wall_register": "S'inscrire",

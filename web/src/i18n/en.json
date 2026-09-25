@@ -144,17 +144,17 @@
     "eyebrow": "GOSIM Hackathon · Intelligent Survey Operations",
     "system": "Agentic Observer",
     "subtitle": "巡天智能体",
-    "lede": "Build a future agent observer for survey nights: read the sky state, reason like a leading observer, and choose the next observation every 900 seconds.",
+    "lede": "Write an agent that runs a survey telescope through the night: it reads the sky state, decides like a lead observer, and picks the next observation every 900 seconds.",
     "pipeline": [
       {
         "label": "Online Training",
         "date": "Oct 1–4",
-        "note": "Meet international astronomers and agent experts"
+        "note": "Sessions with international astronomers and agent experts"
       },
       {
         "label": "Online Competition",
         "date": "Oct 5–7",
-        "note": "KIMI SOTA model support + generous prizes"
+        "note": "KIMI model support · $5,500 prize pool"
       },
       {
         "label": "Awards Day",
@@ -230,7 +230,7 @@
       },
       "weather_help": "Seeing: how blurred stars are, lower is sharper (arcseconds). Transparency: how clear the atmosphere is, higher is better. Sky: how bright the night sky itself is. Instrument: how much the equipment is delivering right now.",
       "seek": "Drag the replay position",
-      "top_score": "Champion's run: {score} — beat it",
+      "top_score": "Champion's run: {score}",
       "lst": "Where the telescope points right now · sky time {lst}"
     },
     "pipeline_intro": "Milestones"
@@ -239,10 +239,10 @@
     "vision": {
       "kicker": "01 / Vision",
       "title": "Build an open benchmark for intelligent survey operations",
-      "lede": "The sky is too large and observing time too precious to point the telescope by chance.",
+      "lede": "There are far more tiles than observing time, so every pointing has to be chosen.",
       "paragraphs": [
         "Every night a survey telescope faces thousands of observable tiles. Weather changes, target visibility changes, and science priorities change. Every decision a human observer makes shapes the quality of the final cosmic sample.",
-        "We are building an open benchmark: an agent reads the state of the night sky, reasons like a seasoned observer, and decides the next observation every 900 seconds. Every participant receives the same survey plan, weather replay, inserted requests, simulator, and scoring rule — the only variable is strategy."
+        "We are building an open benchmark: an agent reads the state of the night sky, reasons like a seasoned observer, and decides the next observation every 900 seconds. Every participant receives the same survey plan, weather replay, inserted requests, simulator, and scoring rule, so teams differ only in strategy."
       ],
       "link": "Read the full event brief"
     },
@@ -264,7 +264,7 @@
           "desc": "Observe a tile, or wait. One action per slot, and the reason for it."
         }
       ],
-      "closing": "No astronomy background? No need to worry: in the October 1–4 online training, international astronomers and senior agent experts coach the practice together.",
+      "closing": "You don't need an astronomy background. During the October 1–4 online training, international astronomers and agent experts run practice sessions.",
       "cardKicker": "How the challenge arrives",
       "cardTitle": "One Survey Mission Card",
       "cardLede": "Every round of the challenge starts from a mission card. Everything that round holds you to is written on it:",
@@ -501,14 +501,14 @@
     },
     "participants": {
       "kicker": "Participants · LIVE",
-      "title": "The participants are the story of this competition",
+      "title": "Registered participants",
       "lede": "Every registered participant shows here: astronomy tier, AI tier, and team-up intent.",
       "stat_total": "Registered",
       "stat_teams": "Teams",
       "stat_looking": "Seeking teammates",
       "looking": "Seeking teammates",
       "in_team": "Team · {team}",
-      "empty_title": "The wall awaits its first card",
+      "empty_title": "No cards yet",
       "empty_desc": "Tick “show my card” when registering and you will appear here.",
       "cta_board": "Find teammates",
       "cta_wall_register": "Register",
