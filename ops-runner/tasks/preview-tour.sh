@@ -13,7 +13,7 @@ echo "preview of $branch at $(git -C /tmp/preview rev-parse --short HEAD)"
 npm ci --prefix /tmp/preview/web --no-audit --no-fund > /dev/null
 ( cd /tmp/preview/web && VITE_BASE_PATH=/survey26/platform/ VITE_SITE_URL=https://create.gosim.org/survey26/platform \
     VITE_SUPABASE_URL="$SUPABASE_URL" VITE_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" npm run build > /dev/null )
-( cd /tmp/preview/web && npx vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/preview.log 2>&1 & )
+( cd /tmp/preview/web && VITE_BASE_PATH=/survey26/platform/ npx vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/preview.log 2>&1 & )
 for _ in $(seq 1 30); do curl -sf http://127.0.0.1:4173/survey26/platform/ > /dev/null && break; sleep 1; done
 python -m pip install -q playwright==1.55.0
 python -m playwright install --with-deps chromium > /dev/null
