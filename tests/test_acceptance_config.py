@@ -124,7 +124,21 @@ def test_same_as_reuses_formal_scenarios_with_their_calibration(database):
     try:
         mod.check_scenario(next(iter(profiles)),'x');raise SystemError('formal scenario accepted')
     except mod.CheckError:pass
+    # An internal team-restricted lab on the same scenarios does not block --same-as ...
+    lab_team=make_hidden_team(uri,'Seeds Lab')
+    lab=uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh,counts_for_final) values(%s,'seeds-lab','Lab','实验室',true)",(lab,))
+    query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,access_team_id) values(%s,true,%s)',(lab,lab_team))
+    for s in profiles:query(uri,'insert into public.phase_scenarios values(%s,%s)',(lab,s))
     checked=[mod.check_scenario(s,'x','formal-copy') for s in sorted(profiles)]
+    # ... but a second participant-visible formal phase still does.
+    public=uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh,counts_for_final) values(%s,'other-formal','Other','其他',true)",(public,))
+    query(uri,'insert into public.phase_scenarios values(%s,%s)',(public,next(iter(profiles))))
+    try:
+        mod.check_scenario(next(iter(profiles)),'x','formal-copy');raise SystemError('public formal phase ignored')
+    except mod.CheckError:pass
+    query(uri,'delete from public.phase_scenarios where phase_id=%s',(public,))
     copied=mod.source_calibration('formal-copy',checked)
     assert copied==profiles
     plan=mod.plan_phase(mod.check_team(str(team)),checked,Args,copied)
