@@ -13,7 +13,8 @@ let timer: ReturnType<typeof setTimeout> | undefined
 
 /**
  * Tonight's Moon on the survey strip: right ascension 0–360° in the eight 45° regions R00–R07.
- * The glow is the scoring's moonlight falloff, exp(−separation / 35°) from tile_config.json.
+ * The glow follows the survey simulator's moonlight falloff, exp(−separation / 35°) from tile_config.json.
+ * It is tonight's real Moon: nobody's score depends on it (runs use their own simulated nights).
  */
 function skyNow() {
   const moon = moonSky()
