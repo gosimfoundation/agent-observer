@@ -61,7 +61,9 @@ def main():
     args = parser.parse_args()
     result, scenarios = plan(args)
     if args.apply:
-        result['bundles'] = [competition.prepare_bundle(s) for s in scenarios]
+        # Playground scenarios ship without hidden anomaly tags; the engine treats that file as optional.
+        practice_files = competition.FORMAL_FILES - {'outputs/reference/tile_anomalies.csv'}
+        result['bundles'] = [competition.prepare_bundle(s, practice_files) for s in scenarios]
         for statement in result['statements']: deploy.query(statement)
         result['current_competition'] = deploy.query('select public.current_competition() as value')[0]['value']
     result.pop('statements') if args.apply else None
