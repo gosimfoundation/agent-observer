@@ -43,7 +43,12 @@ The platform records the source revision and launch configuration, tests the int
 
 Bring your own API and quota if your algorithm needs a model. The platform does not provide model credits. Do not commit keys to your repository or ZIP.
 
-Enter a supported HTTPS endpoint, model and key in Participate and save them. The key is stored encrypted on the server, used only for evaluation and verification, never written to project files, run artifacts or logs, and deleted once the results have been verified. The page does not need to stay open during evaluation; you can replace or delete a saved key at any time.
+Enter a supported HTTPS endpoint, model and key in Participate and choose how the key is handled. Either way, the key never enters project files, run artifacts or logs.
+
+- **Save encrypted (default)**: the key is stored encrypted on the server, used only for evaluation and verification, and deleted once the results have been verified. The page does not need to stay open during evaluation; you can replace or delete a saved key at any time.
+- **Do not save**: the key stays only in your open page and is never stored on the server. Keep the page open until each evaluation finishes; model calls fail while it is closed. If your team is among the top teams and is verified, you must also open the page at the time agreed with the organizers.
+
+Switching from "save encrypted" to "do not save" deletes the stored key immediately.
 
 Deterministic algorithms do not need a key. Explanation length does not increase the performance score.
 

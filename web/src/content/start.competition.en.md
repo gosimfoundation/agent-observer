@@ -12,7 +12,10 @@ The prominent **Submit** button opens the single [Participate](/compete) workspa
 
 Models are optional. If needed, bring your own API and quota. Never place keys in the project.
 
-For model calls, enter a supported HTTPS endpoint, model and key in Participate and save them. The key is stored encrypted on the server, used only for evaluation and verification, and deleted once the results have been verified; the page does not need to stay open during evaluation.
+For model calls, enter a supported HTTPS endpoint, model and key in Participate and choose how the key is handled:
+
+- **Save encrypted (default)**: the key is stored encrypted on the server and deleted once the results have been verified; the page does not need to stay open during evaluation.
+- **Do not save**: the key stays only in the page; keep the page open until each evaluation finishes. If your team is verified as a top team, you must also open the page at the agreed time during verification.
 
 ## 4. Evaluate and review
 
