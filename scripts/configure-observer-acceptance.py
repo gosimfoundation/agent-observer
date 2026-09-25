@@ -65,8 +65,11 @@ def request(base,path,data=None,*,token=None,raw=False,headers=None):
 
 
 def query(sql):
-    return request('https://api.supabase.com','/v1/projects/'+os.environ['SUPABASE_PROJECT_REF']+'/database/query',
-                   {'query':sql},token=os.environ['SUPABASE_ACCESS_TOKEN'])
+    rows=request('https://api.supabase.com','/v1/projects/'+os.environ['SUPABASE_PROJECT_REF']+'/database/query',
+                 {'query':sql},token=os.environ['SUPABASE_ACCESS_TOKEN'])
+    # The management API answers with one JSON object per row (columns in select order);
+    # the checks below unpack rows positionally, like database cursors.
+    return [tuple(row.values()) if isinstance(row,dict) else row for row in rows or []]
 
 
 def one(sql):
