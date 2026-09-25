@@ -1,109 +1,110 @@
 {
- "started": "2026-09-25T18:17:16Z",
+ "started": "2026-09-25T18:29:04Z",
  "steps": [
   {
    "step": "setup",
-   "t": 60.6,
-   "took": 60.6,
+   "t": 7.1,
+   "took": 7.1,
    "team": "2d7cd14e",
-   "phase": "8e27c963"
+   "phase": "8e27c963",
+   "reused": true
   },
   {
    "step": "submission_accepted",
-   "t": 70.2,
-   "took": 9.6,
-   "revision": "54c488be"
+   "t": 16.6,
+   "took": 9.5,
+   "revision": "cbae0379"
   },
   {
    "step": "public_test_passed",
-   "t": 476.5,
-   "took": 406.3,
-   "public_test_score": 2459.301011
+   "t": 419.3,
+   "took": 402.7,
+   "public_test_score": 2350.523948
   },
   {
    "step": "approved",
-   "t": 523.7,
-   "took": 47.2
+   "t": 420.5,
+   "took": 1.2
   },
   {
    "step": "evaluation_queued",
-   "t": 538.2,
-   "took": 14.5,
-   "batch": "10b32940"
+   "t": 421.8,
+   "took": 1.3,
+   "batch": "5e2acf3b"
   },
   {
    "step": "instance_prepared",
-   "t": 591.4,
-   "took": 53.1,
+   "t": 458.7,
+   "took": 36.9,
    "candidate": "0",
-   "instance": "d6e07ef7b81d"
+   "instance": "7c3217cf1922"
   },
   {
    "step": "evaluation_terminal",
-   "t": 638.2,
-   "took": 46.8,
+   "t": 480.6,
+   "took": 21.9,
    "status": "scored",
    "runs": [
     {
      "status": "scored",
-     "score": 83.932917,
+     "score": 92.248179,
      "error": ""
     }
    ]
   },
   {
    "step": "score_recorded",
-   "t": 641.4,
-   "took": 3.3,
-   "score": 83.932917,
+   "t": 483.6,
+   "took": 2.9,
+   "score": 92.248179,
    "raw": "-17200",
    "termination": "global_wallclock_expired",
-   "actions": "1"
+   "actions": "2"
   }
  ],
  "team": "2d7cd14e",
  "phase": "8e27c963",
  "scenario": "observer-platform-smoke-1",
- "revision": "54c488be-7303-4d68-bbb1-f40e38ffa53c",
- "batch": "10b32940-18b8-40ba-9444-c64bbccb9a33",
+ "revision": "cbae0379-360a-4619-bf71-f38790fd2a0c",
+ "batch": "5e2acf3b-d767-4dd0-b3c3-7fdd87293187",
  "jobs": [
   {
    "job": "prepare",
    "status": "succeeded",
-   "queue_s": 11,
-   "work_s": 16,
-   "start_t": 81
+   "queue_s": 12,
+   "work_s": 22,
+   "start_t": 27
   },
   {
    "job": "preview:engine",
    "status": "succeeded",
    "queue_s": 13,
-   "work_s": 321,
-   "start_t": 118
+   "work_s": 326,
+   "start_t": 68
   },
   {
    "job": "preview:execute",
    "status": "succeeded",
    "queue_s": 15,
-   "work_s": 319,
-   "start_t": 118
+   "work_s": 325,
+   "start_t": 68
   },
   {
    "job": "formal:engine",
    "status": "succeeded",
-   "queue_s": 22,
-   "work_s": 55,
-   "start_t": 561
+   "queue_s": 11,
+   "work_s": 30,
+   "start_t": 434
   },
   {
    "job": "formal:execute",
    "status": "succeeded",
-   "queue_s": 26,
-   "work_s": 51,
-   "start_t": 561
+   "queue_s": 16,
+   "work_s": 26,
+   "start_t": 434
   }
  ],
  "ok": true,
  "dispatch_kicks": 4,
- "total_s": 644.6
+ "total_s": 486.0
 }
