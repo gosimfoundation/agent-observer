@@ -167,3 +167,9 @@ def test_bounded_preparation_reproduces_selection_and_stops_without_leaking_inpu
     with pytest.raises(InstanceError, match='scenario_preparation_failed'):
         prepare_bounded(TEMPLATE, tmp_path/'invalid', **{**arguments, 'seed': 'invalid-secret-value'})
     assert capsys.readouterr() == ('', '')
+
+
+def test_parallel_difficulty_matches_the_sequential_measurement(tmp_path):
+    scenario = tmp_path / 'candidate'
+    generate_candidate(TEMPLATE, scenario, seed='b' * 64, candidate=0)
+    assert measure_difficulty(scenario, workers=4) == measure_difficulty(scenario, workers=1)

@@ -28,7 +28,8 @@ def sample(args):
     with tempfile.TemporaryDirectory(prefix="observer-calibration-") as temp:
         scenario = Path(temp) / "scenario"
         record = generate_candidate(template, scenario, seed=seed, candidate=0)
-        difficulty = measure_difficulty(scenario)
+        # The study already runs one sample per worker process.
+        difficulty = measure_difficulty(scenario, workers=1)
         holdout = benchmark_policy(scenario, HOLDOUT_POLICY)
     return {"index": index, "instance_digest": record["instance_digest"],
             "difficulty": difficulty, "holdout": holdout,
