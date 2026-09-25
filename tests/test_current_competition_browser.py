@@ -20,20 +20,28 @@ def test_public_playground_pages_never_ask_participants_to_choose_a_stage(portal
     phase=uuid.uuid4()
     query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,'practice','Playground','练习赛 / Playground')",(phase,))
     query(uri,"update private.observer_site_mode set mode='practice',phase_id=%s",(phase,))
-    problems=[];errors=[]
+    problems=[];errors=[];private_requests=[]
     with sync_playwright() as pw:
         browser=pw.chromium.launch(channel=os.environ.get('OBSERVER_BROWSER_CHANNEL'))
         page=browser.new_page(viewport={'width':1365,'height':950})
         page.on('pageerror',lambda e:errors.append(str(e)))
+        page.on('request',lambda request: private_requests.append(request.url)
+                if '/rpc/champion_' in request.url or '/object/' in request.url and '/results/' in request.url else None)
         for language in ('zh','en','ja','fr'):
             for path in ('/','/start','/brief','/rules','/docs','/resources','/faq','/leaderboard','/teammates','/announcements'):
                 page.goto(portal_site+path+'?lang='+language)
                 page.locator('main').wait_for()
+                if path=='/':
+                    expect(page.get_by_test_id('sky-console')).to_have_attribute('data-replay-source','demo')
+                    expect(page.locator('.sky-live-title')).to_contain_text({
+                        'zh':'官方示例回放','en':'Official example replay',
+                        'ja':'公式サンプルのリプレイ','fr':'Rejeu de l’exemple officiel'}[language])
                 text=page.locator('main').inner_text()
                 match=re.search(r'正式赛|正式比赛|线上比赛|online competition|finals-preview|competition scenarios|正式大会|オンライン大会|compétition en ligne',text,re.I)
                 if match:problems.append((language,path,text[max(0,match.start()-40):match.end()+100]))
         browser.close()
     assert not errors,errors
+    assert not private_requests,private_requests
     assert not problems,'\n'.join(map(str,problems))
 
 

@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, replayHasCursor, replayPulseSec, setReplayData, settledCountAt, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
+import { replayActions, replayMeta, replayNetPrefix, replayNights, replayObserves, replaySite, replaySlots, replayTiles, replayTimeAt, replayTotals, replayHasCursor, replayPulseSec, settledCountAt, useReplayClock, SLOT_SECONDS } from '../../composables/useReplayClock'
 import { drawSkyMap, lstDeg, PAD, type ObservedMark } from '../../lib/skymap'
 import { OUTCOME_COLORS } from '../../lib/report'
 import { fmtUtc, num } from '../../lib/format'
-import { loadChampionRun, loadChampionReplay } from '../../lib/data'
-import UserAvatar from '../UserAvatar.vue'
-import { isSupabaseConfigured } from '../../lib/supabase'
 
 const { t, tf } = useI18n()
 const clock = useReplayClock()
 const canvas = ref<HTMLCanvasElement | null>(null)
-const champion = ref('')
-const championGithub = ref('')
 const progressUI = ref(0)
 const scrubbing = ref(false)
 const lstOpen = ref(false)
@@ -110,23 +105,6 @@ const tourStep = ref(-1)
 const tourOpen = computed(() => tourStep.value >= 0)
 const currentStep = computed(() => TOUR_STEPS.value[tourStep.value] ?? null)
 
-let championTimer: number | undefined
-let championSubmission = 0
-async function refreshChampion() {
-  if (!isSupabaseConfigured) return
-  try {
-    const meta = await loadChampionRun()
-    if (!meta) return
-    champion.value = meta.team_name
-    championGithub.value = meta.leader_github ?? ''
-    if (!meta.report_path || meta.submission_id === championSubmission) return
-    const raw = await loadChampionReplay(meta)
-    if (!raw) return
-    championSubmission = meta.submission_id
-    setReplayData(raw, 'champion', meta.team_name)
-  } catch { /* keep whatever replay is currently loaded */ }
-}
-
 function startTour() { tourStep.value = 0; clock.setPaused(true) }
 function nextStep() {
   if (tourStep.value < TOUR_STEPS.value.length - 1) { tourStep.value += 1; return }
@@ -139,8 +117,6 @@ function endTour() {
 }
 
 onMounted(() => {
-  void refreshChampion()
-  championTimer = window.setInterval(() => { if (!document.hidden) void refreshChampion() }, 60_000)
   if (canvas.value) { observer = new ResizeObserver(() => render()); observer.observe(canvas.value) }
   loop()
   let seen = true
@@ -156,15 +132,14 @@ function onHover(e: PointerEvent, inside: boolean) {
   clock.setPaused(inside)
 }
 
-onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect(); if (championTimer) window.clearInterval(championTimer) })
+onUnmounted(() => { cancelAnimationFrame(raf); observer?.disconnect() })
 </script>
 
 <template>
   <div class="sky-console" data-testid="sky-console" :data-replay-source="replayMeta.source" @pointerenter="onHover($event, true)" @pointerleave="onHover($event, false)">
     <div class="sky-console-head">
-      <span class="sky-live-title flex items-center gap-3"><span class="live-dot" :class="{ 'is-paused': paused || reduced }"></span><span>{{ t('hero.console.title') }}<b v-if="champion" class="sky-champ"><UserAvatar :name="champion" :github="championGithub" />@{{ champion }}</b></span></span>
+      <span class="sky-live-title flex items-center gap-3"><span class="live-dot" :class="{ 'is-paused': paused || reduced }"></span><span>{{ t('hero.console.title') }}</span></span>
       <span class="flex items-center gap-4">
-        <span v-if="replayMeta.source === 'champion'" class="sky-topscore">{{ tf('hero.console.top_score', { score: num(replayTotals.finalScore, 0) }) }}</span>
         <span class="text-white/60">{{ paused ? t('hero.console.paused') : tf('hero.console.replay_note', { nights: replayTotals.nights, actions: replayActions.length }) }}</span>
         <button type="button" class="replay-toggle" :aria-pressed="paused" :disabled="reduced" @click="clock.setPaused(!paused)">{{ paused ? t('hero.console.resume') : t('hero.console.pause') }}</button>
       </span>
