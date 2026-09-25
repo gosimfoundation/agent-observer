@@ -16,9 +16,9 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-BASE = "https://create.gosim.org/survey26/platform"
+BASE = os.environ.get("UX_BASE", "https://create.gosim.org/survey26/platform").rstrip("/")
 EMAIL = "ux-audit@create.gosim.org"
-OUT = Path("ops-runner/results/ux-tour") / time.strftime("%Y%m%d-%H%M%S")
+OUT = Path("ops-runner/results") / os.environ.get("UX_LABEL", "ux-tour") / time.strftime("%Y%m%d-%H%M%S")
 PUBLIC = ["/", "/start", "/brief", "/rules", "/docs", "/faq", "/resources", "/leaderboard",
           "/announcements", "/teammates", "/register", "/register?mode=login", "/no-such-page"]
 SIGNED_IN = ["/dashboard", "/compete", "/team", "/notifications", "/submissions", "/profile", "/teammates", "/"]
