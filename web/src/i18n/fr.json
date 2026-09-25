@@ -771,5 +771,13 @@
   },
   "submit": {
     "title": "Participer"
+  },
+  "eggs": {
+    "mid_autumn": {
+      "title": "Joyeuse fête de la Mi-Automne !",
+      "body": "Ce soir, la Lune est trop brillante pour le ciel profond : les observatoires font une pause gâteaux de lune.",
+      "rabbit": "Lâcher le lapin de jade 🐇",
+      "close": "Fermer"
+    }
   }
 }
