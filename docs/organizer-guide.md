@@ -143,17 +143,30 @@ python -m worker.main gen-scenario --slug eval-a --seed <新种子> --days 30 --
 **不要重新执行 `seed`**：练习场景（demo-week / dev-fortnight / dev-reference）已在存储中冻结，
 与入门包捆绑副本逐字节一致；生成模板升级后重新生成会破坏这一致性。入门包测试用固定校验值锁死了这两份副本。
 
-## 比赛结果核验后删除选手模型密钥
+## 选手模型密钥的自动删除
 
-正式赛中，队伍可选择把模型密钥加密保存在服务器上（默认），或不保存、评测期间保持页面打开。
-结果核验完成后，用 service role 执行（例如在 SQL 编辑器中）：
+正式赛中，队伍默认不保存模型密钥（评测期间保持页面打开）；只有主动选择“加密保存在服务器上”的队伍才会保存密钥。
+保存的密钥由 pg_cron 每小时检查一次，自动删除，无需手动执行 SQL。某队的密钥在以下条件同时满足时删除：
+
+- 所有可能使用该密钥的阶段（`counts_for_final`、`online`、`observer-acceptance-*`、`practice-projects`，站点处于比赛模式时还包括其他可运行评测的阶段）都已设置结束时间，且最后一个结束已满保留期（默认 7 天，留给成绩核实和前列复现）；
+- 密钥保存已满保留期；
+- 该队没有排队或进行中的评测、项目准备，也没有未结算的模型调用。
+
+核实需要更长时间时，可以延长保留期或暂停自动删除：
+
+```sql
+update private.observer_key_retention set retention = interval '14 days' where id;  -- 延长
+update private.observer_key_retention set enabled = false where id;                  -- 暂停
+```
+
+需要立刻删除全部选手密钥时，手动命令仍可用（service role）：
 
 ```sql
 select public.observer_purge_provider_keys();  -- 返回删除的密钥数量
 select count(*) from private.observer_providers where team_id is not null and encrypted_key <> '';  -- 应为 0
 ```
 
-只删除选手的密钥，不影响主办方接口；调用记录保留。可以重复执行，没有剩余时返回 0。详见 `docs/model-api-keys.md`。
+只删除选手的密钥，不影响主办方接口；调用记录保留。详见 `docs/model-api-keys.md`。
 
 ## 两个新开关（设置页）
 

@@ -9,22 +9,29 @@ behaviour. Deterministic projects need no API.
 
 Each team chooses in the workspace section **Model API (optional)**:
 
-| | Save encrypted (default, recommended) | Do not save (page relay) |
+| | Do not save (default, page relay) | Save encrypted (opt-in) |
 |---|---|---|
-| Key location | AES-GCM ciphertext in `private.observer_providers` | only the open page's memory |
-| Page must stay open | no | yes, until each evaluation finishes; also at the time agreed for top-team verification |
-| Call path | model proxy calls the provider directly | model proxy → Broadcast → open page → portal → provider |
-| Per-run bounds | phase settings: 10,000 calls, 10,000,000 tokens; one call at a time | 10,000 calls; one outstanding call |
+| Key location | only the open page's memory | AES-GCM ciphertext in `private.observer_providers` |
+| Page must stay open | yes, until each evaluation finishes; also at the time agreed for top-team verification | no |
+| Deleted | when the page closes | automatically after the results are verified (see "Automatic deletion"), or by the team at any time |
+| Call path | model proxy → Broadcast → open page → portal → provider | model proxy calls the provider directly |
+| Per-run bounds | 10,000 calls; one outstanding call | phase settings: 10,000 calls, 10,000,000 tokens; one call at a time |
 | Size caps | 64 KiB request, 192 KiB response | 64 KiB request, 192 KiB response |
 
-A team that has not chosen is in stored mode. Choosing "Do not save" deletes a
-saved key immediately (`observer_set_team_model_mode('relay')`, same transaction).
-Saving a key selects stored mode again. Only team members (not banned) can change
-the choice or manage the key; it is team-wide.
+Not saving is the default: a team that has not chosen is in relay mode
+(`20260926000600_model_key_opt_in_auto_purge`; teams that already chose stored
+mode or saved a key keep it). The workspace lists "Do not save (default)" first
+and selected, with one sentence on the trade-off (e.g. "Not saved: keep this page
+open during evaluations. Saved: stored encrypted and deleted automatically after
+the results are verified."). Saving on the server is an explicit opt-in: choosing
+"Save encrypted on the server" (`observer_set_team_model_mode('stored')`) or
+saving a key selects stored mode. Choosing "Do not save" deletes a saved key
+immediately (`observer_set_team_model_mode('relay')`, same transaction). Only team
+members (not banned) can change the choice or manage the key; it is team-wide.
 
-## Stored mode
+## Stored mode (opt-in)
 
-1. A member enters any public HTTPS endpoint (see "Which endpoints are accepted"
+1. After opting in, a member enters any public HTTPS endpoint (see "Which endpoints are accepted"
    below), the model and the key, and saves (`save_team_model` portal action,
    over HTTPS). The portal checks the endpoint, creates a new provider ID and
    encrypts the key with the Edge
@@ -63,7 +70,7 @@ model name) with an empty `encrypted_key`; unreferenced rows are deleted. Calls
 already in flight may finish. A team that saved a key but never made a call must
 delete the key before it can be disbanded (the row references the team).
 
-## Relay mode ("Do not save")
+## Relay mode ("Do not save", default)
 
 Unchanged ephemeral flow. The participant selects a supported HTTPS base, model
 and key in the workspace; they stay in Vue memory without browser storage. Each
@@ -85,11 +92,11 @@ model.
 
 ## Organizer steps
 
-Deploy in this order: `scripts/deploy-observer-backend.py --apply` (migration
-`20260926000200_stored_model_keys`; the script now applies every migration from
-`20260925000100` onward and records each hash), then the Edge functions
-`observer-model` and `observer-portal`, then the website. Formal model calls fail
-closed in between.
+Deploy in this order: `scripts/deploy-observer-backend.py --apply` (migrations
+`20260926000200_stored_model_keys` and `20260926000600_model_key_opt_in_auto_purge`;
+the script applies every migration from `20260925000100` onward and records each
+hash), then the Edge functions `observer-model` and `observer-portal`, then the
+website. Formal model calls fail closed in between.
 
 `OBSERVER_MODEL_BASES` (exact bases, comma-separated, written by
 `scripts/configure-observer-secrets.py`) is no longer an allowlist for teams. Its
@@ -131,9 +138,56 @@ The migration sets them for existing formal phases and
 `configure-observer-competition.py` uses them for new ones. Runs opened earlier
 keep the limits they started with.
 
-### Purge after the results are verified
+### Automatic deletion
 
-Run with the service role, for example in the SQL editor or management SQL API:
+No organizer step is needed. Where pg_cron is available (the hosted database),
+the job `observer-purge-provider-keys` runs `private.observer_auto_purge_provider_keys()`
+every hour (at minute 17). It wipes every participant-owned key of a team
+(saved team keys and keys retained from the former provider settings) with the
+same `private.observer_forget_provider_key` as the manual purge, once **all** of
+these hold:
+
+1. **No phase that can use the key is open or upcoming.** The phases that can
+   use a team's key are the active phases whose runs are formal
+   (`private.observer_personal_models_only`): `counts_for_final`, slug `online`,
+   `observer-acceptance-*` and `practice-projects`; while the site is in
+   competition mode, also every other active phase with
+   `observer_phase_settings`. A phase restricted to another team
+   (`access_team_id`) is ignored. Every such phase must have an `ends_at`, and
+   the latest one must have ended at least the retention period ago. An
+   open-ended phase (`ends_at` null) keeps the key.
+2. **The key was saved at least the retention period ago.**
+3. **Nothing of the team is in progress:** no queued/starting/ready/running run,
+   no queued/running batch, no queued/preparing project revision and no
+   unsettled model-call reservation on its keys.
+
+Why this rule: the schema has no "results verified" flag, so the end of the last
+phase that can use the key plus a retention period (default **7 days**) stands in
+for the verification window, including re-runs of top teams. Condition 3 means a
+key is never deleted under a running or queued evaluation. The check takes the
+team row lock, as saving and deleting a key do.
+
+The team's mode is left as it is; the workspace then shows stored mode without a
+saved key, and the team can save again or choose "Do not save". Each run that
+deletes keys writes an `observer.provider_keys_auto_purged` audit entry with the
+count and team IDs (never key material).
+
+Settings (service role), in `private.observer_key_retention`:
+
+```sql
+update private.observer_key_retention set retention = interval '14 days' where id;  -- longer verification
+update private.observer_key_retention set enabled = false where id;                  -- pause
+select * from private.observer_key_retention;  -- last_run_at shows the last check
+```
+
+Without pg_cron (plain PostgreSQL, e.g. the tests) the function is installed but
+not scheduled; call `select private.observer_auto_purge_provider_keys();` from
+any scheduler.
+
+### Manual purge
+
+To delete every participant key at once, regardless of phases, run with the
+service role, for example in the SQL editor or management SQL API:
 
 ```sql
 select public.observer_purge_provider_keys();  -- returns the number of keys deleted
@@ -146,16 +200,22 @@ It wipes every participant-owned key (saved team keys and keys retained from the
 former provider settings), removes the saved-key records and writes an
 `observer.provider_keys_purged` audit entry with the count. Organizer providers
 (`team_id is null`) are untouched and call receipts remain. It is idempotent and
-returns 0 when nothing is left; keys saved afterwards are not covered, so re-run
-it if teams save again.
+returns 0 when nothing is left. Unlike the automatic deletion it does not wait
+for evaluations in progress (calls already in flight may finish).
 
 ## Validation
 
-- `tests/test_personal_models.py` (real PostgreSQL): save, replace, delete,
-  team isolation, no key or ciphertext in any participant-visible result,
+- `tests/test_personal_models.py` (real PostgreSQL): relay is the default and the
+  opt-in migration keeps teams that saved (and is idempotent), save, replace,
+  delete, team isolation, no key or ciphertext in any participant-visible result,
   stored-mode reservations use only the team's own key, no organizer fallback in
   either mode, choosing relay deletes the key, relay claims and receipts, one
-  outstanding call and per-run limits, purge, and the migration's limit update.
+  outstanding call and per-run limits, manual purge, automatic deletion (open,
+  upcoming and recently ended phases, retention after saving, other-team and
+  competition-mode phases, queued runs and unsettled calls keep the key; pause
+  switch; audit), and the migration's limit update.
+- `web/tests/modelKeyMode.test.ts`: the workspace defaults to "Do not save" and
+  every locale explains the trade-off.
 - `observer-model_test.ts`, `observer-portal_test.ts`: HTTPS/approved-host and
   redirect rules, decryption per request, redaction, response cap, no fallback,
   encryption before storage. `observer-personal-model_test.ts`: relay behaviour.
@@ -164,9 +224,10 @@ it if teams save again.
   provider with the saved key and model, redirects and provider errors are not
   forwarded, deleting the key stops use, relay mode fails closed without any
   server-side call, and the plaintext key appears in no table or Edge log.
-- `tests/test_project_portal_browser.py`: default stored mode, save with masked
-  hint, switch to relay (key deleted), relay key not kept in browser storage,
-  switch back, headings in all four languages.
+- `tests/test_project_portal_browser.py`: default relay mode with the trade-off
+  sentence, opt in and save with masked hint, switch to relay (key deleted),
+  relay key not kept in browser storage, opt in again, headings in all four
+  languages.
 - Opt-in: `integration/deployed-personal-model.ts` (selects relay mode first,
   which deletes that team's saved key) and `integration/personal-broadcast_test.ts`.
 

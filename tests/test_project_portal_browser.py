@@ -116,8 +116,16 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         expect(page.get_by_role('button',name='Start local CSV session',exact=True)).to_have_count(0)
         models=page.get_by_test_id('model-api-settings')
         expect(models.get_by_role('heading',name='Model API (optional)',exact=True)).to_be_visible()
-        # Default: the key is saved encrypted, so no page has to stay open.
-        expect(models.get_by_test_id('model-mode-stored')).to_be_checked()
+        # Default: the key is not saved; the page relay is shown and saving is an opt-in.
+        expect(models.get_by_test_id('model-mode-relay')).to_be_checked()
+        expect(models.get_by_test_id('model-mode-stored')).not_to_be_checked()
+        expect(models.get_by_test_id('model-mode-tradeoff')).to_have_text(
+            'Not saved: keep this page open during evaluations. Saved: stored encrypted and deleted automatically after the results are verified.')
+        expect(models.get_by_test_id('personal-model-settings')).to_contain_text('Keep this page open until each evaluation finishes')
+        expect(models.get_by_test_id('team-model-form')).to_have_count(0)
+        assert query(uri,'select count(*) from private.observer_team_model_modes where team_id=%s',(s['team'],))==[(0,)]
+        models.get_by_test_id('model-mode-stored').check()
+        expect(models.get_by_test_id('team-model-form')).to_be_visible(timeout=15000)
         expect(models).to_contain_text('you can close this page during evaluation')
         expect(models.get_by_test_id('personal-model-settings')).to_have_count(0)
         expect(page.get_by_text('Keep this page open until each evaluation finishes, including')).to_have_count(0)
@@ -157,7 +165,7 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         page.reload()
         expect(page.get_by_test_id('personal-api-key')).to_have_value('',timeout=15000)
         expect(page.get_by_test_id('model-mode-relay')).to_be_checked()
-        # Back to the default: the relay form and its keep-open message disappear.
+        # Opting in again: the relay form and its keep-open message disappear.
         page.get_by_test_id('model-mode-stored').check()
         expect(page.get_by_test_id('team-model-form')).to_be_visible(timeout=15000)
         expect(page.get_by_test_id('personal-model-settings')).to_have_count(0)
