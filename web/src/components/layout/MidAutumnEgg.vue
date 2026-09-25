@@ -2,31 +2,30 @@
 // Mid-Autumn Festival greeting: shown on the festival day, dismissible, remembered per year.
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../../composables/useI18n'
-import { isMidAutumnToday } from '../../lib/eggs'
+import { isMidAutumnToday, moonSky } from '../../lib/eggs'
 
-const { t } = useI18n()
+const { t, tf } = useI18n()
 const storageKey = `egg-mid-autumn-${new Date().getFullYear()}`
 const visible = ref(false)
 const parade = ref(0)
-const moonMap = ref(false)
+const sky = ref<ReturnType<typeof skyNow>>()
 let timer: ReturnType<typeof setTimeout> | undefined
 
-/** Orthographic view of the near side, north up, selenographic east to the right. */
-function project(lat: number, lon: number) {
+/**
+ * Tonight's Moon on the survey strip: right ascension 0–360° in the eight 45° regions R00–R07.
+ * The glow is the scoring's moonlight falloff, exp(−separation / 35°) from tile_config.json.
+ */
+function skyNow() {
+  const moon = moonSky()
   const r = Math.PI / 180
-  return { x: Math.cos(lat * r) * Math.sin(lon * r), y: -Math.sin(lat * r) }
+  const glow = Array.from({ length: 73 }, (_, i) => {
+    const cos = Math.sin(moon.dec * r) ** 2 + Math.cos(moon.dec * r) ** 2 * Math.cos((i * 5 - moon.ra) * r)
+    const separation = Math.acos(Math.max(-1, Math.min(1, cos))) / r
+    return { offset: i / 72, opacity: Number((0.9 * moon.illumination * Math.exp(-separation / 35)).toFixed(3)) }
+  })
+  return { ...moon, index: Math.floor(moon.ra / 45) % 8, glow }
 }
-/** The main maria (latitude, longitude, radius in km) so the disk reads as the Moon. */
-const MARIA = ([
-  [32.8, -15.6, 560], [28.0, 17.5, 350], [8.5, 31.4, 440], [17.0, 59.1, 280], [20.7, -56.7, 700],
-  [-21.3, -16.6, 350], [-7.8, 51.3, 420], [-15.2, 35.5, 170], [-24.4, -38.6, 190],
-] as const).map(([lat, lon, km]) => {
-  const { x, y } = project(lat, lon)
-  const size = km / 1737
-  return { x, y, rx: size * Math.cos(lon * Math.PI / 180), ry: size * Math.cos(lat * Math.PI / 180) }
-})
-/** Chang'e 3 landing site, where the Yutu rover stopped (44.12°N, 19.51°W). */
-const YUTU = project(44.12, -19.51)
+const region = (index: number) => `R${String(index).padStart(2, '0')}`
 
 onMounted(() => {
   // Automated browsers (tests, screenshot tours) only see it when asked for with ?egg=midautumn.
@@ -42,10 +41,10 @@ function close() {
   try { localStorage.setItem(storageKey, 'closed') } catch { /* storage may be blocked */ }
 }
 
-/** A jade rabbit hops across the page while mooncakes and lanterns drift up. */
+/** A jade rabbit hops across the page while mooncakes and lanterns drift up, then shows where the Moon is. */
 function releaseRabbit() {
   parade.value += 1
-  moonMap.value = true
+  sky.value = skyNow()
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => { parade.value = 0 }, 4200)
 }
@@ -62,22 +61,26 @@ function releaseRabbit() {
       {{ t('eggs.mid_autumn.rabbit') }}
     </button>
     <button type="button" class="mid-autumn-close" :aria-label="t('eggs.mid_autumn.close')" @click="close">×</button>
-    <div v-if="moonMap" class="mid-autumn-yutu" data-testid="mid-autumn-yutu">
-      <svg viewBox="-1.12 -1.12 2.24 2.24" role="img" :aria-label="t('eggs.mid_autumn.map_label')">
-        <defs>
-          <radialGradient id="mid-autumn-disk" cx="42%" cy="38%" r="72%">
-            <stop offset="0" stop-color="#fffbe8" /><stop offset=".62" stop-color="#efdcaa" /><stop offset="1" stop-color="#c7ad70" />
-          </radialGradient>
-        </defs>
-        <circle r="1" fill="url(#mid-autumn-disk)" />
-        <ellipse v-for="(m, i) in MARIA" :key="i" :cx="m.x" :cy="m.y" :rx="m.rx" :ry="m.ry" fill="rgba(98, 86, 64, .42)" />
-        <circle class="mid-autumn-ping" :cx="YUTU.x" :cy="YUTU.y" r=".13" />
-        <circle :cx="YUTU.x" :cy="YUTU.y" r=".065" fill="#ff4a3d" stroke="#fff3e0" stroke-width=".02" />
-      </svg>
+    <div v-if="sky" class="mid-autumn-sky" data-testid="mid-autumn-sky">
       <p>
-        <strong>{{ t('eggs.mid_autumn.yutu_title') }}</strong>
-        <span>{{ t('eggs.mid_autumn.yutu_body') }}</span>
+        <strong>{{ tf('eggs.mid_autumn.sky_title', { region: region(sky.index) }) }}</strong>
+        <span>{{ tf('eggs.mid_autumn.sky_body', { region: region(sky.index) }) }}</span>
       </p>
+      <svg viewBox="-8 0 376 46" role="img" :aria-label="t('eggs.mid_autumn.sky_label')">
+        <defs>
+          <linearGradient id="mid-autumn-glow" x1="0" x2="360" gradientUnits="userSpaceOnUse">
+            <stop v-for="s in sky.glow" :key="s.offset" :offset="s.offset" stop-color="#ffd98a" :stop-opacity="s.opacity" />
+          </linearGradient>
+        </defs>
+        <rect width="360" height="28" rx="3" fill="#0a0e22" />
+        <rect width="360" height="28" rx="3" fill="url(#mid-autumn-glow)" />
+        <g v-for="k in 8" :key="k" :class="{ 'is-moon': k - 1 === sky.index }">
+          <rect :x="(k - 1) * 45" width="45" height="28" />
+          <text :x="(k - 1) * 45 + 22.5" y="42">{{ region(k - 1) }}</text>
+        </g>
+        <circle class="mid-autumn-sky-moon" :cx="sky.ra" cy="14" r="6.5" />
+      </svg>
+      <small>{{ tf('eggs.mid_autumn.sky_numbers', { ra: sky.ra.toFixed(1), dec: sky.dec.toFixed(1), lit: Math.round(sky.illumination * 100) }) }}</small>
     </div>
   </div>
   <div v-if="parade" :key="parade" class="mid-autumn-parade" aria-hidden="true">
@@ -124,17 +127,21 @@ function releaseRabbit() {
   position: absolute; bottom: -3rem; font-size: 1.8rem; opacity: 0;
   animation: mid-autumn-rise 3.4s ease-out forwards;
 }
-.mid-autumn-yutu {
-  grid-column: 1 / -1; display: flex; align-items: center; gap: 1rem;
+.mid-autumn-sky {
+  grid-column: 1 / -1; display: flex; flex-direction: column; gap: .5rem;
   margin-top: .35rem; padding-top: .75rem; border-top: 1px solid rgba(255, 214, 128, .25);
   animation: mid-autumn-fade .5s ease-out;
 }
-.mid-autumn-yutu svg { flex-shrink: 0; width: 118px; height: 118px; filter: drop-shadow(0 0 14px rgba(255, 214, 120, .35)); }
-.mid-autumn-yutu p { display: flex; flex-direction: column; gap: .3rem; margin: 0; font-size: .84rem; line-height: 1.6; color: #f6ead0; }
-.mid-autumn-yutu strong { color: #ffd98a; font-size: .95rem; }
-.mid-autumn-ping { fill: none; stroke: #ff7a70; stroke-width: .03; transform-box: fill-box; transform-origin: center; animation: mid-autumn-ping 1.8s ease-out infinite; }
+.mid-autumn-sky p { display: flex; flex-direction: column; gap: .3rem; margin: 0; font-size: .84rem; line-height: 1.6; color: #f6ead0; }
+.mid-autumn-sky strong { color: #ffd98a; font-size: .95rem; }
+.mid-autumn-sky svg { width: 100%; height: auto; }
+.mid-autumn-sky svg rect:not([fill]) { fill: none; stroke: rgba(255, 244, 220, .18); stroke-width: .6; }
+.mid-autumn-sky svg text { fill: rgba(255, 244, 220, .55); font-size: 8px; text-anchor: middle; }
+.mid-autumn-sky .is-moon rect { stroke: #ffd98a; stroke-width: 1.2; }
+.mid-autumn-sky .is-moon text { fill: #ffd98a; font-weight: 700; }
+.mid-autumn-sky-moon { fill: #fffbe8; filter: drop-shadow(0 0 4px rgba(255, 220, 130, .9)); }
+.mid-autumn-sky small { color: rgba(255, 244, 220, .6); font-size: .75rem; }
 @keyframes mid-autumn-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes mid-autumn-ping { from { transform: scale(.6); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
 @keyframes mid-autumn-in { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes mid-autumn-hop {
   0% { transform: translate(0, 0); }
@@ -153,13 +160,11 @@ function releaseRabbit() {
   .mid-autumn-moon { grid-row: span 2; width: 1.9rem; height: 1.9rem; align-self: start; }
   .mid-autumn-text { font-size: .82rem; }
   .mid-autumn-action { justify-self: start; padding: .35rem .7rem; font-size: .78rem; }
-  .mid-autumn-yutu { gap: .7rem; }
-  .mid-autumn-yutu svg { width: 84px; height: 84px; }
-  .mid-autumn-yutu p { font-size: .78rem; }
+  .mid-autumn-sky p { font-size: .78rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mid-autumn { animation: none; }
   .mid-autumn-parade { display: none; }
-  .mid-autumn-yutu, .mid-autumn-ping { animation: none; }
+  .mid-autumn-sky { animation: none; }
 }
 </style>

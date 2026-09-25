@@ -778,9 +778,10 @@
       "body": "Ce soir, la Lune est trop brillante pour le ciel profond : les observatoires font une pause gâteaux de lune.",
       "rabbit": "Lâcher le lapin de jade 🐇",
       "close": "Fermer",
-      "yutu_title": "Le lapin de jade a vraiment une maison sur la Lune",
-      "yutu_body": "Levez les yeux ce soir : depuis l'hémisphère nord, la plaine sombre en haut à gauche de la Lune est la mer des Pluies. Le rover chinois Yutu s'y est posé en 2013 (44,12° N, 19,51° O), a cessé de fonctionner en 2016 et s'y trouve toujours. Son successeur, Yutu-2, s'est posé en 2019 sur la face cachée, celle qu'on ne voit jamais depuis la Terre.",
-      "map_label": "Face visible de la Lune ; le point rouge marque Yutu dans la mer des Pluies"
+      "sky_title": "Ce soir, la Lune est dans la région {region}",
+      "sky_body": "Le ciel du relevé est découpé en 8 régions de 45° d'ascension droite. Dans le score, la lumière de la Lune dégrade la qualité des observations proches d'elle, d'autant plus qu'elle est pleine et proche. Observer {region} ce soir, c'est la pire affaire. Prenez d'abord un gâteau de lune.",
+      "sky_numbers": "La Lune en ce moment : AD {ra}°, Déc {dec}°, éclairée à {lit} %",
+      "sky_label": "Bande du relevé en ascension droite de 0° à 360°, régions R00 à R07 ; la lueur marque la Lune de ce soir"
     }
   }
 }
