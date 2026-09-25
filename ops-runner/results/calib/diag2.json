@@ -1,0 +1,212 @@
+{
+ "dev-fortnight": {
+  "gain_rate": {
+   "score": {
+    "total": -33287.278701,
+    "base_science": 7327.903259,
+    "program_bonus": 1344.81804,
+    "request_reward": 140.0,
+    "coverage_bonus": 0.0,
+    "coverage_evenness": 0.902446,
+    "report_reward": 0.0,
+    "penalties": {
+     "flexible_shortfall": 300.0,
+     "invalid_action": 39800.0,
+     "request_miss": 0.0,
+     "required_miss": 2000.0
+    }
+   },
+   "completion": {
+    "completed_tiles": 55,
+    "required_missing": 2,
+    "flexible_by_region": {
+     "R00": 6,
+     "R01": 6,
+     "R02": 6,
+     "R03": 5,
+     "R04": 1,
+     "R05": 5,
+     "R06": 6,
+     "R07": 6
+    },
+    "flexible_shortfall": {
+     "R00": 0,
+     "R01": 0,
+     "R02": 0,
+     "R03": 0,
+     "R04": 3,
+     "R05": 0,
+     "R06": 0,
+     "R07": 0
+    }
+   },
+   "other_keys": [
+    "actions",
+    "completion",
+    "final_cursor",
+    "parameters",
+    "reports",
+    "requests",
+    "schema_version",
+    "score",
+    "termination_reason",
+    "wait_seconds"
+   ]
+  },
+  "wait": {
+   "score": {
+    "total": -19605.9,
+    "base_science": 0.0,
+    "program_bonus": 0.0,
+    "request_reward": 0.0,
+    "coverage_bonus": 0.0,
+    "coverage_evenness": 0.0,
+    "report_reward": 0.0,
+    "penalties": {
+     "avoidable_wait": 405.9,
+     "flexible_shortfall": 3200.0,
+     "request_miss": 0.0,
+     "required_miss": 16000.0
+    }
+   },
+   "completion": {
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "flexible_by_region": {},
+    "flexible_shortfall": {
+     "R00": 4,
+     "R01": 4,
+     "R02": 4,
+     "R03": 4,
+     "R04": 4,
+     "R05": 4,
+     "R06": 4,
+     "R07": 4
+    }
+   },
+   "other_keys": [
+    "actions",
+    "completion",
+    "final_cursor",
+    "parameters",
+    "reports",
+    "requests",
+    "schema_version",
+    "score",
+    "termination_reason",
+    "wait_seconds"
+   ]
+  },
+  "scoring_contract": {
+   "timestamp_format": "YYYY-MM-DDTHH:MM:SSZ",
+   "intervals": "half-open [start, end)",
+   "agent_time": "one global wall-clock deadline; no per-decision limit",
+   "simulation_time": "advances only through committed environment transitions"
+  }
+ },
+ "dev-reference": {
+  "gain_rate": {
+   "score": {
+    "total": -733412.521635,
+    "base_science": 7178.819466,
+    "program_bonus": 1188.658899,
+    "request_reward": 3920.0,
+    "coverage_bonus": 0.0,
+    "coverage_evenness": 1.0,
+    "report_reward": 0.0,
+    "penalties": {
+     "flexible_shortfall": 0.0,
+     "invalid_action": 745700.0,
+     "request_miss": 0.0,
+     "required_miss": 0.0
+    }
+   },
+   "completion": {
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "flexible_by_region": {
+     "R00": 6,
+     "R01": 6,
+     "R02": 6,
+     "R03": 6,
+     "R04": 6,
+     "R05": 6,
+     "R06": 6,
+     "R07": 6
+    },
+    "flexible_shortfall": {
+     "R00": 0,
+     "R01": 0,
+     "R02": 0,
+     "R03": 0,
+     "R04": 0,
+     "R05": 0,
+     "R06": 0,
+     "R07": 0
+    }
+   },
+   "other_keys": [
+    "actions",
+    "completion",
+    "final_cursor",
+    "parameters",
+    "reports",
+    "requests",
+    "schema_version",
+    "score",
+    "termination_reason",
+    "wait_seconds"
+   ]
+  },
+  "wait": {
+   "score": {
+    "total": -31301.5,
+    "base_science": 0.0,
+    "program_bonus": 0.0,
+    "request_reward": 0.0,
+    "coverage_bonus": 0.0,
+    "coverage_evenness": 0.0,
+    "report_reward": 0.0,
+    "penalties": {
+     "avoidable_wait": 6781.5,
+     "flexible_shortfall": 3200.0,
+     "request_miss": 5320.0,
+     "required_miss": 16000.0
+    }
+   },
+   "completion": {
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "flexible_by_region": {},
+    "flexible_shortfall": {
+     "R00": 4,
+     "R01": 4,
+     "R02": 4,
+     "R03": 4,
+     "R04": 4,
+     "R05": 4,
+     "R06": 4,
+     "R07": 4
+    }
+   },
+   "other_keys": [
+    "actions",
+    "completion",
+    "final_cursor",
+    "parameters",
+    "reports",
+    "requests",
+    "schema_version",
+    "score",
+    "termination_reason",
+    "wait_seconds"
+   ]
+  },
+  "scoring_contract": {
+   "timestamp_format": "YYYY-MM-DDTHH:MM:SSZ",
+   "intervals": "half-open [start, end)",
+   "agent_time": "one global wall-clock deadline; no per-decision limit",
+   "simulation_time": "advances only through committed environment transitions"
+  }
+ }
+}
