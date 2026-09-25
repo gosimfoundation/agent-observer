@@ -1,0 +1,116 @@
+{
+ "cpus": 4,
+ "results": {
+  "dev-fortnight": {
+   "ok": true,
+   "seconds": 7.2,
+   "candidate": 3,
+   "rejected_candidates": [
+    [
+     "span",
+     "open_fraction"
+    ],
+    [
+     "gain_rate",
+     "required_first",
+     "requests_first"
+    ],
+    [
+     "open_fraction"
+    ]
+   ],
+   "values_vs_bounds": {
+    "span": {
+     "value": 22979.928161,
+     "bounds": [
+      22297.0945513,
+      25286.955180733334
+     ],
+     "inside": true
+    },
+    "open_fraction": {
+     "value": 0.847457627118644,
+     "bounds": [
+      0.755593220338983,
+      0.8475423728813558
+     ],
+     "inside": true
+    },
+    "gain_rate": {
+     "value": 10003.511836,
+     "bounds": [
+      9999.37098785,
+      10009.99310075
+     ],
+     "inside": true
+    },
+    "required_first": {
+     "value": 10003.511836,
+     "bounds": [
+      9999.37098785,
+      10009.99310075
+     ],
+     "inside": true
+    },
+    "requests_first": {
+     "value": 9992.976327,
+     "bounds": [
+      9980.0137985,
+      10001.25802435
+     ],
+     "inside": true
+    }
+   },
+   "template_digest_matches": true
+  },
+  "dev-reference": {
+   "ok": true,
+   "seconds": 18.7,
+   "candidate": 0,
+   "rejected_candidates": [],
+   "values_vs_bounds": {
+    "span": {
+     "value": 42816.723873333336,
+     "bounds": [
+      41739.13928853333,
+      43906.9351213
+     ],
+     "inside": true
+    },
+    "open_fraction": {
+     "value": 0.9548435923309788,
+     "bounds": [
+      0.9462222502522704,
+      0.9592772452068618
+     ],
+     "inside": true
+    },
+    "gain_rate": {
+     "value": 10001.403523,
+     "bounds": [
+      9998.70891835,
+      10001.544133649999
+     ],
+     "inside": true
+    },
+    "required_first": {
+     "value": 10001.403523,
+     "bounds": [
+      9998.70891835,
+      10001.544133649999
+     ],
+     "inside": true
+    },
+    "requests_first": {
+     "value": 9997.192954,
+     "bounds": [
+      9996.911732749999,
+      10002.58216425
+     ],
+     "inside": true
+    }
+   },
+   "template_digest_matches": true
+  }
+ }
+}
