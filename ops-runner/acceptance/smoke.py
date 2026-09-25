@@ -66,9 +66,9 @@ def kick(rid):
     dispatcher with its Vault capability (which never leaves the database). The
     dispatcher is idempotent and lock-safe. Only kicks while none of this
     revision's jobs is in flight (i.e. the next step waits on the dispatcher),
-    at most every 12 s.
+    at most every 8 s.
     """
-    if time.time() - kicks['at'] < 12: return
+    if time.time() - kicks['at'] < 8: return
     try:
         busy = sql("select count(*) as n from private.observer_jobs j where j.status in ('dispatched','claimed') and (j.revision_id="
                    + q(rid) + " or j.run_id in (select r.id from public.observer_runs r join public.observer_batches b on b.id=r.batch_id"
@@ -194,10 +194,33 @@ def project_zip():
     return data.getvalue()
 
 
+def fast_setup():
+    """One query: is everything from a previous setup still in place? (ids or None)"""
+    rows = sql("""select u.id as user_id,t.id as team_id,p.id as phase_id from auth.users u
+      join public.profiles pr on pr.id=u.id and not pr.is_banned and not pr.show_on_wall
+      join public.teams t on t.id=pr.team_id and t.is_hidden and t.name=""" + q(TEAM_NAME) + """
+      join public.phases p on p.slug='observer-acceptance-'||left(t.id::text,8) and p.is_active
+        and not p.counts_for_final and p.leaderboard_mode='hidden'
+      join public.observer_phase_settings c on c.phase_id=p.id and c.access_team_id=t.id and c.projects_enabled
+        and not c.local_sessions_enabled and c.runtime_seconds=""" + str(RUNTIME_SECONDS) + """
+      join public.scenarios s on s.slug=""" + q(SCENARIO_SLUG) + """ and not s.is_active
+      join private.observer_scenario_calibration k on k.phase_id=p.id and k.scenario_id=s.id
+      where u.email=""" + q(EMAIL) + """ and u.raw_user_meta_data->>'observer_platform_e2e'='true'
+        and (select count(*) from public.phase_scenarios ps where ps.phase_id=p.id)=1
+        and exists(select 1 from public.site_settings x where x.key='excluded_accounts' and x.value ? u.id::text)""")
+    return (rows[0]['user_id'], rows[0]['team_id'], rows[0]['phase_id']) if len(rows) == 1 else None
+
+
 def main():
-    scenario_id, profile_id = ensure_scenario()
-    user, team = ensure_account()
-    phase = ensure_phase(team, scenario_id, profile_id)
+    found = fast_setup()
+    if found:
+        user, team, phase = found
+        acc.verify(phase)  # still invisible to anonymous visitors
+    else:
+        scenario_id, profile_id = ensure_scenario()
+        user, team = ensure_account()
+        phase = ensure_phase(team, scenario_id, profile_id)
+    if team == FULL_ACCEPTANCE_TEAM: raise RuntimeError('smoke account belongs to the full acceptance team')
     report.update(team=team[:8], phase=phase[:8], scenario=SCENARIO_SLUG)
     email = http(f'{BASE}/auth/v1/admin/users/{user}', token=SERVICE)['email']
     password = secrets.token_urlsafe(24)
@@ -207,7 +230,7 @@ def main():
 
     def portal(action, **kw):
         return http(f'{BASE}/functions/v1/observer-portal', {'action': action, **kw}, token=token)['data']
-    step('setup', team=team[:8], phase=phase[:8])
+    step('setup', team=team[:8], phase=phase[:8], reused=bool(found))
 
     # A leftover active batch from an aborted smoke run would block evaluate.
     listing = portal('list')
