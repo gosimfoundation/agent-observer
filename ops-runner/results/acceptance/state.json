@@ -2,27 +2,15 @@
  "cases": {
   "python-zip-kimi": {
    "revision_id": "29076833-cf2a-42bb-89e2-345b7f815e85",
-   "provider": "kimi",
-   "done": true,
-   "result": "public_test_failed",
-   "status": "preparing",
-   "error": ""
+   "provider": "kimi"
   },
   "repo-glm": {
    "revision_id": "4602dbd7-2bd4-452c-9409-b9651dfcfe79",
-   "provider": "glm",
-   "done": true,
-   "result": "public_test_failed",
-   "status": "preparing",
-   "error": ""
+   "provider": "glm"
   },
   "rust-zip": {
    "revision_id": "b561011a-122e-4846-a762-988ac760373b",
-   "provider": null,
-   "done": true,
-   "result": "public_test_failed",
-   "status": "preparing",
-   "error": ""
+   "provider": null
   }
  },
  "log": [
@@ -121,6 +109,10 @@
      "code": "dispatched"
     }
    ]
+  },
+  {
+   "event": "reset",
+   "note": "earlier failures were a detection bug (tests still running); resuming same revisions"
   }
  ]
 }

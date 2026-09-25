@@ -108,12 +108,13 @@ for name, how, provider in CASES:
                 res = portal('evaluate', revision_id=r['id'], phase_id=PHASE)
                 case.update(batch_id=res['batch_id'], public_test_score=test.get('score')); log('evaluating', case=name, public_test=test.get('score'))
                 break
-            if r['status'] in ('failed', 'rejected') or test.get('passed') is False:
+            # Only a terminal revision status is a failure; public_test.passed is false until the test finishes.
+            if r['status'] in ('failed', 'rejected', 'error', 'invalid'):
                 case.update(done=True, result='public_test_failed', status=r['status'], error=r.get('error'))
                 log('failed', case=name, status=r['status'], error=r.get('error'),
                     jobs=[{k: j.get(k) for k in ('kind', 'status', 'code')} for j in portal('diagnostics', revision_id=r['id'])])
                 break
-            if time.time() > DEADLINE: raise TimeoutError('revision not ready: ' + r['status'])
+            if time.time() > DEADLINE: raise TimeoutError('revision not ready: ' + r['status'] + ' ' + json.dumps(test)[:200])
             time.sleep(30)
         while case.get('batch_id') and not case.get('done'):
             b = batch_of(case['batch_id'])
