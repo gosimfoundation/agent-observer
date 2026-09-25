@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { loadPhases,type Phase } from '../lib/data'
+import { competition, loadCompetition } from '../stores/competition'
 import { useAuth } from '../stores/auth'
 import { useI18n } from '../composables/useI18n'
 import DashShell from '../components/layout/DashShell.vue'
@@ -11,7 +12,16 @@ const {t,pick}=useI18n(),{team,refreshMe}=useAuth()
 const phase=ref<Phase|null>(null),loading=ref(true),failed=ref(false)
 // The current phase and its database settings decide the available workflow.
 const interactive=computed(()=>phase.value?.observer_settings?.projects_enabled||phase.value?.observer_settings?.local_sessions_enabled)
-onMounted(async()=>{try{await refreshMe();phase.value=(await loadPhases())[0]??null}catch{failed.value=true}finally{loading.value=false}})
+onMounted(async()=>{try{await refreshMe()
+  // Team or membership changes do not raise auth events, so the workspace always
+  // re-resolves the beta entry fresh instead of trusting the 15s cache.
+  await loadCompetition(true)
+  // Public pages keep the single global phase; this workspace alone swaps in the
+  // team-restricted beta entry for its access team.
+  const phases=await loadPhases(true)
+  const global=phases.find(p=>competition.phaseId?p.id===competition.phaseId:p.slug===(competition.mode==='practice'?'practice':'online'))
+  phase.value=phases.find(p=>p.id===competition.betaPhaseId)??global??null
+}catch{failed.value=true}finally{loading.value=false}})
 </script>
 <template>
   <DashShell :kicker="phase?pick(phase.name_en,phase.name_zh):''" :title="pick('Participate','参赛')">

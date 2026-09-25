@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import secrets
 from pathlib import Path
 import subprocess
@@ -20,7 +21,7 @@ from playwright.sync_api import sync_playwright, expect
 from psycopg.types.json import Jsonb
 
 from test_project_http import edge_stack, run_setup, free_port, ROOT, anon_key  # noqa: F401
-from test_project_database import query
+from test_project_database import identity, query
 from test_project_database import rpc
 from project_platform.artifacts import pack_files
 from project_platform.package import ProjectFile
@@ -150,6 +151,117 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         assert '/compete' in page.url
         assert not script_errors,script_errors
         context.close();browser.close()
+
+
+def test_beta_entry_serves_only_its_team_while_the_site_stays_practice(portal_site,run_setup):
+    """The team-restricted formal phase is reachable for its access team even
+    while every other visitor keeps the unchanged single practice entry."""
+    s=run_setup;uri=s['uri'];password='local-browser-beta-password-17'
+    other,_=identity(uri)
+    legacy=uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,%s,'Playground','练习赛')",(legacy,'practice'))
+    query(uri,'insert into public.phase_scenarios values(%s,%s)',(legacy,s['scenario']))
+    query(uri,"update private.observer_site_mode set mode='practice',phase_id=%s",(legacy,))
+    query(uri,'update public.observer_phase_settings set access_team_id=%s where phase_id=%s',(s['team'],s['phase']))
+    query(uri,"update public.observer_runs set status='failed' where id=%s",(s['run'],))
+    query(uri,"update public.observer_batches set status='failed' where id=(select batch_id from public.observer_runs where id=%s)",(s['run'],))
+    for user in (s['user'],other):
+        query(uri,"update auth.users set raw_user_meta_data=raw_user_meta_data || %s where id=%s",
+              (Jsonb({'password_hash':hashlib.sha256(password.encode()).hexdigest()}),user))
+    portal_url=s['stack']['urls']['observer-portal']
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(channel=os.environ.get('OBSERVER_BROWSER_CHANNEL'))
+        errors=[]
+        def login(context,user):
+            page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+            page.route('**/functions/v1/observer-portal',lambda route:route.fulfill(response=route.fetch(url=portal_url)))
+            page.goto(portal_site+'/register?mode=login&lang=en')
+            page.get_by_test_id('login-email').fill(f'{user}@example.test')
+            page.get_by_test_id('login-password').fill(password)
+            page.get_by_test_id('login-submit').click()
+            expect(page).to_have_url(portal_site+'/dashboard',timeout=20000)
+            return page
+        # The access team member reaches the formal project entry.
+        member_context=browser.new_context(viewport={'width':1365,'height':950},locale='en-US')
+        page=login(member_context,s['user'])
+        page.goto(portal_site+'/compete')
+        expect(page.get_by_test_id('project-title')).to_be_visible(timeout=15000)
+        expect(page.locator('.poster-kicker')).to_have_text('Test')
+        shots=ROOT/'artifacts'/'screenshots-beta-entry';shots.mkdir(parents=True,exist_ok=True)
+        page.screenshot(path=str(shots/'beta-member-project-entry.png'),full_page=True)
+        member_context.close()
+        # Everyone else keeps the single practice entry: anonymous visitors are
+        # sent to login and an unrelated participant still sees the CSV route.
+        other_context=browser.new_context(viewport={'width':1365,'height':950},locale='en-US')
+        page=other_context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+        page.route('**/functions/v1/observer-portal',lambda route:route.fulfill(response=route.fetch(url=portal_url)))
+        page.goto(portal_site+'/compete')
+        expect(page).to_have_url(portal_site+'/register?mode=login&next=/compete',timeout=20000)
+        page.get_by_test_id('login-email').fill(f'{other}@example.test')
+        page.get_by_test_id('login-password').fill(password)
+        page.get_by_test_id('login-submit').click()
+        expect(page).to_have_url(re.compile(re.escape(portal_site)+'/compete$'),timeout=20000)
+        expect(page.get_by_test_id('csv-workflow')).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('project-title')).to_have_count(0)
+        page.screenshot(path=str(shots/'ordinary-participant-practice-csv.png'),full_page=True)
+        other_context.close();browser.close()
+        assert not errors,errors
+
+
+def test_beta_entry_follows_team_changes_within_a_session(portal_site,run_setup):
+    """A same-session team change (no auth event) must switch or drop the beta
+    entry on the next in-app navigation instead of reusing the previous team."""
+    s=run_setup;uri=s['uri'];password='local-browser-beta-password-18'
+    _,team_b=identity(uri)
+    _,team_none=identity(uri)
+    phase_b=uuid.uuid4()
+    legacy=query(uri,"select id from public.phases where slug='practice' limit 1")
+    if legacy:
+        legacy=legacy[0][0]
+    else:
+        legacy=uuid.uuid4()
+        query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,'practice','Playground','练习赛')",(legacy,))
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh,sort_order) values(%s,'acceptance-b','Beta B','验收B',10100)",(phase_b,))
+    query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,access_team_id) values(%s,true,false,%s)',(phase_b,team_b))
+    query(uri,'insert into public.phase_scenarios values(%s,%s)',(legacy,s['scenario']))
+    query(uri,"update private.observer_site_mode set mode='practice',phase_id=%s",(legacy,))
+    query(uri,'update public.observer_phase_settings set access_team_id=%s where phase_id=%s',(s['team'],s['phase']))
+    query(uri,"update public.observer_runs set status='failed' where id=%s",(s['run'],))
+    query(uri,"update public.observer_batches set status='failed' where id=(select batch_id from public.observer_runs where id=%s)",(s['run'],))
+    query(uri,"update auth.users set raw_user_meta_data=raw_user_meta_data || %s where id=%s",
+          (Jsonb({'password_hash':hashlib.sha256(password.encode()).hexdigest()}),s['user']))
+    portal_url=s['stack']['urls']['observer-portal']
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(channel=os.environ.get('OBSERVER_BROWSER_CHANNEL'))
+        context=browser.new_context(viewport={'width':1365,'height':950},locale='en-US')
+        page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+        page.route('**/functions/v1/observer-portal',lambda route:route.fulfill(response=route.fetch(url=portal_url)))
+        page.goto(portal_site+'/register?mode=login&lang=en')
+        page.get_by_test_id('login-email').fill(f"{s['user']}@example.test")
+        page.get_by_test_id('login-password').fill(password)
+        page.get_by_test_id('login-submit').click()
+        expect(page).to_have_url(portal_site+'/dashboard',timeout=20000)
+        page.goto(portal_site+'/compete')
+        expect(page.get_by_test_id('project-title')).to_be_visible(timeout=15000)
+        expect(page.locator('.poster-kicker')).to_have_text('Test')
+        nav=page.locator('nav.admin-nav')
+        # Joining another acceptance team swaps the entry to that team's phase.
+        query(uri,'update public.profiles set team_id=%s where id=%s',(team_b,s['user']))
+        nav.get_by_role('link',name='Dashboard',exact=True).click()
+        expect(page).to_have_url(portal_site+'/dashboard',timeout=20000)
+        nav.get_by_role('link',name='Participate',exact=True).click()
+        expect(page).to_have_url(portal_site+'/compete',timeout=20000)
+        expect(page.get_by_test_id('project-title')).to_be_visible(timeout=15000)
+        expect(page.locator('.poster-kicker')).to_have_text('Beta B')
+        # Leaving every acceptance team falls back to the unchanged practice entry.
+        query(uri,'update public.profiles set team_id=%s where id=%s',(team_none,s['user']))
+        nav.get_by_role('link',name='Dashboard',exact=True).click()
+        expect(page).to_have_url(portal_site+'/dashboard',timeout=20000)
+        nav.get_by_role('link',name='Participate',exact=True).click()
+        expect(page.get_by_test_id('csv-workflow')).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('project-title')).to_have_count(0)
+        context.close();browser.close()
+        assert not errors,errors
 
 
 @pytest.mark.parametrize('calibrated',[False,True])
