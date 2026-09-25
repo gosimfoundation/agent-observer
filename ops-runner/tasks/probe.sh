@@ -54,8 +54,8 @@ PY
 fi
 
 if [ -n "${KIMI_API_KEY:-}" ]; then
-  for host in api.moonshot.cn api.moonshot.ai; do
-    echo "kimi $host /v1/models: $(code "https://$host/v1/models" -H "Authorization: Bearer $KIMI_API_KEY")"
+  for url in https://api.moonshot.cn/v1 https://api.moonshot.ai/v1 https://api.kimi.com/coding/v1; do
+    echo "kimi $url/models: $(code "$url/models" -H "Authorization: Bearer $KIMI_API_KEY")"
   done
 fi
 
