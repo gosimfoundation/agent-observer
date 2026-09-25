@@ -129,5 +129,17 @@ for name, how, provider in CASES:
         if isinstance(e, TimeoutError): break
     STATE.write_text(json.dumps(state, indent=1, ensure_ascii=False))
 
+# Diagnostics for any failed run (job kinds, codes and log tails; logs are the platform's own, key-free).
+for name, case in state['cases'].items():
+    if case.get('batch_id') and not case.get('diag'):
+        b = batch_of(case['batch_id'])
+        for run in (b or {}).get('observer_runs', []):
+            if run['status'] == 'failed':
+                jobs = portal('diagnostics', run_id=run['id'])
+                case.setdefault('diag', []).append({'run': run['id'], 'jobs': [
+                    {'kind': j.get('kind'), 'status': j.get('status'), 'code': j.get('code'), 'log': (j.get('log') or '')[-1500:]} for j in jobs]})
+                log('diagnostics', case=name, run=run['id'], jobs=[(j.get('kind'), j.get('code')) for j in jobs])
+STATE.write_text(json.dumps(state, indent=1, ensure_ascii=False))
+
 summary = {n: {k: c.get(k) for k in ('result', 'score', 'public_test_score', 'runs', 'error')} for n, c in state['cases'].items()}
 (OUT / 'summary.json').write_text(json.dumps(summary, indent=1, ensure_ascii=False)); print(json.dumps(summary, ensure_ascii=False))
