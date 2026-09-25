@@ -98,7 +98,10 @@ def check_scenario(scenario_id,phase_slug,allowed_phase=None):
     if not bundle:raise CheckError('Scenario '+str(found_id)+' has no private bundle; the engine could not run it')
     leak=query('select p.slug from public.phase_scenarios ps join public.phases p on p.id=ps.phase_id'
                ' where ps.scenario_id='+quote(scenario_id)+' and (p.counts_for_final or p.slug in '+str(PROTECTED_SLUGS)+')'
-               +(' and p.slug<>'+quote(allowed_phase) if allowed_phase else ''))
+               # With --same-as, the copied phase and other internal team-restricted phases
+               # (earlier acceptance labs on the same scenarios) are not participant material.
+               +(' and p.slug<>'+quote(allowed_phase)+' and not exists(select 1 from public.observer_phase_settings s'
+                 ' where s.phase_id=p.id and s.access_team_id is not null)' if allowed_phase else ''))
     if leak:raise CheckError('Scenario '+str(found_id)+' is already linked to participant phase(s) '+json.dumps(leak)+'; refusing to reuse formal material')
     bundle_path,bundle_digest=bundle[0]
     present=one("select count(*) from storage.objects where bucket_id='observer-scenarios' and name="+quote(bundle_path))
