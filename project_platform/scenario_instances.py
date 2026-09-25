@@ -12,7 +12,9 @@ import hmac
 import json
 import math
 import re
+import os
 import shutil
+from concurrent.futures import ProcessPoolExecutor
 from collections import OrderedDict
 from datetime import timedelta
 from pathlib import Path
@@ -185,8 +187,17 @@ def benchmark_policy(scenario: Path, policy: str, *, reuse_windows: bool = True)
             "required_missing": len(report["completion"]["required_missing"])}
 
 
-def measure_difficulty(scenario: Path) -> dict:
-    scores = {name: benchmark_policy(scenario, name) for name in (*POLICIES, "wait")}
+def measure_difficulty(scenario: Path, workers: int | None = None) -> dict:
+    # The reference policies are independent, deterministic simulations; running
+    # them side by side gives identical scores in a fraction of the wall time, so
+    # instance preparation fits its deadline even when candidates are rejected.
+    names = (*POLICIES, "wait")
+    workers = min(len(names), os.cpu_count() or 1) if workers is None else workers
+    if workers > 1:
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            scores = dict(zip(names, pool.map(benchmark_policy, [scenario] * len(names), names)))
+    else:
+        scores = {name: benchmark_policy(scenario, name) for name in names}
     weather = load_weather(scenario / "outputs/reference/weather.csv")
     if not weather:
         raise InstanceError("empty_scenario")
