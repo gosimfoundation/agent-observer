@@ -78,9 +78,13 @@ const activePhases = computed(() => (data.value?.phases ?? []).filter(p => (p.ph
 const projectsOpen = computed(() => activePhases.value.some(p => p.projects_enabled))
 const openPhases = computed(() => activePhases.value.filter(p => !p.phases.starts_at || Date.parse(p.phases.starts_at) <= Date.now()))
 const selectedPhase = computed(() => openPhases.value.find(p => p.phase_id === phaseId.value))
+// Team-key runs have no practical token cap (1,000,000,000 or more is shown as uncapped).
+const TOKENS_UNCAPPED = 1_000_000_000
 const modelLimits = computed(() => {
   const p = activePhases.value[0]
-  return p && p.model_call_limit > 0 ? { calls: p.model_call_limit.toLocaleString(), tokens: p.model_token_limit.toLocaleString() } : null
+  if (!p || !(p.model_call_limit > 0)) return null
+  const params = { calls: p.model_call_limit.toLocaleString(), tokens: p.model_token_limit.toLocaleString(), concurrency: p.model_concurrency ?? 1 }
+  return { key: p.model_token_limit >= TOKENS_UNCAPPED ? 'submit.model_api.limits' : 'submit.model_api.limits_tokens', params }
 })
 const statuses = computed(() => pick<Record<string, string>>({ queued:'Queued', preparing:'Preparing', reviewable:'Ready for review', approved:'Confirmed',
   failed:'Failed', starting:'Starting', ready:'Ready', running:'Running', awaiting_csv:'Waiting for CSV', scored:'Scored', cancelled:'Cancelled' },
@@ -191,7 +195,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         </fieldset>
         <p class="help mt-4">{{ t('submit.model_api.usage') }}</p>
         <template v-if="modelMode === 'stored'">
-          <p v-if="modelLimits" class="help">{{ tf('submit.model_api.limits', modelLimits) }}</p>
+          <p v-if="modelLimits" class="help">{{ tf(modelLimits.key, modelLimits.params) }}</p>
           <div v-if="savedModel && !replacingKey" class="mt-4" data-testid="team-model-saved">
             <h3>{{ t('submit.model_api.saved_title') }}</h3>
             <p class="help break-all">{{ savedModel.base_url }} · {{ savedModel.model }}</p>

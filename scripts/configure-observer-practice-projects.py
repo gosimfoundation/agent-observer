@@ -44,9 +44,11 @@ def plan(args):
         +',now(),'+(q(practice['ends_at']) if practice['ends_at'] else 'null')+') on conflict(id) do update set is_active=true',
         'insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches,'
         'model_token_limit,model_call_limit,model_concurrency) values ('+','.join(map(q, (phase_id, True, False, runtime, args.daily,
-                                                                                           10000000, 10000, 1)))+')'
+                                                                                           competition.MODEL_TOKEN_LIMIT,
+                                                                                           competition.MODEL_CALL_LIMIT,
+                                                                                           competition.MODEL_CONCURRENCY)))+')'
         ' on conflict(phase_id) do update set projects_enabled=true,local_sessions_enabled=false,daily_batches=excluded.daily_batches,'
-        'model_token_limit=excluded.model_token_limit,model_call_limit=excluded.model_call_limit,model_concurrency=1',
+        'model_token_limit=excluded.model_token_limit,model_call_limit=excluded.model_call_limit,model_concurrency=excluded.model_concurrency',
     ] + ['insert into public.phase_scenarios(phase_id,scenario_id) values ('+q(phase_id)+','+q(s['id'])+') on conflict do nothing'
          for s in scenarios]
     return {'phase_id': phase_id, 'is_new': not existing, 'runtime_seconds': runtime, 'daily_batches': args.daily,

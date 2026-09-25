@@ -43,8 +43,8 @@ def test_activation_preserves_old_rows_and_refuses_existing_competition_results(
     assert query(uri,"select row_to_json(p)::text from public.phases p order by id")==before
     assert query(uri,'select id,daily_token_limit from private.observer_providers order by id')==providers
     assert query(uri,'select projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches from public.observer_phase_settings where phase_id=%s',(phase,))==[(True,False,3600,10)]
-    # Formal runs spend the team's own saved key: explicit per-run bounds, one call at a time.
-    assert query(uri,'select model_token_limit,model_call_limit,model_concurrency from public.observer_phase_settings where phase_id=%s',(phase,))==[(10000000,10000,1)]
+    # Formal runs spend the team's own key: no practical token cap, 100,000 calls, up to 4 at a time.
+    assert query(uri,'select model_token_limit,model_call_limit,model_concurrency from public.observer_phase_settings where phase_id=%s',(phase,))==[(1000000000,100000,4)]
     assert query(uri,'select phase_id,scenario_id from private.observer_preparation_config')==[(phase,s['scenario'])]
     # A legacy result cannot be silently displaced if an operator uses this
     # script on a phase that already has old submissions.

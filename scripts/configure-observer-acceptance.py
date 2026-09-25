@@ -26,7 +26,7 @@ Each phase: counts_for_final=false, leaderboard_mode=hidden, projects only
 (local sessions and legacy CSV are rejected by the platform), runtime capped
 at 300s, exactly two scenarios, no organizer model tokens (the migration
 20260926000300 makes observer-acceptance-* runs use the team's own key; the
-formal per-run caps of 10,000 calls and 10,000,000 tokens apply).
+same per-run caps as formal runs apply: 100,000 calls, up to 4 at a time, 1,000,000,000 tokens).
 """
 import json
 import os
@@ -40,6 +40,12 @@ import uuid
 ROOT=Path(__file__).resolve().parents[1]
 
 MAX_RUNTIME_SECONDS=300
+# Per-run model bounds for runs on the team's own key (same as formal runs,
+# migration 20260926000600): tokens are effectively unlimited because the team pays for
+# them; calls stay capped because each one passes through observer-model.
+MODEL_TOKEN_LIMIT=1_000_000_000
+MODEL_CALL_LIMIT=100_000
+MODEL_CONCURRENCY=4
 PROTECTED_SLUGS=('online','practice','observer-platform-e2e')
 SERVICE='agentic-observer26-backend'
 
@@ -147,11 +153,11 @@ def plan_phase(team,scenarios,args,profiles=None):
       "insert into public.phases(id,slug,name_en,name_zh,allow_results,allow_agents,leaderboard_mode,counts_for_final,is_active,sort_order) values ("
         +','.join(map(quote,(phase_id,slug,'Acceptance '+team['team_id'][:8],'内部验收',False,False,'hidden',False,True,args.sort_order)))+')'
         +' on conflict(id) do update set slug=excluded.slug,is_active=excluded.is_active,sort_order=excluded.sort_order',
-      "insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches,model_token_limit,model_call_limit,access_team_id) values ("
-        +','.join(map(quote,(phase_id,True,False,runtime,args.daily_batches,10000000,10000,team['team_id'])))+')'
+      "insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches,model_token_limit,model_call_limit,model_concurrency,access_team_id) values ("
+        +','.join(map(quote,(phase_id,True,False,runtime,args.daily_batches,MODEL_TOKEN_LIMIT,MODEL_CALL_LIMIT,MODEL_CONCURRENCY,team['team_id'])))+')'
         +' on conflict(phase_id) do update set projects_enabled=excluded.projects_enabled,local_sessions_enabled=excluded.local_sessions_enabled,'
         +'runtime_seconds=excluded.runtime_seconds,daily_batches=excluded.daily_batches,access_team_id=excluded.access_team_id,'
-        +'model_token_limit=excluded.model_token_limit,model_call_limit=excluded.model_call_limit',
+        +'model_token_limit=excluded.model_token_limit,model_call_limit=excluded.model_call_limit,model_concurrency=excluded.model_concurrency',
     ]
     for scenario in scenarios:
         statements.append('insert into public.phase_scenarios(phase_id,scenario_id) values ('
@@ -179,7 +185,8 @@ def plan_phase(team,scenarios,args,profiles=None):
             'projects_only':{'projects_enabled':True,'local_sessions_enabled':False,
                              'legacy_csv':'rejected by observer_submission_admission (any phase with an settings row)'},
             'runtime_seconds':runtime,'daily_batches':args.daily_batches,
-            'model':'team-provided keys only; run caps model_token_limit=10000000, model_call_limit=10000; organizer provider untouched',
+            'model':f'team-provided keys only; run caps model_token_limit={MODEL_TOKEN_LIMIT}, model_call_limit={MODEL_CALL_LIMIT}, '
+                     f'model_concurrency={MODEL_CONCURRENCY}; organizer provider untouched',
             'statements':statements,'calibration':calibration}
 
 
