@@ -20,7 +20,7 @@ export function isFullMoonToday(): boolean {
 
 /**
  * Where the Moon is on the sky and how much of it is lit, with the same low-precision
- * formulas as challenge/tile_geometry_simulator.py, so it matches the moonlight the scoring uses.
+ * formulas as challenge/tile_geometry_simulator.py.
  */
 export function moonSky(date = new Date()): { ra: number; dec: number; illumination: number } {
   const r = Math.PI / 180
