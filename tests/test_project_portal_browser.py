@@ -121,7 +121,10 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         expect(models.get_by_test_id('personal-model-settings')).to_have_count(0)
         expect(page.get_by_text('Keep this page open until each evaluation finishes, including')).to_have_count(0)
         key='browser-saved-key-fixture-4Kd9'
-        models.get_by_test_id('team-model-endpoint').select_option(index=0)
+        # Any public https:// address is accepted; the organizer's list only feeds suggestions.
+        suggested=page.locator('#model-base-suggestions option').first.get_attribute('value')
+        assert suggested and suggested.startswith('https://')
+        models.get_by_test_id('team-model-endpoint').fill(suggested)
         models.get_by_label('Model',exact=True).fill('team-model')
         models.get_by_test_id('team-model-key').fill(key)
         models.get_by_role('button',name='Save encrypted key',exact=True).click()
@@ -143,6 +146,7 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         expect(models).to_contain_text('open this page at the time agreed with the organizers')
         assert query(uri,'select count(*) from private.observer_team_models where team_id=%s',(s['team'],))==[(0,)]
         assert query(uri,"select count(*) from private.observer_providers where team_id=%s and encrypted_key<>''",(s['team'],))==[(0,)]
+        personal.get_by_test_id('personal-model-endpoint').fill(suggested)
         personal.get_by_label('Model',exact=True).fill('own-model')
         personal.get_by_test_id('personal-api-key').fill('in-memory-browser-fixture')
         personal.get_by_role('button',name='Use for this session',exact=True).click()

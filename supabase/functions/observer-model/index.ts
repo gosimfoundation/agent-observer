@@ -65,7 +65,7 @@ Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async
         rpc,
         exchange: (topic, call, payload) => exchangeModelBroadcast(service, topic, call, payload),
       })
-      : await teamChatCompletion(request, { rpc, fetch, decrypt, allowedBases: bases("OBSERVER_MODEL_BASES") });
+      : await teamChatCompletion(request, { rpc, fetch, decrypt, trustedBases: bases("OBSERVER_MODEL_BASES") });
     for (const [name, value] of Object.entries(cors)) response.headers.set(name, value);
     return response;
   } catch (error) {

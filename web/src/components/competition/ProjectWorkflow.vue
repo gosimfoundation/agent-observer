@@ -9,6 +9,7 @@ const { pick, t, tf, locale } = useI18n()
 const { team, refreshMe } = useAuth()
 const personal=usePersonalModel()
 const data = ref<PortalData | null>(null)
+// Suggestions only: any public https:// address works (the server refuses IPs and internal names).
 const personalBases=computed(()=>data.value?.model_bases.filter(base=>base.startsWith('https://'))??[])
 const loading = ref(true), busy = ref(false), error = ref(''), notice = ref('')
 const form = ref({ title: '', kind: 'repository', url: '' })
@@ -98,7 +99,7 @@ function errorMessage(e: unknown) {
     wrong_file_type: pick('Choose a file with the required extension.', '请选择要求的文件类型。'),
     file_too_large: pick('The file is empty or exceeds the size limit.', '文件为空或超过大小限制。'),
     invalid_repository_url: pick('Enter a public https://github.com/owner/repository URL.', '请输入公开 GitHub 仓库的完整地址。'),
-    model_destination_not_enabled: pick('This API endpoint is not enabled by the organizers.', '这个 API 地址尚未由主办方启用。'),
+    model_destination_not_enabled: t('submit.model_api.endpoint_refused'),
     invalid_team_model: t('submit.model_api.invalid'),
   }
   return messages[code] ?? words.value.failed
@@ -106,8 +107,6 @@ function errorMessage(e: unknown) {
 async function reload() {
   data.value = await portal<PortalData>('list')
   modeChoice.value = modelMode.value
-  if (!modelForm.value.base_url) modelForm.value.base_url = personalBases.value[0] ?? ''
-  if(!personal.endpoint.value)personal.endpoint.value=personalBases.value[0]??''
   await personal.refresh()
   if (!openPhases.value.some(p => p.phase_id === phaseId.value)) phaseId.value = openPhases.value[0]?.phase_id ?? ''
 }
@@ -201,12 +200,12 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
           </div>
           <form v-else class="mt-4" data-testid="team-model-form" @submit.prevent="saveModel">
             <p v-if="!savedModel" class="help">{{ t('submit.model_api.none') }}</p>
-            <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><select v-model="modelForm.base_url" required data-testid="team-model-endpoint"><option v-for="base in personalBases" :key="base" :value="base">{{ base }}</option></select></label>
+            <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><input v-model="modelForm.base_url" type="url" required pattern="https://.+" maxlength="1000" list="model-base-suggestions" placeholder="https://api.moonshot.cn/v1" autocomplete="off" spellcheck="false" aria-describedby="team-model-endpoint-help" data-testid="team-model-endpoint"></label>
+            <p id="team-model-endpoint-help" class="help">{{ t('submit.model_api.endpoint_hint') }}</p>
             <label class="field"><span>{{ t('submit.model_api.model') }}</span><input v-model="modelForm.model" type="text" maxlength="256" required autocomplete="off"></label>
             <label class="field"><span>{{ t('submit.model_api.key') }}</span><input v-model="modelForm.key" type="password" autocomplete="new-password" maxlength="8192" required data-testid="team-model-key"></label>
-            <p v-if="!personalBases.length" class="help">{{ t('submit.model_api.no_bases') }}</p>
             <div class="flex flex-wrap gap-3">
-              <button class="btn sm" :disabled="busy || !personalBases.length">{{ t('submit.model_api.save') }}</button>
+              <button class="btn sm" :disabled="busy">{{ t('submit.model_api.save') }}</button>
               <button v-if="savedModel" type="button" class="btn sm" :disabled="busy" @click="replacingKey = false; modelForm.key = ''">{{ t('submit.model_api.cancel') }}</button>
             </div>
           </form>
@@ -214,14 +213,15 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         <form v-else class="mt-4" data-testid="personal-model-settings" @submit.prevent="action(personal.connect)">
           <p v-if="relayRunning && !personal.connected.value" class="errors" role="alert">{{ t('submit.model_api.relay_running') }}</p>
           <p class="help">{{ t('submit.model_api.keep_open') }}</p>
-          <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><select v-model="personal.endpoint.value" :disabled="personal.connected.value" required><option v-for="base in personalBases" :key="base">{{ base }}</option></select></label>
+          <label class="field"><span>{{ t('submit.model_api.endpoint') }}</span><input v-model="personal.endpoint.value" type="url" :disabled="personal.connected.value" required pattern="https://.+" maxlength="1000" list="model-base-suggestions" placeholder="https://api.moonshot.cn/v1" autocomplete="off" spellcheck="false" aria-describedby="personal-model-endpoint-help" data-testid="personal-model-endpoint"></label>
+          <p id="personal-model-endpoint-help" class="help">{{ t('submit.model_api.endpoint_hint') }}</p>
           <label class="field"><span>{{ t('submit.model_api.model') }}</span><input v-model="personal.model.value" type="text" :disabled="personal.connected.value" maxlength="256" required></label>
           <label class="field"><span>{{ t('submit.model_api.key') }}</span><input v-model="personal.key.value" type="password" autocomplete="off" :disabled="personal.connected.value" maxlength="8192" required data-testid="personal-api-key"></label>
-          <p v-if="!personalBases.length" class="help">{{ t('submit.model_api.no_bases') }}</p>
-          <button v-if="!personal.connected.value" class="btn sm" :disabled="busy||!personalBases.length">{{ t('submit.model_api.connect') }}</button>
+          <button v-if="!personal.connected.value" class="btn sm" :disabled="busy">{{ t('submit.model_api.connect') }}</button>
           <button v-else type="button" class="btn sm" @click="personal.clear">{{ t('submit.model_api.disconnect') }}</button>
           <p v-if="personal.connected.value" class="help mt-3" role="status">{{ personal.status.value==='failed'?t('submit.model_api.call_failed'):personal.status.value==='working'?t('submit.model_api.working'):t('submit.model_api.connected') }}</p>
         </form>
+        <datalist id="model-base-suggestions"><option v-for="base in personalBases" :key="base" :value="base"></option></datalist>
       </section>
       <p class="mb-5"><button type="button" class="btn sm" :disabled="busy" @click="action(reload)">{{ words.refresh }}</button></p>
       <form v-if="projectsOpen" class="panel mb-6" @submit.prevent="submit">

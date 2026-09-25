@@ -1,6 +1,7 @@
 import { fulfillPersonalModel } from "./observer-personal-model.ts";
 import { sendModelBroadcast } from "./observer-model-broadcast.ts";
-import { approvedHttpsBase, boundedJson, decryptCredential, encryptCredential, ProxyError } from "./observer-model.ts";
+import { boundedJson, decryptCredential, encryptCredential, ProxyError } from "./observer-model.ts";
+import { publicBase, type Resolver } from "./observer-public-base.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { sourceRepository } from "./observer-github.ts";
 
@@ -11,6 +12,8 @@ type Dependencies = {
   masterKey: string;
   modelBases: string[];
   httpBases: string[];
+  /** DNS lookups for participant bases; tests replace it. */
+  resolve?: Resolver | null;
   artifactDownload?: (reference: string) => Promise<string>;
 };
 const known = new Set([
@@ -87,7 +90,8 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
       return await fulfillPersonalModel(body, d.userId, {
         rpc: serviceRpc,
         fetch,
-        allowedBases: new Set(d.modelBases),
+        trustedBases: new Set(d.modelBases),
+        resolve: d.resolve,
         send: (topic, event, payload) => sendModelBroadcast(d.service, topic, event, payload),
       });
     case "diagnostics":
@@ -210,8 +214,8 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
     case "save_team_model": {
       let key = typeof body.key === "string" ? body.key.trim() : "";
       body.key = "";
-      // Only an organizer-approved HTTPS base; HTTP test exceptions never apply here.
-      const base = approvedHttpsBase(body.base_url, new Set(d.modelBases));
+      // Any public HTTPS base (or an exact organizer-configured one); never HTTP, an IP or an internal name.
+      const base = await publicBase(body.base_url, new Set(d.modelBases), d.resolve);
       if (!base) throw new ProxyError(400, "model_destination_not_enabled");
       const model = typeof body.model === "string" ? body.model.trim() : "";
       if (

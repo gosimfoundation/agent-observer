@@ -1,4 +1,6 @@
 /** Model proxy core. No model credential ever reaches the participant process. */
+import { publicBase, type Resolver } from "./observer-public-base.ts";
+
 export class ProxyError extends Error {
   constructor(public status: number, public code: string) {
     super(code);
@@ -154,29 +156,14 @@ function redact(value: any, key: string): any {
   return value;
 }
 
-/** Exact organizer-approved HTTPS base, normalized like the backend allowlist; otherwise null. */
-export function approvedHttpsBase(value: unknown, allowed: Set<string>): string | null {
-  if (typeof value !== "string" || value.length > 1000) return null;
-  let url: URL;
-  try {
-    url = new URL(value.trim());
-  } catch {
-    return null;
-  }
-  const normalized = url.href.replace(/\/+$/, "");
-  if (
-    url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !allowed.has(normalized)
-  ) return null;
-  return normalized;
-}
-
 export const MAX_TEAM_RESPONSE = 192 * 1024;
 export type TeamProxyDependencies = {
   rpc: Rpc;
   fetch: typeof fetch;
   decrypt: (ciphertext: string, providerId: string) => Promise<string>;
-  // Exact backend-configured bases; only their HTTPS entries are ever used here.
-  allowedBases: Set<string>;
+  // Exact organizer-configured bases, trusted as they are; any other base must be public HTTPS.
+  trustedBases: Set<string>;
+  resolve?: Resolver | null;
   timeoutMs?: number;
 };
 
@@ -202,7 +189,7 @@ export async function teamChatCompletion(request: Request, deps: TeamProxyDepend
   let upstreamAttempted = false;
   let key = "";
   try {
-    const base = approvedHttpsBase(reservation.base_url, deps.allowedBases);
+    const base = await publicBase(reservation.base_url, deps.trustedBases, deps.resolve);
     if (
       !base || typeof reservation.model !== "string" || !reservation.model || reservation.model.length > 256 ||
       typeof reservation.provider_id !== "string" || !UUID.test(reservation.provider_id)

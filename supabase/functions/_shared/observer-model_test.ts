@@ -1,6 +1,5 @@
 import { assert, assertEquals, assertRejects, assertThrows } from "@std/assert";
 import {
-  approvedHttpsBase,
   capability,
   chatCompletion,
   decryptCredential,
@@ -227,32 +226,14 @@ function teamFixture(overrides: Partial<TeamProxyDependencies> = {}, reservation
       decrypted.push({ ciphertext, provider });
       return Promise.resolve(teamKey);
     },
-    allowedBases: new Set(["https://team-provider.test/v1", "http://organizer-test.test/v1"]),
+    trustedBases: new Set(["https://team-provider.test/v1", "http://organizer-test.test/v1"]),
+    resolve: null,
     ...overrides,
   };
   return { deps, calls, upstream, decrypted };
 }
 const teamRequest = (headers = {}) =>
   request({ model: "project-chosen-model", messages: [{ role: "user", content: "hi" }], max_tokens: 32 }, headers);
-
-Deno.test("approved HTTPS bases are normalized; HTTP, credentials, queries and unknown hosts are refused", () => {
-  const allowed = new Set(["https://api.example.test/v1", "http://plain.example.test/v1"]);
-  assertEquals(approvedHttpsBase("https://api.example.test/v1/", allowed), "https://api.example.test/v1");
-  assertEquals(approvedHttpsBase(" https://API.example.test/v1 ", allowed), "https://api.example.test/v1");
-  for (
-    const bad of [
-      "http://plain.example.test/v1",
-      "https://user:secret@api.example.test/v1",
-      "https://api.example.test/v1?key=x",
-      "https://api.example.test/v1#x",
-      "https://api.example.test/v2",
-      "https://api.example.test.evil.test/v1",
-      "not a url",
-      null,
-      42,
-    ]
-  ) assertEquals(approvedHttpsBase(bad, allowed), null);
-});
 
 Deno.test("formal run sends the saved key only to the saved HTTPS provider with the saved model", async () => {
   const f = teamFixture();
@@ -292,11 +273,29 @@ Deno.test("formal run without a saved key fails without any organizer fallback",
   assertEquals(f.upstream.length, 0);
 });
 
-Deno.test("HTTP, unapproved and credential-bearing saved bases are refused before decrypting", async () => {
+Deno.test("a saved public HTTPS base outside the organizer list is used once its addresses are public", async () => {
+  const base_url = "https://api.team-choice.com/v1";
+  const f = teamFixture({ resolve: (_host, type) => Promise.resolve(type === "A" ? ["104.18.2.5"] : []) }, {
+    base_url,
+  });
+  assertEquals((await teamChatCompletion(teamRequest(), f.deps)).status, 200);
+  assertEquals(f.upstream[0].url, base_url + "/chat/completions");
+  const inside = teamFixture({ resolve: (_host, type) => Promise.resolve(type === "A" ? ["10.0.0.7"] : []) }, {
+    base_url,
+  });
+  const error = await assertRejects(() => teamChatCompletion(teamRequest(), inside.deps), ProxyError);
+  assertEquals(error.code, "provider_not_authorized");
+  assertEquals(inside.decrypted.length, 0);
+  assertEquals(inside.upstream.length, 0);
+});
+
+Deno.test("HTTP, internal, reserved and credential-bearing saved bases are refused before decrypting", async () => {
   for (
     const base_url of [
       "http://organizer-test.test/v1",
       "https://unapproved.test/v1",
+      "https://169.254.169.254/v1",
+      "https://localhost/v1",
       "https://user:pass@team-provider.test/v1",
       "https://team-provider.test/v1?redirect=https://elsewhere.test",
     ]

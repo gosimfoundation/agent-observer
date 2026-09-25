@@ -24,10 +24,10 @@ the choice or manage the key; it is team-wide.
 
 ## Stored mode
 
-1. A member selects an approved HTTPS endpoint, enters the model and key, and
-   saves (`save_team_model` portal action, over HTTPS). The portal accepts only an
-   exact HTTPS entry of `OBSERVER_MODEL_BASES` (the HTTP test exception never
-   applies), creates a new provider ID and encrypts the key with the Edge
+1. A member enters any public HTTPS endpoint (see "Which endpoints are accepted"
+   below), the model and the key, and saves (`save_team_model` portal action,
+   over HTTPS). The portal checks the endpoint, creates a new provider ID and
+   encrypts the key with the Edge
    application key `OBSERVER_KEY_ENCRYPTION_KEY` (AES-GCM, provider ID as
    additional data). Only the ciphertext and, for keys of at least 16 characters,
    the last four characters as a recognition hint reach the database
@@ -44,8 +44,8 @@ the choice or manage the key; it is team-wide.
    shared, legacy or other-team provider is ever substituted; the
    `a_disallow_stored_formal_model` trigger on `private.observer_model_calls`
    enforces this again for every call receipt.
-4. The Edge function re-checks the base against the current allowlist (HTTPS, no
-   credentials, query or fragment), decrypts the key in request memory only,
+4. The Edge function re-checks the base with the endpoint rule below (including
+   a fresh DNS lookup), decrypts the key in request memory only,
    sends one non-streaming request with `redirect: "error"` using the saved model
    name (the project's `model` value is replaced), redacts the key from the
    response and drops its reference. Usage reported by the provider is settled;
@@ -70,8 +70,8 @@ and key in the workspace; they stay in Vue memory without browser storage. Each
 active run gets an unguessable Broadcast channel, readable only by the owning
 team. The proxy reserves a call ID and broadcasts the prompt; the open page
 submits it with the key to the authenticated portal, which verifies team
-ownership and the exact prompt digest, claims the call once and calls only an
-approved HTTPS provider with redirects disabled. The database stores the channel
+ownership and the exact prompt digest, claims the call once and calls the
+page's endpoint only if it passes the endpoint rule below, with redirects disabled. The database stores the channel
 and call receipts, never the key, ciphertext, prompt or response. Without an
 attached page the call fails within the bounded wait; there is no organizer
 fallback. The relay functions refuse teams in stored mode
@@ -91,13 +91,39 @@ Deploy in this order: `scripts/deploy-observer-backend.py --apply` (migration
 `observer-model` and `observer-portal`, then the website. Formal model calls fail
 closed in between.
 
-The allowlist is the `OBSERVER_MODEL_BASES` function secret (exact bases,
-comma-separated) written by `scripts/configure-observer-secrets.py`: the
-organizer HTTP test base (also in `OBSERVER_MODEL_HTTP_BASES`, never usable for
-saved keys), `https://openrouter.ai/api/v1`, `https://api.deepseek.com` and any
-`--model-base` additions made when it was run. Kimi Coding
-(`https://api.kimi.com/coding/v1`) and the GLM endpoints are not in the script's
-defaults; add them there if they should be offered.
+`OBSERVER_MODEL_BASES` (exact bases, comma-separated, written by
+`scripts/configure-observer-secrets.py`) is no longer an allowlist for teams. Its
+HTTPS entries are shown as suggestions in the workspace and are trusted as they
+are (the local test stacks rely on this for their loopback stubs). Its HTTP
+entries are never usable for team keys.
+
+## Which endpoints are accepted
+
+Teams are not limited to a provider list. The same rule applies to saved keys
+(when saving and again before every call) and to the page relay
+(`_shared/observer-public-base.ts`):
+
+- `https://` only, default port 443, no user name or password, no query or
+  fragment; a trailing slash is dropped.
+- The host must be a DNS name with at least one dot. IP literals (in any
+  spelling) are refused, as are `localhost` and names under `.localhost`,
+  `.local`, `.internal`, `.intranet`, `.lan`, `.home.arpa`, `.arpa`, `.test`,
+  `.example`, `.invalid` and `.onion`.
+- The name is resolved (A and AAAA) and every address must be public unicast.
+  Refused: 0/8, 10/8, 100.64/10, 127/8, 169.254/16, 172.16/12, 192.0.0/24,
+  192.0.2/24, 192.88.99/24, 192.168/16, 198.18/15, 198.51.100/24,
+  203.0.113/24, 224/4 and above, and every IPv6 address outside 2000::/3 or in
+  2001:db8::/32, 2001::/23 or 2002::/16 (this covers ::1, IPv4-mapped, NAT64,
+  ULA fc00::/7, link-local and multicast). A name without any record is
+  refused. If the runtime offers no working DNS lookup, the naming rules still
+  apply.
+- Redirects are never followed, and TLS certificate checks bind each connection
+  to the name. A name that later resolves to an internal address therefore
+  still cannot reach an internal HTTPS service, and internal plain-HTTP services
+  are out of reach because HTTP is refused.
+
+A refused endpoint returns `model_destination_not_enabled` when saving, and
+`provider_not_authorized` for a call.
 
 Formal phases get explicit per-run model limits in `public.observer_phase_settings`
 (`model_call_limit` 10,000, `model_token_limit` 10,000,000, `model_concurrency` 1).
