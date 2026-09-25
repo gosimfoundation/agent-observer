@@ -16,11 +16,17 @@ Usage:
   python scripts/configure-observer-acceptance.py \
     --team-id <uuid> --team-id <uuid> --team-id <uuid> \
     --scenario-id <uuid> --scenario-id <uuid> [--apply] [--daily-batches 10]
+  python scripts/configure-observer-acceptance.py --team-id <uuid> --same-as online [--apply]
+
+--same-as <phase slug> runs the acceptance team on exactly that phase's scenarios
+and calibration profiles, so every run gets a fresh random seed and a calibrated
+score just like participants. Only the acceptance team can see the phase.
 
 Each phase: counts_for_final=false, leaderboard_mode=hidden, projects only
 (local sessions and legacy CSV are rejected by the platform), runtime capped
-at 300s, exactly two private synthetic scenarios, no organizer model tokens
-(teams use their own provider keys; run-level caps still apply).
+at 300s, exactly two scenarios, no organizer model tokens (the migration
+20260926000300 makes observer-acceptance-* runs use the team's own key; the
+formal per-run caps of 10,000 calls and 10,000,000 tokens apply).
 """
 import json
 import os
@@ -80,7 +86,7 @@ def check_team(team_id):
     return {'team_id':str(found_id),'hidden':True,'active_members':members}
 
 
-def check_scenario(scenario_id,phase_slug):
+def check_scenario(scenario_id,phase_slug,allowed_phase=None):
     rows=query('select id,slug,name,is_active from public.scenarios where id='+quote(scenario_id))
     if not rows:raise CheckError('Scenario '+str(scenario_id)+' does not exist')
     found_id,slug,name,is_active=rows[0]
@@ -88,7 +94,8 @@ def check_scenario(scenario_id,phase_slug):
     bundle=query('select storage_path,digest from private.observer_scenario_bundles where scenario_id='+quote(scenario_id))
     if not bundle:raise CheckError('Scenario '+str(found_id)+' has no private bundle; the engine could not run it')
     leak=query('select p.slug from public.phase_scenarios ps join public.phases p on p.id=ps.phase_id'
-               ' where ps.scenario_id='+quote(scenario_id)+' and (p.counts_for_final or p.slug in '+str(PROTECTED_SLUGS)+')')
+               ' where ps.scenario_id='+quote(scenario_id)+' and (p.counts_for_final or p.slug in '+str(PROTECTED_SLUGS)+')'
+               +(' and p.slug<>'+quote(allowed_phase) if allowed_phase else ''))
     if leak:raise CheckError('Scenario '+str(found_id)+' is already linked to participant phase(s) '+json.dumps(leak)+'; refusing to reuse formal material')
     bundle_path,bundle_digest=bundle[0]
     present=one("select count(*) from storage.objects where bucket_id='observer-scenarios' and name="+quote(bundle_path))
@@ -96,7 +103,17 @@ def check_scenario(scenario_id,phase_slug):
     return {'scenario_id':str(found_id),'slug':slug,'bundle_path':bundle_path,'bundle_digest':bundle_digest}
 
 
-def plan_phase(team,scenarios,args):
+def source_calibration(slug,scenarios):
+    """Calibration profiles of the phase the acceptance run copies, one per scenario."""
+    rows=query('select c.scenario_id,c.profile_id from private.observer_scenario_calibration c join public.phases p on p.id=c.phase_id'
+               ' where p.slug='+quote(slug))
+    profiles={str(scenario):str(profile) for scenario,profile in rows}
+    missing=[s['scenario_id'] for s in scenarios if s['scenario_id'] not in profiles]
+    if missing:raise CheckError('Phase '+slug+' has no calibration for scenario(s) '+json.dumps(missing))
+    return profiles
+
+
+def plan_phase(team,scenarios,args,profiles=None):
     slug='observer-acceptance-'+str(team['team_id'])[:8]
     existing=query('select id,slug,name_en,counts_for_final,leaderboard_mode,is_active,sort_order from public.phases where slug='+quote(slug))
     if existing:
@@ -125,18 +142,25 @@ def plan_phase(team,scenarios,args):
         +','.join(map(quote,(phase_id,slug,'Acceptance '+team['team_id'][:8],'内部验收',False,False,'hidden',False,True,args.sort_order)))+')'
         +' on conflict(id) do update set slug=excluded.slug,is_active=excluded.is_active,sort_order=excluded.sort_order',
       "insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,daily_batches,model_token_limit,model_call_limit,access_team_id) values ("
-        +','.join(map(quote,(phase_id,True,False,runtime,args.daily_batches,5000,10,team['team_id'])))+')'
+        +','.join(map(quote,(phase_id,True,False,runtime,args.daily_batches,10000000,10000,team['team_id'])))+')'
         +' on conflict(phase_id) do update set projects_enabled=excluded.projects_enabled,local_sessions_enabled=excluded.local_sessions_enabled,'
-        +'runtime_seconds=excluded.runtime_seconds,daily_batches=excluded.daily_batches,access_team_id=excluded.access_team_id',
+        +'runtime_seconds=excluded.runtime_seconds,daily_batches=excluded.daily_batches,access_team_id=excluded.access_team_id,'
+        +'model_token_limit=excluded.model_token_limit,model_call_limit=excluded.model_call_limit',
     ]
     for scenario in scenarios:
         statements.append('insert into public.phase_scenarios(phase_id,scenario_id) values ('
                           +quote(phase_id)+','+quote(scenario['scenario_id'])+') on conflict do nothing')
+    # Same calibration profiles as the copied phase: each run gets its own random seed.
+    for scenario in scenarios if profiles else []:
+        statements.append('insert into private.observer_scenario_calibration(phase_id,scenario_id,profile_id) values ('
+                          +','.join(map(quote,(phase_id,scenario['scenario_id'],profiles[scenario['scenario_id']])))+') on conflict do nothing')
     calibration=[]
     for scenario in scenarios:
         rows=query('select c.profile_id,p.bundle_digest from private.observer_scenario_calibration c'
                    ' join private.observer_calibration_profiles p on p.id=c.profile_id'
                    ' where c.phase_id='+quote(str(phase_id))+' and c.scenario_id='+quote(scenario['scenario_id']))
+        if not rows and profiles:
+            rows=query('select id,bundle_digest from private.observer_calibration_profiles where id='+quote(profiles[scenario['scenario_id']]))
         if rows:
             profile_id,profile_digest=rows[0]
             seeded=profile_digest==scenario['bundle_digest']
@@ -149,7 +173,7 @@ def plan_phase(team,scenarios,args):
             'projects_only':{'projects_enabled':True,'local_sessions_enabled':False,
                              'legacy_csv':'rejected by observer_submission_admission (any phase with an settings row)'},
             'runtime_seconds':runtime,'daily_batches':args.daily_batches,
-            'model':'team-provided keys only; run caps model_token_limit=5000, model_call_limit=10; organizer provider untouched',
+            'model':'team-provided keys only; run caps model_token_limit=10000000, model_call_limit=10000; organizer provider untouched',
             'statements':statements,'calibration':calibration}
 
 
@@ -166,20 +190,27 @@ def main():
     import argparse
     parser=argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--team-id',action='append',required=True,help='acceptance team uuid (repeat for each test team)')
-    parser.add_argument('--scenario-id',action='append',required=True,help='private synthetic scenario uuid (exactly two)')
+    parser.add_argument('--scenario-id',action='append',default=[],help='private synthetic scenario uuid (exactly two)')
+    parser.add_argument('--same-as',help='phase slug whose scenarios and calibration the acceptance phase reuses (e.g. online)')
     parser.add_argument('--apply',action='store_true',help='write changes (default: dry-run)')
     parser.add_argument('--daily-batches',type=int,default=10)
     parser.add_argument('--runtime-seconds',type=int,default=MAX_RUNTIME_SECONDS)
     parser.add_argument('--sort-order',type=int,default=10100,help='kept behind the hidden lab (10000) and all participant phases')
     args=parser.parse_args()
-    if len(args.scenario_id)!=2:raise CheckError('Exactly two --scenario-id values are required')
+    profiles=None
+    if args.same_as:
+        if args.scenario_id:raise CheckError('--same-as takes the scenarios from that phase; do not pass --scenario-id')
+        args.scenario_id=[str(r[0]) for r in query('select ps.scenario_id from public.phase_scenarios ps join public.phases p'
+            ' on p.id=ps.phase_id where p.slug='+quote(args.same_as)+' order by ps.scenario_id')]
+    if len(args.scenario_id)!=2:raise CheckError('Exactly two scenarios are required')
     for scenario_id in args.scenario_id:uuid.UUID(scenario_id)
     plans=[]
     for team_id in args.team_id:
         uuid.UUID(team_id)
         team=check_team(team_id)
-        scenarios=[check_scenario(scenario_id,team_id) for scenario_id in args.scenario_id]
-        plans.append(plan_phase(team,scenarios,args))
+        scenarios=[check_scenario(scenario_id,team_id,args.same_as) for scenario_id in args.scenario_id]
+        if args.same_as and profiles is None:profiles=source_calibration(args.same_as,scenarios)
+        plans.append(plan_phase(team,scenarios,args,profiles))
     global_guards=query("select slug from public.phases where counts_for_final or slug in "+str(PROTECTED_SLUGS))
     report={'mode':'apply' if args.apply else 'dry-run','phases':plans,
             'untouched':{'global_site_mode':'private.observer_site_mode never read or written',
@@ -187,7 +218,7 @@ def main():
                          'hidden_lab':'slug observer-platform-e2e and its rows are protected slugs here',
                          'preparation_config':'private.observer_preparation_config is a single global row owned by the lab; not modified',
                          'organizer_model_provider':'not read or written; teams bring their own keys'},
-            'randomized_seeds':'opt-in per phase via observer_scenario_calibration; see per-scenario calibration report above',
+            'randomized_seeds':'on when every scenario is calibrated (see the per-scenario report above); --same-as copies them',
             'verification':None}
     for statement in [s for plan in plans for s in plan['statements']]:
         print('-- ' + statement)
