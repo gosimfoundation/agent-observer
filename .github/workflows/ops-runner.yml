@@ -12,8 +12,10 @@ permissions:
   # Tasks may commit their results back to this branch only.
   contents: write
 
+# Tasks that change production share one queue. Read-only tasks (screenshots,
+# queries) put "[parallel]" in the commit message and run at once.
 concurrency:
-  group: ops-runner
+  group: ${{ contains(github.event.head_commit.message, '[parallel]') && format('ops-runner-{0}', github.sha) || 'ops-runner' }}
   cancel-in-progress: false
 
 jobs:
