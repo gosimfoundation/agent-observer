@@ -31,7 +31,8 @@ RUNTIME_SECONDS = 10  # check (runtime_seconds between 10 and 18000)
 OUT = Path('ops-runner/results/smoke'); OUT.mkdir(parents=True, exist_ok=True)
 DEADLINE_MIN = float(os.environ.get('SMOKE_MINUTES', '15'))
 T0 = time.time()
-steps, report = [], {'started': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'steps': steps}
+steps = []
+report = {'started': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'steps': steps}
 
 
 def q(v): return acc.quote(v)
@@ -252,7 +253,7 @@ def main():
 
 def breakdown():
     """Where the time went, from the platform's own job timestamps."""
-    rid, bid = report.get('revision'), report.get('batch')
+    rid = report.get('revision')
     if not rid: return
     rows = sql("""select 'prepare' as job,j.status,j.created_at,j.claimed_at,j.finished_at from private.observer_jobs j where j.revision_id=""" + q(rid) + """
       union all select b.purpose||':'||j.kind,j.status,j.created_at,j.claimed_at,j.finished_at from private.observer_jobs j
