@@ -13,7 +13,7 @@ The current competition is Playground. Register, form a team, submit and view sc
 2. Required columns: `decision_id, slot_id, action, tile_id, program, request_id, reason`. Maximum file size: 20 MB.
 3. Each team may submit up to 50 times per day, subject to the displayed quota. Select the same scenario used locally; no competition-stage selection is needed.
 4. The starter kit includes public scenarios, example strategies, the runner, scorer and replay tools. Never include model credentials in a submitted file.
-5. You can also submit a complete project (GitHub repository or ZIP) on Participate. The platform runs it round by round in the cloud, following the competition flow, on scenarios generated from Playground data. Each team gets 5 evaluations per day, uses its own model key only, and is ranked on a separate complete-project board that does not decide awards. Before the competition, including the October 1–4 training, use it to rehearse the competition flow.
+5. You can also submit a complete project (GitHub repository or ZIP) on Participate. The platform runs it round by round in the cloud (same evaluation flow as the competition) on scenarios generated from Playground data. Each team gets 5 evaluations per day, uses its own model key only, and is ranked on a separate complete-project board that does not decide awards. During the October 1–4 training, use it to go through the flow once.
 
 ## 3. Scores and standings
 
