@@ -102,3 +102,59 @@ def test_beta_entry_isolates_parallel_teams_and_follows_team_changes(database):
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a)==phase_b
     query(uri,'update public.profiles set team_id=null where id=%s',(member_a,))
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a) is None
+
+
+def test_playground_project_board_is_offered_only_in_practice_mode(database):
+    uri=database
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    board,scenario=uuid.uuid4(),uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,'practice-projects','Playground projects','练习赛·完整项目')",(board,))
+    # Without settings the phase has no workflow and is not offered.
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,daily_batches) values(%s,true,5)',(board,))
+    assert rpc(uri,'current_competition',role='anon')['project_phase_id']==str(board)
+    # A restricted (acceptance-style) board is never offered to everyone.
+    team=identity(uri)[1]
+    query(uri,'update public.observer_phase_settings set access_team_id=%s where phase_id=%s',(team,board))
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,'update public.observer_phase_settings set access_team_id=null where phase_id=%s',(board,))
+    query(uri,"update public.phases set is_active=false where id=%s",(board,))
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,"update public.phases set is_active=true where id=%s",(board,))
+    # In competition mode only the formal phase counts.
+    query(uri,"update private.observer_site_mode set mode='competition',phase_id=null")
+    try:
+        assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    finally:
+        query(uri,"update private.observer_site_mode set mode='practice',phase_id=null")
+    query(uri,'delete from public.observer_phase_settings where phase_id=%s',(board,))
+    query(uri,'delete from public.phases where id=%s',(board,))
+
+
+def test_formal_scenarios_stay_unnamed_until_the_competition_opens(database):
+    uri=database
+    formal,shared,practice_s=uuid.uuid4(),uuid.uuid4(),uuid.uuid4()
+    online=query(uri,"select id from public.phases where slug='online'")
+    online=online[0][0] if online else None
+    if online is None:
+        online=uuid.uuid4()
+        query(uri,"insert into public.phases(id,slug,name_en,name_zh,counts_for_final) values(%s,'online','Online','正式',true)",(online,))
+    query(uri,"update public.phases set starts_at=now()+interval '3 days' where id=%s",(online,))
+    practice=query(uri,"select id from public.phases where slug='practice'")[0][0]
+    for sid,slug in ((formal,'hidden-eval'),(shared,'shared-eval'),(practice_s,'plain-practice')):
+        query(uri,"insert into public.scenarios(id,slug,name,is_active) values(%s,%s,'S',true)",(sid,slug))
+    query(uri,'insert into public.phase_scenarios values(%s,%s),(%s,%s)',(online,formal,online,shared))
+    query(uri,'insert into public.phase_scenarios values(%s,%s),(%s,%s)',(practice,shared,practice,practice_s))
+    def visible(role='anon',user=None):
+        with psycopg.connect(uri) as conn:
+            conn.execute("select set_config('role',%s,true)",(role,))
+            if user:conn.execute("select set_config('request.jwt.claims',%s,true)",('{"sub":"%s","role":"authenticated"}'%user,))
+            return {r[0] for r in conn.execute('select slug from public.scenarios').fetchall()}
+    names=visible()
+    assert 'hidden-eval' not in names and 'shared-eval' in names and 'plain-practice' in names
+    user,_=identity(uri)
+    assert 'hidden-eval' not in visible('authenticated',user)
+    query(uri,'update public.profiles set is_admin=true where id=%s',(user,))
+    assert 'hidden-eval' in visible('authenticated',user)
+    query(uri,"update public.phases set starts_at=now()-interval '1 minute' where id=%s",(online,))
+    assert 'hidden-eval' in visible()

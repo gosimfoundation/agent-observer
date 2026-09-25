@@ -1,6 +1,6 @@
 import { reactive, readonly } from 'vue'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
-const state = reactive({ mode: 'practice' as 'practice'|'competition', phaseId: null as string|null, betaPhaseId: null as string|null })
+const state = reactive({ mode: 'practice' as 'practice'|'competition', phaseId: null as string|null, betaPhaseId: null as string|null, projectPhaseId: null as string|null })
 let fetched = 0, pending: Promise<void>|null = null
 export const competition = readonly(state)
 export async function loadCompetition(force=false) {
@@ -12,6 +12,8 @@ export async function loadCompetition(force=false) {
     if (!error && data) {
       state.mode=data.mode==='competition'?'competition':'practice'
       state.phaseId=typeof data.phase_id==='string'?data.phase_id:null
+      // Playground only: the separate complete-project board next to CSV practice.
+      state.projectPhaseId=typeof data.project_phase_id==='string'?data.project_phase_id:null
       fetched=Date.now()
     }
     // Team-restricted beta entry: the RPC is granted to signed-in users only and

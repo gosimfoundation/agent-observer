@@ -1723,6 +1723,13 @@
       "working": "Calling your API…",
       "call_failed": "The model call failed. Check your API and quota.",
       "invalid": "Check the endpoint, model and key."
+    },
+    "track": {
+      "lede": "The Playground has two ways to take part, with separate boards:",
+      "csv": "Upload a CSV result",
+      "project": "Submit a complete project",
+      "csv_help": "Run it on your own machine and upload decisions.csv. Scores go to the Playground board.",
+      "project_help": "Submit a GitHub repository or a ZIP. The platform runs your program round by round in the cloud, the same flow as the competition. Scenarios are generated from Playground data; scores go to the separate complete-project board. 5 evaluations per team per day; bring your own API key if you use a model."
     }
   },
   "subs": {

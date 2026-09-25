@@ -79,7 +79,11 @@ commit;
 """
 
 
-def prepare_bundle(scenario):
+FORMAL_FILES={'config/workflow_config.json','config/score_config.json','outputs/reference/weather.csv',
+              'outputs/reference/tiles.csv','outputs/reference/tile_anomalies.csv'}
+
+
+def prepare_bundle(scenario,required=FORMAL_FILES):
     sid,slug=scenario['id'],scenario['slug']
     objects=deploy.query("select name from storage.objects where bucket_id='scenarios' and (name like "+
       q(slug+'/config/%')+" or name like "+q(slug+'/outputs/reference/%')+") order by name")
@@ -89,9 +93,8 @@ def prepare_bundle(scenario):
         if len(raw)>104857600:raise RuntimeError('Scenario file exceeds the transfer limit')
         return ProjectFile(name.removeprefix(slug+'/'),raw)
     with ThreadPoolExecutor(max_workers=4) as pool:files=tuple(pool.map(fetch,objects))
-    required={'config/workflow_config.json','config/score_config.json','outputs/reference/weather.csv',
-              'outputs/reference/tiles.csv','outputs/reference/tile_anomalies.csv'}
-    if not required.issubset({f.path for f in files}):raise RuntimeError('Incomplete formal scenario')
+    missing=sorted(set(required)-{f.path for f in files})
+    if missing:raise RuntimeError('Incomplete scenario: missing '+', '.join(missing))
     data=pack_files(files);digest=hashlib.sha256(data).hexdigest();path=sid+'/'+digest+'.zip'
     recorded=deploy.query('select digest,storage_path from private.observer_scenario_bundles where scenario_id='+q(sid))
     if recorded and recorded!=[{'digest':digest,'storage_path':path}]:

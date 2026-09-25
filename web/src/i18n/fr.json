@@ -835,6 +835,13 @@
       "working": "Appel de votre API…",
       "call_failed": "L'appel du modèle a échoué. Vérifiez votre API et votre quota.",
       "invalid": "Vérifiez le point d'accès, le modèle et la clé."
+    },
+    "track": {
+      "lede": "Le Playground propose deux façons de participer, avec des classements séparés :",
+      "csv": "Téléverser un CSV",
+      "project": "Soumettre un projet complet",
+      "csv_help": "Exécutez-le sur votre machine et téléversez decisions.csv. Les scores vont au classement du Playground.",
+      "project_help": "Soumettez un dépôt GitHub ou un ZIP. La plateforme exécute votre programme tour par tour dans le cloud, comme en compétition. Les scénarios sont générés à partir des données du Playground ; les scores vont au classement séparé des projets complets. 5 évaluations par équipe et par jour ; apportez votre propre clé d'API si vous utilisez un modèle."
     }
   },
   "dash": {
