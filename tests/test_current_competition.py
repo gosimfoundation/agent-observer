@@ -102,3 +102,30 @@ def test_beta_entry_isolates_parallel_teams_and_follows_team_changes(database):
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a)==phase_b
     query(uri,'update public.profiles set team_id=null where id=%s',(member_a,))
     assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a) is None
+
+
+def test_playground_project_board_is_offered_only_in_practice_mode(database):
+    uri=database
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    board,scenario=uuid.uuid4(),uuid.uuid4()
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,'practice-projects','Playground projects','练习赛·完整项目')",(board,))
+    # Without settings the phase has no workflow and is not offered.
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,daily_batches) values(%s,true,5)',(board,))
+    assert rpc(uri,'current_competition',role='anon')['project_phase_id']==str(board)
+    # A restricted (acceptance-style) board is never offered to everyone.
+    team=identity(uri)[1]
+    query(uri,'update public.observer_phase_settings set access_team_id=%s where phase_id=%s',(team,board))
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,'update public.observer_phase_settings set access_team_id=null where phase_id=%s',(board,))
+    query(uri,"update public.phases set is_active=false where id=%s",(board,))
+    assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    query(uri,"update public.phases set is_active=true where id=%s",(board,))
+    # In competition mode only the formal phase counts.
+    query(uri,"update private.observer_site_mode set mode='competition',phase_id=null")
+    try:
+        assert rpc(uri,'current_competition',role='anon').get('project_phase_id') is None
+    finally:
+        query(uri,"update private.observer_site_mode set mode='practice',phase_id=null")
+    query(uri,'delete from public.observer_phase_settings where phase_id=%s',(board,))
+    query(uri,'delete from public.phases where id=%s',(board,))

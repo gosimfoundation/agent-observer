@@ -120,7 +120,7 @@ export async function loadPhases(all = false): Promise<Phase[]> {
   if (all) return rows
   const { loadCompetition } = await import('../stores/competition')
   const current = await loadCompetition()
-  return rows.filter(p => current.phaseId ? p.id===current.phaseId : p.slug===(current.mode==='practice'?'practice':'online'))
+  return rows.filter(p => p.id===current.projectPhaseId || (current.phaseId ? p.id===current.phaseId : p.slug===(current.mode==='practice'?'practice':'online')))
 }
 
 /** The "main" phase: the counts_for_final one that is open/closed, else the first open one, else the first. */
