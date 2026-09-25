@@ -56,6 +56,29 @@ def http(url, data=None, method=None, token=None, headers=None):
 
 
 last = [T0]
+kicks = {'n': 0, 'at': 0.0}
+
+
+def kick(rid):
+    """Run the platform dispatcher now instead of waiting for its 1-minute cron.
+
+    Same effect as the lab's manual tick: private.observer_tick() posts to the
+    dispatcher with its Vault capability (which never leaves the database). The
+    dispatcher is idempotent and lock-safe. Only kicks while none of this
+    revision's jobs is in flight (i.e. the next step waits on the dispatcher),
+    at most every 12 s.
+    """
+    if time.time() - kicks['at'] < 12: return
+    try:
+        busy = sql("select count(*) as n from private.observer_jobs j where j.status in ('dispatched','claimed') and (j.revision_id="
+                   + q(rid) + " or j.run_id in (select r.id from public.observer_runs r join public.observer_batches b on b.id=r.batch_id"
+                   " where b.revision_id=" + q(rid) + "))")[0]['n']
+        if busy: return
+        kicks['at'] = time.time()
+        sql('update private.observer_dispatch_config set last_enqueued_at=null where id and enabled;select private.observer_tick()')
+        kicks['n'] += 1
+    except Exception as error:
+        print('  kick failed:', str(error)[:120], flush=True)
 
 
 def step(name, **data):
@@ -212,7 +235,7 @@ def main():
                                      for j in portal('diagnostics', revision_id=rid)]
             raise RuntimeError('public test failed: ' + (rev.get('error') or '') + ' ' + json.dumps(test)[:300])
         if time.time() > deadline: raise TimeoutError('public test still ' + rev['status'])
-        time.sleep(4)
+        kick(rid); time.sleep(3)
 
     portal('approve', revision_id=rid, digest=rev['approval_digest'])
     step('approved')
@@ -238,7 +261,7 @@ def main():
                  runs=[{k: r.get(k) for k in ('status', 'score', 'error')} for r in runs])
             break
         if time.time() > deadline: raise TimeoutError('batch still ' + (batch or {}).get('status', '?'))
-        time.sleep(4)
+        kick(rid); time.sleep(3)
 
     run = sql('select r.status,r.score,r.score_summary->\'calibration\'->>\'adjusted_score\' as adjusted,'
               'r.score_summary->\'raw_score\'->>\'total\' as raw,r.score_summary->>\'termination_reason\' as termination,'
@@ -278,7 +301,7 @@ try:
     breakdown()
 except Exception as error:
     report['breakdown_error'] = str(error)[:200]
-report['ok'] = ok; report['total_s'] = round(time.time() - T0, 1)
+report['ok'] = ok; report['dispatch_kicks'] = kicks['n']; report['total_s'] = round(time.time() - T0, 1)
 
 print('\n==================== SMOKE ACCEPTANCE ' + ('PASSED' if ok else 'FAILED') + ' ====================')
 print(f"team {report.get('team')}  phase {report.get('phase')}  scenario {SCENARIO_SLUG}  runtime {RUNTIME_SECONDS}s")
@@ -290,7 +313,7 @@ for j in report.get('jobs', []):
 if not ok: print('  ERROR:', report['error'])
 for d in report.get('diagnostics', []):
     print('  diag', d.get('kind'), d.get('status'), d.get('code'), '|', (d.get('log') or '')[-300:].replace('\n', ' | '))
-print(f"  total {report['total_s']}s (target < 600s)")
+print(f"  total {report['total_s']}s (target < 600s), dispatcher kicks {kicks['n']}")
 (OUT / 'last.json').write_text(json.dumps(report, indent=1, ensure_ascii=False, default=str))
 with (OUT / 'history.jsonl').open('a') as h: h.write(json.dumps(report, ensure_ascii=False, default=str) + '\n')
 sys.exit(0 if ok else 1)
