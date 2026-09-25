@@ -1,0 +1,172 @@
+{
+ "dev-fortnight": {
+  "config_keys": {
+   "scenario_config.json": [
+    "competition",
+    "configs",
+    "contract_semantics",
+    "scenario_id",
+    "schema_version",
+    "seed"
+   ],
+   "calendar_config.json": [
+    "schema_version",
+    "site",
+    "solver",
+    "survey"
+   ]
+  },
+  "calendar": {
+   "schema_version": "observing-calendar-v1"
+  },
+  "template": {
+   "gain_rate": {
+    "score": -33287.278701,
+    "completed_tiles": 55,
+    "required_missing": 2,
+    "seconds": 4.4
+   },
+   "required_first": {
+    "score": -33287.278701,
+    "completed_tiles": 55,
+    "required_missing": 2,
+    "seconds": 4.3
+   },
+   "requests_first": {
+    "score": -33372.500214,
+    "completed_tiles": 55,
+    "required_missing": 2,
+    "seconds": 4.0
+   },
+   "science_first": {
+    "score": -34403.485159,
+    "completed_tiles": 54,
+    "required_missing": 3,
+    "seconds": 4.3
+   },
+   "wait": {
+    "score": -19605.9,
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "seconds": 1.1
+   }
+  },
+  "seed0": {
+   "gain_rate": {
+    "score": -36040.122868,
+    "completed_tiles": 54,
+    "required_missing": 2,
+    "seconds": 2.6
+   },
+   "required_first": {
+    "score": -36040.122868,
+    "completed_tiles": 54,
+    "required_missing": 2,
+    "seconds": 2.6
+   },
+   "requests_first": {
+    "score": -36062.657976,
+    "completed_tiles": 54,
+    "required_missing": 2,
+    "seconds": 2.6
+   },
+   "science_first": {
+    "score": -37107.792709,
+    "completed_tiles": 53,
+    "required_missing": 3,
+    "seconds": 2.3
+   },
+   "wait": {
+    "score": -19609.5,
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "seconds": 0.7
+   }
+  }
+ },
+ "dev-reference": {
+  "config_keys": {
+   "scenario_config.json": [
+    "competition",
+    "configs",
+    "contract_semantics",
+    "scenario_id",
+    "schema_version",
+    "seed"
+   ],
+   "calendar_config.json": [
+    "schema_version",
+    "site",
+    "solver",
+    "survey"
+   ]
+  },
+  "calendar": {
+   "schema_version": "observing-calendar-v1"
+  },
+  "template": {
+   "gain_rate": {
+    "score": -733412.521635,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 43.3
+   },
+   "required_first": {
+    "score": -733412.521635,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 43.5
+   },
+   "requests_first": {
+    "score": -733422.317456,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 43.5
+   },
+   "science_first": {
+    "score": -733069.683619,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 43.3
+   },
+   "wait": {
+    "score": -31301.5,
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "seconds": 6.1
+   }
+  },
+  "seed0": {
+   "gain_rate": {
+    "score": -740577.165211,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 25.7
+   },
+   "required_first": {
+    "score": -740577.165211,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 25.9
+   },
+   "requests_first": {
+    "score": -740569.265684,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 25.7
+   },
+   "science_first": {
+    "score": -740203.642109,
+    "completed_tiles": 64,
+    "required_missing": 0,
+    "seconds": 23.1
+   },
+   "wait": {
+    "score": -31352.8,
+    "completed_tiles": 0,
+    "required_missing": 16,
+    "seconds": 3.3
+   }
+  }
+ }
+}
