@@ -31,10 +31,12 @@ def plan(args):
                                                      " on p.id=ps.phase_id where p.slug='online' or p.counts_for_final")}
     if any(s['id'] in formal for s in scenarios): raise RuntimeError('A selected scenario is formal material; refusing')
     runtimes = {s['global_wallclock_seconds'] for s in scenarios}
-    if len(runtimes) != 1 or None in runtimes: raise RuntimeError('Selected scenarios differ in runtime: '+json.dumps(sorted(map(str, runtimes))))
+    if None in runtimes: raise RuntimeError('A selected scenario has no runtime')
+    # The Playground scenarios differ in length; the phase cap is the longest one
+    # (each run still ends when its own scenario ends).
     existing = deploy.query('select id from public.phases where slug='+q(SLUG))
     phase_id = existing[0]['id'] if existing else str(uuid.uuid4())
-    runtime = next(iter(runtimes))
+    runtime = max(int(r) for r in runtimes)
     statements = [
         'insert into public.phases(id,slug,name_en,name_zh,allow_results,allow_agents,leaderboard_mode,counts_for_final,is_active,sort_order,starts_at,ends_at)'
         ' values ('+','.join(map(q, (phase_id, SLUG, 'Playground · complete projects', '练习赛 · 完整项目', False, False,
