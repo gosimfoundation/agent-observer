@@ -112,19 +112,56 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
             'buffer':pack_files((ProjectFile('main.rs',b'fn main() {}'),))})
         page.get_by_test_id('project-submit').click()
         expect(page.get_by_role('heading',name='ZIP project',exact=True)).to_be_visible(timeout=15000)
-        expect(page.get_by_role('button',name='Save encrypted key',exact=True)).to_have_count(0)
         expect(page.get_by_role('button',name='Start local CSV session',exact=True)).to_have_count(0)
-        personal=page.get_by_test_id('personal-model-settings')
-        personal.locator('summary').click()
+        models=page.get_by_test_id('model-api-settings')
+        expect(models.get_by_role('heading',name='Model API (optional)',exact=True)).to_be_visible()
+        # Default: the key is saved encrypted, so no page has to stay open.
+        expect(models.get_by_test_id('model-mode-stored')).to_be_checked()
+        expect(models).to_contain_text('you can close this page during evaluation')
+        expect(models.get_by_test_id('personal-model-settings')).to_have_count(0)
+        expect(page.get_by_text('Keep this page open until each evaluation finishes, including')).to_have_count(0)
+        key='browser-saved-key-fixture-4Kd9'
+        models.get_by_test_id('team-model-endpoint').select_option(index=0)
+        models.get_by_label('Model',exact=True).fill('team-model')
+        models.get_by_test_id('team-model-key').fill(key)
+        models.get_by_role('button',name='Save encrypted key',exact=True).click()
+        expect(models.get_by_test_id('team-model-hint')).to_contain_text('Key ending in 4Kd9',timeout=15000)
+        expect(models.get_by_test_id('team-model-key')).to_have_count(0)
+        assert key not in page.content()
+        assert key not in page.evaluate('JSON.stringify({...localStorage,...sessionStorage})')
+        stored=query(uri,'''select p.encrypted_key from private.observer_team_models m
+            join private.observer_providers p on p.id=m.provider_id where m.team_id=%s''',(s['team'],))
+        assert len(stored)==1 and stored[0][0].startswith('v1.') and key not in stored[0][0]
+        page.reload()
+        models=page.get_by_test_id('model-api-settings')
+        expect(models.get_by_test_id('team-model-hint')).to_contain_text('Key ending in 4Kd9',timeout=15000)
+        # Choosing not to save deletes the saved key at once and shows the page relay.
+        expect(models).to_contain_text('Choosing this deletes the saved key.')
+        models.get_by_test_id('model-mode-relay').check()
+        personal=models.get_by_test_id('personal-model-settings')
+        expect(personal).to_contain_text('Keep this page open until each evaluation finishes',timeout=15000)
+        expect(models).to_contain_text('open this page at the time agreed with the organizers')
+        assert query(uri,'select count(*) from private.observer_team_models where team_id=%s',(s['team'],))==[(0,)]
+        assert query(uri,"select count(*) from private.observer_providers where team_id=%s and encrypted_key<>''",(s['team'],))==[(0,)]
         personal.get_by_label('Model',exact=True).fill('own-model')
         personal.get_by_test_id('personal-api-key').fill('in-memory-browser-fixture')
         personal.get_by_role('button',name='Use for this session',exact=True).click()
         expect(personal.get_by_role('button',name='Disconnect and clear key')).to_be_visible()
         assert 'in-memory-browser-fixture' not in page.evaluate('JSON.stringify({...localStorage,...sessionStorage})')
-        assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
+        assert query(uri,"select count(*) from private.observer_providers where team_id=%s and encrypted_key<>''",(s['team'],))==[(0,)]
         page.reload()
-        page.get_by_test_id('personal-model-settings').locator('summary').click()
-        expect(page.get_by_test_id('personal-api-key')).to_have_value('')
+        expect(page.get_by_test_id('personal-api-key')).to_have_value('',timeout=15000)
+        expect(page.get_by_test_id('model-mode-relay')).to_be_checked()
+        # Back to the default: the relay form and its keep-open message disappear.
+        page.get_by_test_id('model-mode-stored').check()
+        expect(page.get_by_test_id('team-model-form')).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('personal-model-settings')).to_have_count(0)
+        expect(page.get_by_text('Keep this page open until each evaluation finishes, including')).to_have_count(0)
+        for lang,title in (('fr','API de modèle (facultatif)'),('ja','モデル API（任意）'),('zh','模型 API（可选）')):
+            page.goto(portal_site+'/projects?lang='+lang)
+            expect(page.get_by_test_id('model-api-settings').get_by_role('heading',name=title,exact=True)).to_be_visible(timeout=15000)
+        page.goto(portal_site+'/projects?lang=en')
+        expect(page.get_by_test_id('model-api-settings').get_by_role('heading',name='Model API (optional)')).to_be_visible(timeout=15000)
 
         page.get_by_role('button',name='Review interface',exact=True).click()
         page.get_by_label('Architecture and reproduction notes').fill('Run the project using the submitted manifest.')

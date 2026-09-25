@@ -6,15 +6,21 @@ export type ProjectRevision = {
   explanation: string; error: string; public_test: { passed?: boolean; summary?: string; run_id?: string; status?: string }
   observer_evidence: { notes: string; code_url: string } | null
 }
+/** The team's model key choice; a saved key is described, never returned. */
+export type TeamModel = {
+  mode: 'stored' | 'relay'
+  saved: { base_url: string; model: string; key_hint: string; saved_at: string } | null
+}
 export type PortalData = {
   phases: { phase_id: string; projects_enabled: boolean; local_sessions_enabled: boolean; daily_batches: number
-    model_token_limit: number; phases: { slug: string; name_en: string; name_zh: string; is_active: boolean
+    model_token_limit: number; model_call_limit: number; phases: { slug: string; name_en: string; name_zh: string; is_active: boolean
       starts_at: string | null; ends_at: string | null } }[]
   projects: { id: string; title: string; observer_revisions: ProjectRevision[] }[]
   batches: { id: string; mode: string; status: string; score: number | null; created_at: string
     observer_runs: { id: string; status: string; score: number | null; result_path: string | null
       score_summary?: { raw_score?: { total: number }; calibration?: { version: string } } | null }[] }[]
   providers: { id: string; name: string; base_url: string; models: string[]; shared: boolean; enabled: boolean; daily_token_limit: number }[]
+  team_model: TeamModel | null
   model_bases: string[]
 }
 

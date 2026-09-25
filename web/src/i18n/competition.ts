@@ -40,7 +40,7 @@ export function competitionMessages(base: Record<string, any>, chinese: boolean)
     'resources.scenarios_note':pick('Only public scenario configuration is downloadable. Future weather and anomaly answers stay on the server.','仅提供场景公开配置，未来天气和异常答案保留在服务器。'),
     'resources.file_group_desc.weather':pick('Current weather arrives through the session. Future weather cannot be downloaded.','当前天气通过会话提供，未来天气不提供下载。'),
     'resources.cli':pick('Prepare your project','准备你的项目'),
-    'faq.items.4.a':pick('Yes. Model use is optional; bring your own API and quota. Keys are used only in memory and never saved by the platform.','可以，模型调用可选，请自备 API 和额度。密钥仅在内存中使用，平台不保存。'),
+    'faq.items.4.a':pick('Yes. Model use is optional; bring your own API and quota. In Participate, either save the key encrypted on the server (used only for evaluation and verification, deleted after results are verified) or do not save it and keep that page open during evaluations.','可以，模型调用可选，请自备 API 和额度。可在「参赛」页选择将密钥加密保存在服务器上（只用于评测和核验，结果核验完成后删除），或不保存密钥、评测期间保持该页面打开。'),
     'faq.items.14.q':pick('Does the platform provide model credits?','平台提供模型额度吗？'),
     'faq.items.14.a':pick('No. Use your own model API and quota, or run without a model.','不提供，请使用自己的模型 API 和额度，也可以完全不调用模型。'),
     'faq.items.3.a':pick('Any language can use the JSONL interface. Submit a complete repository or ZIP; CSV uploads are not accepted.','任意语言都可使用 JSONL 接口，提交完整仓库或 ZIP，不接受 CSV。'),
