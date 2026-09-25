@@ -7,6 +7,11 @@ import { fmtUtc, num } from '../../lib/format'
 const props = defineProps<{ actions: ReportAction[] }>()
 const { t } = useI18n()
 const CLASSES: OutcomeClass[] = ['completed', 'wait', 'interrupted', 'unsafe', 'invalid']
+/**
+ * Past this many actions the 1px gap and 1px minimum per bar no longer fit any column (a 180-night run has
+ * thousands), so bars drop both and share the width by weight alone.
+ */
+const DENSE = 120
 
 /** Waits are squeezed so that exposures stay visible even in runs that idle for most of the calendar. */
 const weightOf = (a: ReportAction) => Math.max(1, Number(a.elapsed_seconds) || 1) * (a.action === 'wait' ? 0.15 : 1)
@@ -28,8 +33,8 @@ function tooltip(a: ReportAction): string {
 
 <template>
   <div class="action-timeline" data-testid="action-timeline">
-    <div class="timeline mt-3">
-      <i v-for="b in bars" :key="b.a.decision_id" :style="{ flex: `0 0 ${b.width}`, background: OUTCOME_COLORS[b.cls] }" :title="tooltip(b.a)"></i>
+    <div class="timeline mt-3" :class="{ dense: bars.length > DENSE }">
+      <i v-for="b in bars" :key="b.a.decision_id" :style="{ flex: `0 1 ${b.width}`, background: OUTCOME_COLORS[b.cls] }" :title="tooltip(b.a)"></i>
     </div>
     <div class="legend">
       <span v-for="c in CLASSES" :key="c"><i :style="{ background: OUTCOME_COLORS[c] }"></i>{{ t(`subs.outcome_class.${c}`) }} <b class="text-text-primary">{{ counts[c] }}</b></span>

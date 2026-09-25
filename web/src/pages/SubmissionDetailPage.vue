@@ -36,6 +36,8 @@ const worker = useWorkerStatus()
 watch(pending, (p) => { if (p) worker.start(id.value); else worker.stop() }, { immediate: true })
 const evaluations = computed(() => ((sub.value?.evaluations ?? []) as any[]).slice().sort((a, b) => Number(a.id) - Number(b.id)))
 const watcher = useSubmissionWatch(load, () => pending.value)
+/** Per evaluation, the one replay position the decision replay and the observed-sky map both show. */
+const replayCursor = ref<Record<string, number | null>>({})
 // Seeing a scored replay completes the dashboard quest's last Playground step.
 const { remember } = useQuestFlags()
 watch(() => sub.value?.status, status => { if (status === 'scored') remember('review', 'practice') })
@@ -240,11 +242,11 @@ onMounted(async () => {
             <!-- replay -->
             <div v-if="ev.replay_path" class="mt-8">
               <h3 class="label">{{ t('subs.replay.title') }}</h3>
-              <ReplayViewer class="mt-3" :path="ev.replay_path" />
+              <ReplayViewer v-model:cursor="replayCursor[ev.id]" class="mt-3" :path="ev.replay_path" :actions="reports[ev.id]?.actions.length" />
             </div>
 
             <template v-if="reports[ev.id]">
-              <ObservedSkyMap v-if="ev.scenarios?.slug" class="mt-8" :slug="ev.scenarios.slug" :actions="reports[ev.id]!.actions" :tiles-public="ev.scenarios?.tiles_public !== false" />
+              <ObservedSkyMap v-if="ev.scenarios?.slug" class="mt-8" :slug="ev.scenarios.slug" :actions="reports[ev.id]!.actions" :tiles-public="ev.scenarios?.tiles_public !== false" v-model:cursor="replayCursor[ev.id]" />
               <h3 class="label mt-8">{{ t('subs.actions_title') }}</h3>
               <ActionTimeline :actions="reports[ev.id]!.actions" />
               <details class="plain mt-6">
