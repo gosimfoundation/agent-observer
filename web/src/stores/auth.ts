@@ -1,6 +1,7 @@
 import { reactive, computed } from 'vue'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { loadCompetition } from './competition'
 
 export interface MeTeam {
   id: string; name: string; slug: string; leader_id: string; invite_code: string
@@ -44,11 +45,14 @@ export function initAuth(): Promise<void> {
     } catch { /* offline or misconfigured: treat as logged out */ }
     finally { state.ready = true }
     supabase.auth.onAuthStateChange((event, session) => {
+      // Only a session gain or loss changes the beta entry; token refreshes must
+      // not force competition refetches.
+      const hadSession = Boolean(state.session)
       state.session = session
       if (event === 'PASSWORD_RECOVERY') state.recovery = true
-      if (!session) { state.me = null; return }
+      if (!session) { state.me = null; if (hadSession) window.setTimeout(() => { void loadCompetition(true) }, 0); return }
       // Do not await Supabase calls inside the callback (documented deadlock hazard).
-      window.setTimeout(() => { void refreshMe() }, 0)
+      window.setTimeout(() => { void refreshMe(); if (!hadSession) void loadCompetition(true) }, 0)
     })
   })()
   return readyPromise

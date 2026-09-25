@@ -46,3 +46,58 @@ def test_formal_competition_rejects_csv_and_local_batches_even_if_config_is_stal
         rpc(uri,'create_submission',str(phase),'results',str(scenario),str(team)+'/result.csv',role='authenticated',user=user)
     assert query(uri,'select count(*) from public.observer_batches where phase_id=%s',(phase,))==[(0,)]
     assert query(uri,'select count(*) from public.submissions where phase_id=%s',(phase,))==[(0,)]
+
+
+def test_private_beta_entry_reachable_only_for_its_access_team(database):
+    uri=database;member,team=identity(uri);other,_=identity(uri)
+    beta,scenario=uuid.uuid4(),uuid.uuid4()
+    practice=query(uri,"select id from public.phases where slug='practice'")[0][0]
+    query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,%s,'Formal','正式比赛')",(beta,'formal-beta'))
+    query(uri,"insert into public.scenarios(id,slug,name) values(%s,%s,'Beta')",(scenario,'beta'))
+    query(uri,'insert into public.phase_scenarios values(%s,%s)',(beta,scenario))
+    query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled) values(%s,true,true)',(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
+    query(uri,'update public.observer_phase_settings set access_team_id=%s where phase_id=%s',(team,beta))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member)==beta
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=other) is None
+    with pytest.raises(psycopg.Error,match='permission denied'):
+        rpc(uri,'my_observer_phase',role='anon')
+    admin,_=identity(uri)
+    query(uri,'update public.profiles set is_admin=true where id=%s',(admin,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin)==beta
+    query(uri,'update public.profiles set is_banned=true where team_id=%s',(team,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
+    query(uri,'update public.profiles set is_banned=false where team_id=%s',(team,))
+    # A phase without a live workflow or past its end stays hidden without
+    # touching the site-wide switch.
+    query(uri,'update public.observer_phase_settings set projects_enabled=false,local_sessions_enabled=false where phase_id=%s',(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
+    query(uri,'update public.observer_phase_settings set local_sessions_enabled=true where phase_id=%s',(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member)==beta
+    query(uri,"update public.phases set starts_at=now()+interval '1 hour' where id=%s",(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
+    query(uri,'update public.phases set starts_at=now()-interval \'1 minute\' where id=%s',(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member)==beta
+    query(uri,"update public.phases set ends_at=now()-interval '1 minute' where id=%s",(beta,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member) is None
+    assert rpc(uri,'current_competition',role='anon')=={'mode':'practice','phase_id':str(practice)}
+
+
+def test_beta_entry_isolates_parallel_teams_and_follows_team_changes(database):
+    uri=database;member_a,team_a=identity(uri);member_b,team_b=identity(uri)
+    phase_a,phase_b=uuid.uuid4(),uuid.uuid4()
+    # Same sort_order on purpose: the tiebreak must be deterministic (phase id).
+    for phase,slug,team in ((phase_a,'acceptance-a',team_a),(phase_b,'acceptance-b',team_b)):
+        query(uri,"insert into public.phases(id,slug,name_en,name_zh,sort_order) values(%s,%s,'Acceptance','验收',10100)",(phase,slug))
+        query(uri,'insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,access_team_id) values(%s,true,false,%s)',(phase,team))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a)==phase_a
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member_b)==phase_b
+    admin,_=identity(uri)
+    query(uri,'update public.profiles set is_admin=true where id=%s',(admin,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=admin)==min(phase_a,phase_b)
+    # Moving a member between acceptance teams switches their entry; leaving
+    # every acceptance team removes it.
+    query(uri,'update public.profiles set team_id=%s where id=%s',(team_b,member_a))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a)==phase_b
+    query(uri,'update public.profiles set team_id=null where id=%s',(member_a,))
+    assert rpc(uri,'my_observer_phase',role='authenticated',user=member_a) is None
