@@ -2267,7 +2267,10 @@
       "title": "Happy Mid-Autumn Festival!",
       "body": "The moon is too bright for deep-sky work tonight, so the observatories have stopped for mooncakes.",
       "rabbit": "Release the jade rabbit 🐇",
-      "close": "Close"
+      "close": "Close",
+      "yutu_title": "The jade rabbit really has a home on the Moon",
+      "yutu_body": "Look up tonight: from the northern hemisphere, the dark plain at the Moon's upper left is Mare Imbrium. China's Yutu rover landed there in 2013 (44.12°N, 19.51°W), stopped working in 2016 and is still parked there. Its successor, Yutu-2, landed in 2019 on the far side, the side we never see from Earth.",
+      "map_label": "Near side of the Moon; the red dot marks Yutu in Mare Imbrium"
     }
   }
 }
