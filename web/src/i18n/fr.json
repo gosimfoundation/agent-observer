@@ -809,5 +809,13 @@
       "call_failed": "L'appel du modèle a échoué. Vérifiez votre API et votre quota.",
       "invalid": "Vérifiez le point d'accès, le modèle et la clé."
     }
+  },
+  "eggs": {
+    "mid_autumn": {
+      "title": "Joyeuse fête de la Mi-Automne !",
+      "body": "Ce soir, la Lune est trop brillante pour le ciel profond : les observatoires font une pause gâteaux de lune.",
+      "rabbit": "Lâcher le lapin de jade 🐇",
+      "close": "Fermer"
+    }
   }
 }

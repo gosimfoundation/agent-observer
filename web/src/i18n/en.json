@@ -2299,5 +2299,13 @@
     "body": "Safari keeps showing an old version of this site and displays parts of it incorrectly. Copy the address and open it in Chrome.",
     "copy": "Copy the address",
     "stay": "Use Safari anyway"
+  },
+  "eggs": {
+    "mid_autumn": {
+      "title": "Happy Mid-Autumn Festival!",
+      "body": "The moon is too bright for deep-sky work tonight, so the observatories have stopped for mooncakes.",
+      "rabbit": "Release the jade rabbit 🐇",
+      "close": "Close"
+    }
   }
 }

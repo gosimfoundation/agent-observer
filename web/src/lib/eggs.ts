@@ -18,6 +18,23 @@ export function isFullMoonToday(): boolean {
   return Math.abs(moonPhase() - 0.5) < 0.017
 }
 
+/** Mid-Autumn Festival (the 15th day of the 8th lunar month), as calendar dates in China. */
+const MID_AUTUMN = ['2026-09-25', '2027-09-15', '2028-10-03', '2029-09-22', '2030-09-12']
+
+function isoDate(date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+}
+
+/** True on the festival day in China or in the visitor's own time zone; `?egg=midautumn` previews it. */
+export function isMidAutumnToday(date = new Date()): boolean {
+  try {
+    if (new URLSearchParams(window.location.search).get('egg') === 'midautumn') return true
+    return MID_AUTUMN.includes(isoDate(date, 'Asia/Shanghai')) || MID_AUTUMN.includes(isoDate(date))
+  } catch {
+    return false
+  }
+}
+
 /** The tab icon follows tonight's real moon. */
 export function installMoonFavicon() {
   try {
