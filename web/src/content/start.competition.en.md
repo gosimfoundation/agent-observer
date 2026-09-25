@@ -10,9 +10,9 @@ Your project may use any language. It reads current observations and returns one
 
 The prominent **Submit** button opens the single [Participate](/compete) workspace. Enter a public repository link or upload a private ZIP. Review the source version, launch settings and proposed interface files, then confirm the version to evaluate. CSV uploads are not accepted.
 
-Models are optional. If needed, bring your own API and quota. Credentials must be encrypted in transit and held only in memory for the run; the platform must not save them to databases, files or logs. Never place keys in the project.
+Models are optional. If needed, bring your own API and quota. Never place keys in the project.
 
-For model calls, enter a supported HTTPS endpoint, model and key in Participate and keep that page open, including during automatic adaptation. Closing the page or disconnecting clears the key; reconnecting requires entering it again.
+For model calls, enter a supported HTTPS endpoint, model and key in Participate and save them. The key is stored encrypted on the server, used only for evaluation and verification, and deleted once the results have been verified; the page does not need to stay open during evaluation.
 
 ## 4. Evaluate and review
 

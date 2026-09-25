@@ -41,9 +41,9 @@ The platform records the source revision and launch configuration, tests the int
 
 ## 5. Optional personal model APIs
 
-Bring your own API and quota if your algorithm needs a model. The platform does not provide model credits. Credentials use HTTPS and stay only in page and request memory. They must not enter databases, project files, run artifacts or logs. Do not commit keys to your repository or ZIP.
+Bring your own API and quota if your algorithm needs a model. The platform does not provide model credits. Do not commit keys to your repository or ZIP.
 
-For model calls, enter a supported HTTPS endpoint, model and key in Participate and keep that page open, including during automatic adaptation. Closing the page or disconnecting clears the key; reconnecting requires entering it again.
+Enter a supported HTTPS endpoint, model and key in Participate and save them. The key is stored encrypted on the server, used only for evaluation and verification, never written to project files, run artifacts or logs, and deleted once the results have been verified. The page does not need to stay open during evaluation; you can replace or delete a saved key at any time.
 
 Deterministic algorithms do not need a key. Explanation length does not increase the performance score.
 
