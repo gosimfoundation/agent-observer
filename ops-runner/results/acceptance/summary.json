@@ -1,0 +1,27 @@
+{
+ "python-zip-kimi": {
+  "result": "failed",
+  "score": null,
+  "public_test_score": -24596.114115,
+  "runs": [
+   {
+    "status": "scored",
+    "score": 157.076967,
+    "error": ""
+   },
+   {
+    "status": "failed",
+    "score": null,
+    "error": "engine_job_failed"
+   }
+  ],
+  "error": null
+ },
+ "repo-glm": {
+  "result": null,
+  "score": null,
+  "public_test_score": -19270.2,
+  "runs": null,
+  "error": null
+ }
+}

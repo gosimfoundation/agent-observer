@@ -1,0 +1,149 @@
+{
+ "cases": {
+  "python-zip-kimi": {
+   "revision_id": "608c1321-f3ca-4574-8451-60067dc36b8e",
+   "provider": "kimi",
+   "batch_id": "f7bab6e6-f946-4cf6-a3f1-9e94517ad77f",
+   "public_test_score": -24596.114115,
+   "done": true,
+   "result": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 157.076967,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ],
+   "diag": [
+    {
+     "run": "a6d87907-9dfa-4e2f-a1c3-86e55720e5db",
+     "jobs": [
+      {
+       "kind": "execute",
+       "status": "failed",
+       "code": "invalid_or_expired_capability",
+       "log": "\n"
+      },
+      {
+       "kind": "engine",
+       "status": "failed",
+       "code": "scenario_preparation_timeout",
+       "log": ""
+      }
+     ]
+    }
+   ]
+  },
+  "repo-glm": {
+   "revision_id": "4b0b0e0d-1755-43f5-ae62-c25cb94bb5d0",
+   "provider": "glm",
+   "batch_id": "c8ebe7cc-e915-4c72-945c-2e229b51b094",
+   "public_test_score": -19270.2
+  }
+ },
+ "log": [
+  {
+   "t": "17:34:17",
+   "event": "key_saved",
+   "provider": "kimi",
+   "base": "https://api.kimi.com/coding/v1",
+   "model": "kimi-for-coding",
+   "hint_len": 4
+  },
+  {
+   "t": "17:34:23",
+   "event": "submitted",
+   "case": "python-zip-kimi",
+   "how": "python"
+  },
+  {
+   "t": "17:42:40",
+   "event": "key_saved",
+   "provider": "kimi",
+   "base": "https://api.kimi.com/coding/v1",
+   "model": "kimi-for-coding",
+   "hint_len": 4
+  },
+  {
+   "t": "17:42:41",
+   "event": "evaluating",
+   "case": "python-zip-kimi",
+   "public_test": -24596.114115
+  },
+  {
+   "t": "18:03:57",
+   "event": "finished",
+   "case": "python-zip-kimi",
+   "status": "failed",
+   "score": null,
+   "runs": [
+    {
+     "status": "scored",
+     "score": 157.076967,
+     "error": ""
+    },
+    {
+     "status": "failed",
+     "score": null,
+     "error": "engine_job_failed"
+    }
+   ]
+  },
+  {
+   "t": "18:04:00",
+   "event": "key_saved",
+   "provider": "glm",
+   "base": "https://open.bigmodel.cn/api/paas/v4",
+   "model": "glm-4.5-flash",
+   "hint_len": 4
+  },
+  {
+   "t": "18:04:01",
+   "event": "submitted",
+   "case": "repo-glm",
+   "how": "repository"
+  },
+  {
+   "t": "18:12:20",
+   "event": "key_saved",
+   "provider": "glm",
+   "base": "https://open.bigmodel.cn/api/paas/v4",
+   "model": "glm-4.5-flash",
+   "hint_len": 4
+  },
+  {
+   "t": "18:12:21",
+   "event": "evaluating",
+   "case": "repo-glm",
+   "public_test": -19270.2
+  },
+  {
+   "t": "18:19:23",
+   "event": "error",
+   "case": "repo-glm",
+   "error": "batch still running"
+  },
+  {
+   "t": "18:19:27",
+   "event": "diagnostics",
+   "case": "python-zip-kimi",
+   "run": "a6d87907-9dfa-4e2f-a1c3-86e55720e5db",
+   "jobs": [
+    [
+     "execute",
+     "invalid_or_expired_capability"
+    ],
+    [
+     "engine",
+     "scenario_preparation_timeout"
+    ]
+   ]
+  }
+ ]
+}
