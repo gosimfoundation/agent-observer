@@ -14,6 +14,13 @@ import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+# The first Observer migration. Every later migration belongs to Observer too;
+# earlier ones are legacy event migrations and are never applied by this script.
+FIRST_OBSERVER_MIGRATION = '20260925000100'
+
+
+def observer_migrations(root):
+    return sorted(p for p in (root/'supabase/migrations').glob('*_*.sql') if p.stem>=FIRST_OBSERVER_MIGRATION)
 
 
 def quote(value):
@@ -37,7 +44,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--apply',action='store_true',help='Apply the reviewed, pending additive migrations')
     args=parser.parse_args()
-    files=sorted((ROOT/'supabase/migrations').glob('20260925*_*.sql'))
+    files=observer_migrations(ROOT)
     exists=query("select to_regclass('private.observer_migrations') is not null as present")[0]['present']
     applied={r['version']:r['digest'] for r in query('select version,digest from private.observer_migrations')} if exists else {}
     pending=[]

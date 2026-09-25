@@ -1,13 +1,16 @@
 import { assert, assertEquals, assertRejects, assertThrows } from "@std/assert";
 import {
+  approvedHttpsBase,
   capability,
   chatCompletion,
   decryptCredential,
   encryptCredential,
+  MAX_TEAM_RESPONSE,
   ProxyError,
+  teamChatCompletion,
   validateChat,
 } from "./observer-model.ts";
-import type { ProxyDependencies } from "./observer-model.ts";
+import type { ProxyDependencies, TeamProxyDependencies } from "./observer-model.ts";
 
 const run = "00000000-0000-4000-8000-000000000001";
 const provider = "00000000-0000-4000-8000-000000000002";
@@ -189,4 +192,170 @@ Deno.test("accounting failure retains the reservation and never retries inferenc
       : base(name, args);
   await assertRejects(() => chatCompletion(request(), f.deps), ProxyError);
   assertEquals(f.upstream.length, 1);
+});
+
+// Formal runs: the team's saved key, stored encrypted and decrypted per request.
+const teamProvider = "00000000-0000-4000-8000-000000000003";
+const teamKey = "team-saved-key-fixture-0123456789";
+function teamFixture(overrides: Partial<TeamProxyDependencies> = {}, reservation: Record<string, unknown> = {}) {
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const upstream: { url: string; init: RequestInit | undefined }[] = [];
+  const decrypted: { ciphertext: string; provider: string }[] = [];
+  const deps: TeamProxyDependencies = {
+    rpc: (name, args) => {
+      calls.push({ name, args });
+      return Promise.resolve(
+        name === "observer_reserve_team_model"
+          ? {
+            reserved: true,
+            provider_id: teamProvider,
+            base_url: "https://team-provider.test/v1",
+            model: "saved-model",
+            encrypted_key: "v1.stored.ciphertext",
+            ...reservation,
+          }
+          : null,
+      );
+    },
+    fetch: (url, init) => {
+      upstream.push({ url: String(url), init });
+      return Promise.resolve(
+        Response.json({ choices: [{ message: { role: "assistant", content: "OK" } }], usage: { total_tokens: 21 } }),
+      );
+    },
+    decrypt: (ciphertext, provider) => {
+      decrypted.push({ ciphertext, provider });
+      return Promise.resolve(teamKey);
+    },
+    allowedBases: new Set(["https://team-provider.test/v1", "http://organizer-test.test/v1"]),
+    ...overrides,
+  };
+  return { deps, calls, upstream, decrypted };
+}
+const teamRequest = (headers = {}) =>
+  request({ model: "project-chosen-model", messages: [{ role: "user", content: "hi" }], max_tokens: 32 }, headers);
+
+Deno.test("approved HTTPS bases are normalized; HTTP, credentials, queries and unknown hosts are refused", () => {
+  const allowed = new Set(["https://api.example.test/v1", "http://plain.example.test/v1"]);
+  assertEquals(approvedHttpsBase("https://api.example.test/v1/", allowed), "https://api.example.test/v1");
+  assertEquals(approvedHttpsBase(" https://API.example.test/v1 ", allowed), "https://api.example.test/v1");
+  for (
+    const bad of [
+      "http://plain.example.test/v1",
+      "https://user:secret@api.example.test/v1",
+      "https://api.example.test/v1?key=x",
+      "https://api.example.test/v1#x",
+      "https://api.example.test/v2",
+      "https://api.example.test.evil.test/v1",
+      "not a url",
+      null,
+      42,
+    ]
+  ) assertEquals(approvedHttpsBase(bad, allowed), null);
+});
+
+Deno.test("formal run sends the saved key only to the saved HTTPS provider with the saved model", async () => {
+  const f = teamFixture();
+  const result = await teamChatCompletion(teamRequest({ "idempotency-key": provider }), f.deps);
+  assertEquals(result.status, 200);
+  assertEquals(result.headers.get("cache-control"), "no-store");
+  assertEquals(result.headers.get("x-observer-request-id"), provider);
+  assertEquals((await result.json()).choices[0].message.content, "OK");
+  assertEquals(f.calls.map((c) => c.name), ["observer_reserve_team_model", "observer_settle_model"]);
+  assertEquals(f.calls[0].args.p_run, run);
+  assertEquals(f.calls[0].args.p_token, token);
+  assertEquals(f.calls[0].args.p_call, provider);
+  assertEquals(f.calls[1].args, { p_call: provider, p_actual_tokens: 21 });
+  assertEquals(f.decrypted, [{ ciphertext: "v1.stored.ciphertext", provider: teamProvider }]);
+  assertEquals(f.upstream.length, 1);
+  assertEquals(f.upstream[0].url, "https://team-provider.test/v1/chat/completions");
+  assertEquals(f.upstream[0].init?.redirect, "error");
+  assertEquals(new Headers(f.upstream[0].init?.headers).get("authorization"), "Bearer " + teamKey);
+  const sent = JSON.parse(String(f.upstream[0].init?.body));
+  assertEquals(sent.model, "saved-model");
+  assert(!String(f.upstream[0].init?.body).includes(token));
+  // The database only ever receives digests and receipts, never the key.
+  assert(!JSON.stringify(f.calls).includes(teamKey));
+});
+
+Deno.test("formal run without a saved key fails without any organizer fallback", async () => {
+  const f = teamFixture({
+    rpc: (name, args) => {
+      f.calls.push({ name, args });
+      return Promise.reject(new ProxyError(403, "team_model_not_configured"));
+    },
+  });
+  const error = await assertRejects(() => teamChatCompletion(teamRequest(), f.deps), ProxyError);
+  assertEquals(error.code, "team_model_not_configured");
+  assertEquals(f.calls.map((c) => c.name), ["observer_reserve_team_model"]);
+  assertEquals(f.decrypted.length, 0);
+  assertEquals(f.upstream.length, 0);
+});
+
+Deno.test("HTTP, unapproved and credential-bearing saved bases are refused before decrypting", async () => {
+  for (
+    const base_url of [
+      "http://organizer-test.test/v1",
+      "https://unapproved.test/v1",
+      "https://user:pass@team-provider.test/v1",
+      "https://team-provider.test/v1?redirect=https://elsewhere.test",
+    ]
+  ) {
+    const f = teamFixture({}, { base_url });
+    const error = await assertRejects(() => teamChatCompletion(teamRequest(), f.deps), ProxyError);
+    assertEquals(error.code, "provider_not_authorized");
+    assertEquals(f.decrypted.length, 0);
+    assertEquals(f.upstream.length, 0);
+    assertEquals(f.calls.at(-1)?.args.p_actual_tokens, 0);
+  }
+});
+
+Deno.test("provider redirects are never followed and failures disclose no key or body", async () => {
+  const redirect = teamFixture({
+    fetch: (_url, init) => {
+      assertEquals(init?.redirect, "error");
+      return Promise.reject(new TypeError("redirect to https://elsewhere.test with " + teamKey));
+    },
+  });
+  const moved = await assertRejects(() => teamChatCompletion(teamRequest(), redirect.deps), ProxyError);
+  assertEquals(moved.code, "model_provider_unavailable");
+  assert(!moved.message.includes(teamKey));
+  assertEquals(redirect.calls.at(-1)?.args.p_actual_tokens, null);
+  const denied = teamFixture({
+    fetch: () => Promise.resolve(new Response("invalid key " + teamKey, { status: 401 })),
+  });
+  const failed = await assertRejects(() => teamChatCompletion(teamRequest(), denied.deps), ProxyError);
+  assertEquals(failed.code, "model_provider_error");
+  assert(!failed.message.includes(teamKey));
+});
+
+Deno.test("provider output echoing the saved key is redacted, and oversized output is refused", async () => {
+  const echo = teamFixture({
+    fetch: () => Promise.resolve(Response.json({ choices: [{ message: { content: "key " + teamKey } }] })),
+  });
+  const body = await (await teamChatCompletion(teamRequest(), echo.deps)).text();
+  assert(!body.includes(teamKey) && body.includes("[REDACTED]"));
+  assertEquals(echo.calls.at(-1)?.args.p_actual_tokens, null);
+  const large = teamFixture({
+    fetch: () => Promise.resolve(Response.json({ choices: [{ message: { content: "x".repeat(MAX_TEAM_RESPONSE) } }] })),
+  });
+  const error = await assertRejects(() => teamChatCompletion(teamRequest(), large.deps), ProxyError);
+  assertEquals(error.code, "model_response_too_large");
+});
+
+Deno.test("duplicate formal call IDs and invalid IDs never reach the provider", async () => {
+  const duplicate = teamFixture({ rpc: () => Promise.resolve({ reserved: false, status: "settled" }) });
+  const error = await assertRejects(() => teamChatCompletion(teamRequest(), duplicate.deps), ProxyError);
+  assertEquals(error.code, "model_request_already_received");
+  assertEquals(duplicate.upstream.length + duplicate.decrypted.length, 0);
+  const invalid = teamFixture();
+  await assertRejects(() => teamChatCompletion(teamRequest({ "idempotency-key": "not-a-uuid" }), invalid.deps));
+  assertEquals(invalid.calls.length + invalid.upstream.length, 0);
+});
+
+Deno.test("formal requests keep the 64 KiB request cap before any reservation", async () => {
+  const f = teamFixture();
+  const big = request({ model: "m", messages: [{ role: "user", content: "a".repeat(70000) }] });
+  await assertRejects(() => teamChatCompletion(big, f.deps), ProxyError);
+  assertEquals(f.calls.length + f.upstream.length, 0);
 });

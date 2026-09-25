@@ -60,9 +60,10 @@ do $verify$ begin
     where s.id={q(preview_id)} and s.is_active and s.weather_public and s.forecasts_public and s.events_public)
     then raise exception 'Public preview is not ready';end if;
 end $verify$;
+-- Participant-funded model use (saved team keys): explicit per-run bounds, one call at a time.
 insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,
   daily_batches,model_token_limit,model_call_limit,model_concurrency)
-  values({q(phase_id)},true,false,{runtime},{daily},0,0,1)
+  values({q(phase_id)},true,false,{runtime},{daily},10000000,10000,1)
 on conflict(phase_id) do nothing;
 do $settings$ begin
   if not exists(select 1 from public.observer_phase_settings where phase_id={q(phase_id)}
