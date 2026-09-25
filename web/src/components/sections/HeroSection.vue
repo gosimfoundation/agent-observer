@@ -14,7 +14,7 @@ import { competition } from '../../stores/competition'
 const { t, tf, pick, locale } = useI18n()
 const { isLoggedIn } = useAuth()
 const { registrationOpen } = useRegistrationOpen()
-const { current, next, nextStartsAt, usingFallback, countdown, loaded } = usePhaseClock()
+const { current, next, nextStart, nextStartsAt, usingFallback, countdown, loaded } = usePhaseClock()
 type Metric = { value: string; label: string }
 const metrics = computed(() => t('hero.metrics') as Metric[])
 const heroTitleLines = computed(() => locale.value === 'zh' ? ['巡天智能体'] : ['Agent Observer'])
@@ -110,8 +110,12 @@ const stages = computed(() => t('hero.pipeline') as Stage[])
               <span v-else-if="loaded" class="pill">{{ t('phase_clock.no_open') }}</span>
               <span v-else class="pill" aria-busy="true">…</span>
             </div>
-            <div class="phase-strip-next">
-              <span class="phase-strip-label">{{ t('phase_clock.next') }} · {{ loaded ? nextName : '…' }}<template v-if="nextStartsAt"> · {{ fmtUtc(nextStartsAt) }} UTC</template></span>
+            <div class="phase-strip-next" data-testid="phase-next">
+              <span class="phase-strip-label">{{ t('phase_clock.next') }}</span>
+              <p v-if="nextStart && next?.starts_at" class="phase-strip-stage">
+                <b>{{ nextStart.name }}</b> · <time :datetime="next.starts_at" :title="nextStart.moment">{{ nextStart.day }}</time> · <span>{{ nextStart.left }}</span>
+              </p>
+              <p v-else class="phase-strip-stage is-quiet">{{ loaded ? nextName : '…' }}<template v-if="nextStartsAt"> · {{ fmtUtc(nextStartsAt) }} UTC</template></p>
               <div v-if="nextStartsAt" class="phase-countdown" role="timer" :aria-label="t('phase_clock.countdown_aria')">
                 <span v-for="p in parts" :key="p.l"><b class="phase-countdown-value">{{ p.v }}</b><small>{{ p.l }}</small></span>
               </div>
@@ -243,6 +247,15 @@ const stages = computed(() => t('hero.pipeline') as Stage[])
   background: linear-gradient(90deg, rgba(255,255,255,.2), rgba(255,255,255,.03));
 }
 .phase-strip-label { font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+/* Both halves read top-down from the left: label, then the stage. */
+.phase-strip > .phase-strip-now { align-items: flex-start; gap: .45rem; }
+.phase-strip-stage {
+  margin: .35rem 0 0; font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  font-size: .98rem; line-height: 1.5; color: rgba(226,234,255,.86);
+}
+.phase-strip-stage b { font-weight: 650; color: #fff; }
+.phase-strip-stage time { color: #cfe0ff; }
+.phase-strip-stage.is-quiet { font-size: .82rem; color: rgba(255,255,255,.62); }
 .phase-countdown { display: flex; gap: 1.25rem; margin-top: .45rem; font-variant-numeric: tabular-nums; }
 .phase-countdown span { display: flex; align-items: baseline; gap: .35rem; }
 .phase-countdown-value {
@@ -254,12 +267,13 @@ const stages = computed(() => t('hero.pipeline') as Stage[])
 .phase-countdown small { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.45); }
 @media (min-width: 768px) {
   .phase-strip { grid-template-columns: auto 1fr; }
-  .phase-strip-now { padding-right: 1.5rem; }
+  /* `.phase-strip > div` resets the padding, so these need the same reach to apply. */
+  .phase-strip > .phase-strip-now { padding-right: 1.5rem; }
   .phase-strip-now::after {
     left: auto; right: 0; top: .3rem; bottom: .3rem; width: 1px; height: auto;
     background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.24) 40%, rgba(255,255,255,.1) 80%, rgba(255,255,255,0));
   }
-  .phase-strip-next { padding-left: 1.5rem; }
+  .phase-strip > .phase-strip-next { padding-left: 1.5rem; }
 }
 
 .hero-metrics { position: relative; }

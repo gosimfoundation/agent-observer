@@ -10,6 +10,7 @@ import { useFlash } from '../stores/flash'
 import DashShell from '../components/layout/DashShell.vue'
 import TierBadge from '../components/TierBadge.vue'
 import TeamDirectory from '../components/TeamDirectory.vue'
+import SoloTeamButton from '../components/SoloTeamButton.vue'
 
 interface Member { id: string; name: string; github: string | null; affiliation: string | null; is_leader: boolean; astro_level: number; ai_level: number }
 
@@ -169,7 +170,10 @@ onMounted(load)
     <div v-else class="dash-grid">
       <div id="create" class="panel">
         <div class="hd"><h2>{{ t('team.create_title') }}</h2></div>
-        <p class="text2 mb-5 text-sm">{{ t('team.solo_hint') }}</p>
+        <div class="solo-callout mb-6" data-testid="solo-callout">
+          <p class="text2 text-sm">{{ t('team.solo_lede') }}</p>
+          <SoloTeamButton class="mt-3" />
+        </div>
         <form @submit.prevent="createTeam">
           <div class="grid-form">
             <label class="field"><span>{{ t('team.name') }}</span><input data-testid="team-name-input" v-model="createForm.name" type="text" required minlength="2" maxlength="60"></label>

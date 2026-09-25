@@ -1463,7 +1463,60 @@
     },
     "verify_notice": "邮箱尚未验证，请查收邮件。",
     "loading": "正在加载面板…",
-    "quota_used": "今日 {used} / {limit}"
+    "quota_used": "今日 {used} / {limit}",
+    "quest": {
+      "title": "新手任务",
+      "progress": "进度 {done}/{total}",
+      "done_step": "已完成",
+      "next_action": "下一步：{action}",
+      "done_title": "新手任务全部完成",
+      "done_text": "继续改进你的智能体并提交，冲击排行榜吧。",
+      "done_board": "查看排行榜",
+      "practice": {
+        "team": {
+          "title": "组队（或单人参赛）",
+          "hint": "每支队伍最多 3 人；单人参赛也需要一支 1 人队伍。",
+          "action": "组队"
+        },
+        "prepare": {
+          "title": "下载入门包",
+          "hint": "解压后运行示例智能体，在本地跑出第一份 decisions.csv。",
+          "action": "下载入门包"
+        },
+        "submit": {
+          "title": "第一次提交",
+          "hint": "在「参赛」页上传 decisions.csv，平台会自动评分。",
+          "action": "去提交"
+        },
+        "review": {
+          "title": "查看回放/成绩",
+          "hint": "看看每一步决策拍到了什么，再改进你的策略。",
+          "action": "查看回放与成绩"
+        }
+      },
+      "competition": {
+        "team": {
+          "title": "组队",
+          "hint": "每支队伍最多 3 人，也可以一个人参赛。",
+          "action": "组队"
+        },
+        "prepare": {
+          "title": "准备项目（入门包与文档）",
+          "hint": "参考完整示例项目和接口文档，用任意语言实现你的智能体。",
+          "action": "查看入门包与文档"
+        },
+        "submit": {
+          "title": "提交项目并开始评测",
+          "hint": "在「参赛」页上传仓库或 ZIP，确认版本后启动评测。",
+          "action": "去参赛"
+        },
+        "review": {
+          "title": "查看成绩与回放",
+          "hint": "评测完成后查看得分构成与逐步回放，找到改进方向。",
+          "action": "查看成绩与回放"
+        }
+      }
+    }
   },
   "credits": {
     "title": "API 额度",
@@ -1554,7 +1607,28 @@
     "invite_people": "邀请队友",
     "invite_link": "邀请链接",
     "copy_link": "复制邀请链接",
-    "copy_fallback": "复制失败，请选中邀请码或邀请链接手动复制。"
+    "copy_fallback": "复制失败，请选中邀请码或邀请链接手动复制。",
+    "solo": "一键单人参赛",
+    "solo_lede": "一个人也能参赛：一键创建以你昵称命名的单人队伍（上限 1 人），之后仍可调高人数上限并邀请队友。",
+    "solo_done": "已创建单人队伍「{name}」，现在就开始参赛吧。",
+    "directory": {
+      "title": "队伍列表",
+      "lede": "点击队伍发送加入申请，队长接受后即可加入。",
+      "search": "搜索队伍名",
+      "show_all": "显示全部（{n}）",
+      "recruiting": "招募中 {n} 支",
+      "empty": "没有匹配的队伍",
+      "create_own": "创建自己的队伍",
+      "go_solo": "单人参赛",
+      "more": "再显示 {n} 支",
+      "request": "申请加入",
+      "requested": "已申请 · 查看进度",
+      "sign_in": "登录后申请加入",
+      "yours": "我的队伍",
+      "paused": "暂停招募",
+      "full": "已满员",
+      "in_team": "你已有队伍"
+    }
   },
   "submit": {
     "title": "参赛",
@@ -2191,7 +2265,13 @@
     "minutes": "分",
     "seconds": "秒",
     "countdown_aria": "距下一阶段开始的倒计时",
-    "none_scheduled": "暂无后续阶段安排"
+    "none_scheduled": "暂无后续阶段安排",
+    "starts_on": "{date}开赛",
+    "left_days": "还有 {n} 天",
+    "left_day": "还有 1 天",
+    "left_hours": "还有 {n} 小时",
+    "left_soon": "即将开始",
+    "next_line": "下一阶段：{name} · {day} · {left}"
   },
   "start_page": {
     "kicker": "新手上路",

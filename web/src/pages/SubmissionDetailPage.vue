@@ -12,6 +12,7 @@ import { useAuth } from '../stores/auth'
 import { useFlash } from '../stores/flash'
 import { useSubmissionWatch } from '../composables/useSubmissionWatch'
 import { useWorkerStatus } from '../composables/useWorkerStatus'
+import { useQuestFlags } from '../composables/useQuestFlags'
 import DashShell from '../components/layout/DashShell.vue'
 import StatusPill from '../components/layout/StatusPill.vue'
 import ObservedSkyMap from '../components/submissions/ObservedSkyMap.vue'
@@ -35,6 +36,9 @@ const worker = useWorkerStatus()
 watch(pending, (p) => { if (p) worker.start(id.value); else worker.stop() }, { immediate: true })
 const evaluations = computed(() => ((sub.value?.evaluations ?? []) as any[]).slice().sort((a, b) => Number(a.id) - Number(b.id)))
 const watcher = useSubmissionWatch(load, () => pending.value)
+// Seeing a scored replay completes the dashboard quest's last Playground step.
+const { remember } = useQuestFlags()
+watch(() => sub.value?.status, status => { if (status === 'scored') remember('review', 'practice') })
 
 async function load() {
   const { data, error } = await supabase.from('submissions').select(`${SUBMISSION_SELECT}, profiles(name,nickname)`).eq('id', id.value).maybeSingle()

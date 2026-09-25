@@ -1463,7 +1463,60 @@
     },
     "verify_notice": "Your email is not verified yet. Check your inbox.",
     "loading": "Loading dashboard…",
-    "quota_used": "{used} / {limit} today"
+    "quota_used": "{used} / {limit} today",
+    "quest": {
+      "title": "Getting started",
+      "progress": "{done}/{total} done",
+      "done_step": "done",
+      "next_action": "Next: {action}",
+      "done_title": "All set",
+      "done_text": "Keep improving your agent and submitting to climb the leaderboard.",
+      "done_board": "View leaderboard",
+      "practice": {
+        "team": {
+          "title": "Form a team (or go solo)",
+          "hint": "Teams have up to 3 people; competing alone uses a one-person team.",
+          "action": "Form a team"
+        },
+        "prepare": {
+          "title": "Download the starter kit",
+          "hint": "Unzip it and run the example agent to produce your first decisions.csv locally.",
+          "action": "Download the kit"
+        },
+        "submit": {
+          "title": "Make your first submission",
+          "hint": "Upload decisions.csv on Participate; the platform scores it automatically.",
+          "action": "Submit"
+        },
+        "review": {
+          "title": "Watch the replay and score",
+          "hint": "See what each decision observed, then improve your strategy.",
+          "action": "View replay and score"
+        }
+      },
+      "competition": {
+        "team": {
+          "title": "Form a team",
+          "hint": "Teams have up to 3 people; you can also compete alone.",
+          "action": "Form a team"
+        },
+        "prepare": {
+          "title": "Prepare your project (kit and docs)",
+          "hint": "Use the complete example project and interface docs to build your agent in any language.",
+          "action": "Open the kit and docs"
+        },
+        "submit": {
+          "title": "Submit your project and start an evaluation",
+          "hint": "Upload a repository or ZIP on Participate, confirm the version, then start the evaluation.",
+          "action": "Go to Participate"
+        },
+        "review": {
+          "title": "Check the score and replay",
+          "hint": "When the evaluation finishes, review the score breakdown and replay to find what to improve.",
+          "action": "View score and replay"
+        }
+      }
+    }
   },
   "credits": {
     "title": "API credits",
@@ -1554,7 +1607,28 @@
     "invite_people": "Invite teammates",
     "invite_link": "Invite link",
     "copy_link": "Copy invite link",
-    "copy_fallback": "Copy failed. Select the invite code or link and copy it manually."
+    "copy_fallback": "Copy failed. Select the invite code or link and copy it manually.",
+    "solo": "Go solo in one click",
+    "solo_lede": "Going solo? Create a one-person team named after you in one click. You can raise the size limit and invite teammates later.",
+    "solo_done": "Solo team “{name}” created. You can start now.",
+    "directory": {
+      "title": "Teams",
+      "lede": "Choose a team to send a request. You join after its captain accepts.",
+      "search": "Search team names",
+      "show_all": "Show all ({n})",
+      "recruiting": "{n} recruiting",
+      "empty": "No matching teams",
+      "create_own": "Create your own team",
+      "go_solo": "Compete solo",
+      "more": "Show {n} more",
+      "request": "Request to join",
+      "requested": "Request sent · view progress",
+      "sign_in": "Sign in to request",
+      "yours": "Your team",
+      "paused": "Not recruiting",
+      "full": "Full",
+      "in_team": "Already in a team"
+    }
   },
   "submit": {
     "title": "Participate",
@@ -2191,7 +2265,13 @@
     "minutes": "m",
     "seconds": "s",
     "countdown_aria": "Countdown to the next phase",
-    "none_scheduled": "No further phase scheduled"
+    "none_scheduled": "No further phase scheduled",
+    "starts_on": "starts {date}",
+    "left_days": "{n} days to go",
+    "left_day": "1 day to go",
+    "left_hours": "{n} h to go",
+    "left_soon": "starting soon",
+    "next_line": "Next: {name} · {day} · {left}"
   },
   "start_page": {
     "kicker": "Get started",
