@@ -59,7 +59,9 @@ Three frozen reference algorithms test each generated scenario against frozen ca
 
 All-wait scores 0; the reference mean scores 10000; stronger algorithms may exceed 10000. Calibration reduces differences; it cannot guarantee identical difficulty for every strategy.
 
-A batch includes all scenarios and ranks only when they all finish. The batch score is the mean calibrated score. Each team keeps its best complete batch, without mixing the best scenario scores from different attempts. Original score components remain available. Detailed scoring, penalties and tie-breaking are in [Rules](/rules).
+A batch includes all scenarios and ranks only when they all finish. The batch score is the mean calibrated score. The live board shows each team's best complete batch as a preliminary result, without mixing the best scenario scores from different attempts.
+
+The final ranking comes from the final evaluation on October 8 (UTC+8): each team chooses one confirmed version and starts it once, the platform runs 3 batches of new private random scenarios in sequence, and the mean of the 3 batches counts; a batch that does not complete counts as 0. Teams using a personal model API must keep this page open and in the foreground until all 3 batches finish. Original score components remain available. Detailed scoring, penalties and tie-breaking are in [Rules](/rules).
 
 ## 7. Results and reproduction
 

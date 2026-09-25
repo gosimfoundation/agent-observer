@@ -18,6 +18,6 @@ For model calls, enter a supported HTTPS endpoint, model and key in Participate 
 
 Each batch covers all configured scenarios. Every new attempt receives new private random seeds. The platform records each decision before releasing the next observation. Difficulties are screened and scores calibrated against fixed reference algorithms.
 
-Your result includes the calibrated ranking score, original score components and the run record. All scenarios must finish before the batch ranks. Your team's best complete batch counts.
+Your result includes the calibrated ranking score, original score components and the run record. All scenarios must finish before the batch ranks. The live board shows your team's best complete batch as a preliminary result. On October 8 (UTC+8) each team starts one final evaluation: the platform runs 3 batches of new scenarios and their mean decides the ranking. See [Rules](/rules).
 
 Use the result downloads to inspect the decisions and failures. Runtime and API quotas are displayed on the participation page. Contact the organizers through [Announcements](/announcements) if an evaluation cannot complete.

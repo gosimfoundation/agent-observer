@@ -5,22 +5,32 @@
 3. Organizers, evaluation-platform maintainers, and their immediate collaborators are excluded from awards. Their teams are marked hidden on the boards.
 4. Team names and content must follow the code of conduct (section 8).
 
-## 2. Current competition
+## 2. Schedule
 
-The current schedule and submission quota are shown above. All participants use the same Participate page; the platform selects the active competition. Awards Day is October 17, 2026 at GOSIM Shenzhen.
+All participants use the same Participate page; the platform selects the active competition. The submission quota is shown on the page.
+
+| Stage | Time (UTC+8) | What happens |
+|---|---|---|
+| Live competition | Oct 5 00:00 – Oct 7 23:59 | Submit and evaluate projects; the live board shows preliminary results for reference only |
+| Final evaluation | Oct 8 00:00 – 23:59 | Each team starts one final evaluation; its result decides the ranking (section 6) |
+| Results | Oct 9 | Final standings are published after verification |
+| Awards Day | Oct 17 | GOSIM Shenzhen |
 
 ## 3. What you submit
 
 1. Submit a complete project from a public GitHub repository or a private ZIP up to 50 MB. Any language is allowed. Review and confirm the fixed source revision, launch settings and proposed adapter after the platform checks them.
 2. Formal competition accepts complete projects only. CSV files and local CSV sessions are not accepted.
 3. Each evaluation receives current observations one round at a time. The server records each decision before releasing the next observation. Future weather and hidden anomaly answers remain private.
-4. The displayed daily quota applies to complete batches. Every batch covers all configured scenarios.
+4. The displayed daily quota applies to complete batches. Every batch covers all configured scenarios. The final evaluation is separate; see section 6.
 
 ## 4. Execution and model APIs
 
 1. Python is the platform runner, not a language restriction. The confirmed project runs in its specified container.
 2. Model calls are optional. Participants provide their own API and quota; organizer model credits are not provided. Credentials are encrypted in transit, used only in memory during execution and never written to databases, files or logs. Do not place keys in project sources.
-3. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
+3. External compute and external services are allowed, including your own model APIs and servers. The platform container limits (2 CPU cores, 2 GB memory) apply only to the part that runs on the platform.
+4. Every decision must be made automatically by your program. Human participation in, or substitution for, decisions is prohibited.
+5. External services must stay available during evaluation. Results affected by external outages, timeouts or rate limits are scored as they occur and are not re-run.
+6. Attempts to read other teams' data, tamper with scoring or deliberately exhaust platform resources can lead to disqualification.
 
 For model calls, enter a supported HTTPS endpoint, model and key in Participate and keep that page open, including during automatic adaptation. Closing the page or disconnecting clears the key; reconnecting requires entering it again.
 
@@ -39,16 +49,18 @@ The score is computed by the published `scoring_core.py` (schema `challenge-scor
 6. Only completed exposures score. An exposure interrupted by closed weather earns nothing and is not penalised; an exposure interrupted by geometry or the end of the night earns nothing and is an invalid action.
 7. Terminal penalties are applied to every run, including runs cut short by the wall clock or an agent error. An expired request with fewer feasible opportunities than required tiles is excused.
 8. Completion (completed tiles ÷ tiles) and the FLEXIBLE shortfall per region are reported on the board; they are part of the score through the terminal penalties.
-9. Each competition batch covers every competition scenario. Its score is the arithmetic mean of all scenario scores from that batch; it ranks only when all scenarios are complete. Each team keeps its best complete batch, without combining scenario maxima from different batches.
+9. Each batch covers every competition scenario. Its score is the arithmetic mean of the calibrated scenario scores from that batch and counts only when all scenarios are complete. During the live competition the live board shows each team's best complete batch as a preliminary result that does not decide the ranking; the final evaluation in section 6 does.
 10. **Random scenarios and sequential decisions.** In the current competition, each team and evaluation attempt receives a different private seed for weather, events and hidden tags. Public observation tasks and scoring rules stay fixed. The platform records each decision before releasing the next observation; future rounds cannot be submitted early and accepted decisions cannot be replaced. An infrastructure retry of the same run retains its scenario; a new evaluation attempt receives a new one.
 11. **Difficulty calibration.** Three fixed online reference policies test each generated scenario against bounds frozen in advance; outliers are not served to participants. The ranking score is `10000 × (raw score − all-wait score) / (reference-policy mean − all-wait score)`: all-wait scores 0, the reference mean scores 10000, and stronger policies can exceed 10000. Raw totals and components remain visible. Item 9 averages the calibrated scores. Calibration reduces scenario differences without guaranteeing equal difficulty for every possible strategy. Before activation, organizers validate independent samples and freeze the generator, calibration rules and scenario configuration. Private records support regeneration and score audits. Existing scores are preserved.
 
-## 6. Ranking, ties, and verification
+## 6. Final evaluation, ranking, and verification
 
-1. Only scored, non-excluded submissions count, combined as in section 5, item 9. Ranking is by score, descending; on an exact tie the earlier submission ranks first.
-2. The Online Competition board is live. Organizers may freeze the board during the final hours and publish the final standings after verification.
-3. Before awards are confirmed, organizers may ask the top teams for their agent code and a short description of the approach, and regenerate the decisions.csv with it. Results that cannot be reproduced are removed.
-4. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.
+1. **Final evaluation.** On October 8 (UTC+8), each team chooses one confirmed version and starts its final evaluation; each team can start it only once. The platform then runs 3 batches in sequence, each covering every competition scenario with new private random scenarios.
+2. **The final score** is the arithmetic mean of these 3 batch scores; a batch that does not complete counts as 0 (the all-wait reference). A final evaluation started before the deadline runs to completion, and batches that fail because of the platform itself are re-run automatically. Teams that do not start a final evaluation are not ranked.
+3. Teams using a personal model API must keep the Participate page open and in the foreground until all 3 batches finish. Model calls fail while the page is closed and the results are scored as they occur.
+4. Ranking is by final score, descending; on an exact tie the team that started its final evaluation earlier ranks first. The final board is not public during the final evaluation; organizers publish it after verification on October 9.
+5. Before awards are confirmed, organizers may ask the top teams for their complete code, the versions and configuration of the external services and models they used, and their call records from the evaluation, and reproduce the result on new hidden scenarios. Results that cannot be reproduced, or that involved human intervention, are removed.
+6. Organizers may re-score submissions if a scorer defect is found. Any change to the scorer or the constants is announced with a version number and applies to every submission of the phase. The current constants are provisional organizer calibration values until the online competition opens.
 
 ## 7. Awards
 
