@@ -899,7 +899,7 @@
       "rabbit": "Lâcher le lapin de jade 🐇",
       "close": "Fermer",
       "sky_title": "Ce soir, la Lune est dans la région {region}",
-      "sky_body": "Le ciel du relevé est découpé en 8 régions de 45° d'ascension droite. Voici où se trouve la vraie Lune ce soir. Sa lumière délave le ciel voisin : un vrai télescope pointé vers {region} ce soir fait la pire affaire. Prenez d'abord un gâteau de lune.",
+      "sky_body": "Le ciel du relevé est découpé en 8 régions de 45° d'ascension droite. Le point brillant indique où se trouve la vraie Lune ce soir.",
       "sky_numbers": "La Lune en ce moment : AD {ra}°, Déc {dec}°, éclairée à {lit} %",
       "sky_label": "Bande du relevé en ascension droite de 0° à 360°, régions R00 à R07 ; la lueur marque la Lune de ce soir"
     }
