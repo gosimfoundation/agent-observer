@@ -1,0 +1,66 @@
+[
+  {
+    "lang": "zh",
+    "view": "desktop",
+    "button": true,
+    "fact_box": {
+      "top": 670.3125,
+      "bottom": 709.4375,
+      "left": 20,
+      "right": 347.6875,
+      "vw": 1440,
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "text": "900 秒里，旅行者 1 号又离太阳远了约 15000 公里。"
+    },
+    "h_scroll": false
+  },
+  {
+    "lang": "zh",
+    "view": "mobile",
+    "button": true,
+    "fact_box": {
+      "top": 459.484375,
+      "bottom": 516.546875,
+      "left": 20,
+      "right": 355.390625,
+      "vw": 390,
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "text": "光走 900 秒约 2.7 亿公里——从太阳出发，飞过火星还有富余。"
+    },
+    "h_scroll": false
+  },
+  {
+    "lang": "en",
+    "view": "desktop",
+    "button": true,
+    "fact_box": {
+      "top": 652.921875,
+      "bottom": 709.984375,
+      "left": 20,
+      "right": 560,
+      "vw": 1440,
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "text": "In 900 seconds Voyager 1 gets another 15,000 km farther from the Sun."
+    },
+    "h_scroll": false
+  },
+  {
+    "lang": "en",
+    "view": "mobile",
+    "button": true,
+    "fact_box": {
+      "top": 398.90625,
+      "bottom": 455.96875,
+      "left": 20,
+      "right": 355.390625,
+      "vw": 390,
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "text": "In 900 seconds Voyager 1 gets another 15,000 km farther from the Sun."
+    },
+    "h_scroll": false
+  }
+]
