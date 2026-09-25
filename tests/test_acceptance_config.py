@@ -134,3 +134,10 @@ def test_same_as_reuses_formal_scenarios_with_their_calibration(database):
     assert all(c['calibrated'] and c['profile_matches_bundle'] for c in plan['calibration'])
     limits=query(uri,'select model_call_limit,model_token_limit from public.observer_phase_settings where phase_id=%s',(plan['phase_id'],))[0]
     assert limits==(10000,10000000)
+
+
+def test_management_api_rows_are_positional(monkeypatch):
+    monkeypatch.setenv('SUPABASE_PROJECT_REF','ref');monkeypatch.setenv('SUPABASE_ACCESS_TOKEN','token')
+    real=importlib.util.module_from_spec(spec);spec.loader.exec_module(real)
+    real.request=lambda *args,**kwargs:[{'id':'a','is_hidden':True}]
+    assert real.query('select 1')==[('a',True)]
