@@ -49,7 +49,7 @@ Back on the site, open **Submit**, pick the phase and the scenario, drag in the 
 
 This upload flow is for practice. For competition, open [Agent projects](/projects) to submit a public repository or private project ZIP, or start an official local session and upload its exported CSV. Both modes receive current information step by step; future weather remains private.
 
-To rehearse the competition flow before it opens, choose Submit a complete project on Participate. The platform runs your program round by round in the cloud on scenarios generated from Playground data: 5 evaluations per team per day, your own model key only, and a separate board. We recommend doing this once during the October 1–4 training.
+To try the evaluation flow early, choose Submit a complete project on Participate. The platform runs your program round by round in the cloud (same evaluation flow as the competition) on scenarios generated from Playground data: 5 evaluations per team per day, your own model key only, and a separate board. We recommend doing this once during the October 1–4 training.
 
 ## Step 6 · Read the result
 
