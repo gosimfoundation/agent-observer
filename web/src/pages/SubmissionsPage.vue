@@ -33,7 +33,8 @@ onMounted(async () => {
 
 <template>
   <DashShell :kicker="t('dash.title')" :title="t('subs.title')">
-    <EvaluationHistory v-if="team && competition.mode==='competition'" />
+    <!-- Complete-project evaluations live in observer_batches, not in CSV submissions. -->
+    <EvaluationHistory v-if="team" all-phases :hide-empty="competition.mode!=='competition'" />
     <details :open="competition.mode==='practice'">
       <summary v-if="competition.mode==='competition'" class="btn sm mb-5">{{ pick('Earlier submissions','查看已有提交') }}</summary>
     <SkeletonRows v-if="loading" :rows="6" :cols="6" :label="t('common.loading')" />
