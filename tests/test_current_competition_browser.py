@@ -83,11 +83,19 @@ def test_admin_switch_updates_submission_resources_and_public_instructions(porta
         expect(page.get_by_role('button',name='Start local CSV session')).to_have_count(0)
         page.goto(portal_site+'/resources?lang=en')
         expect(page.locator('a[download][href$="main.zip"]')).to_be_visible()
+        expect(page.locator('[data-testid^="dl-"]')).to_have_count(0)
+        expect(page.get_by_text("Competition data is supplied round by round during evaluation. Source bundles cannot be downloaded.").first).to_be_visible()
         for language in ('zh','en','ja','fr'):
             for path in ('/','/start','/brief','/rules','/docs','/resources','/faq','/leaderboard'):
                 page.goto(portal_site+path+'?lang='+language)
                 page.locator('main').wait_for()
                 body=page.locator('main').inner_text()
+                # The official demo truthfully identifies its public practice data;
+                # that source label is not a choice of competition stage.
+                if path=='/':
+                    demo_title=page.locator('.demo-title')
+                    expect(demo_title).to_be_visible()
+                    body=body.replace(demo_title.inner_text(),'',1)
                 match=re.search(r'练习赛|练习场景|Playground|\bpractice\b|練習|entraînement',body,re.I)
                 if match:problems.append((language,path,body[max(0,match.start()-40):match.end()+100]))
         page.goto(portal_site+'/admin/settings?lang=en')
