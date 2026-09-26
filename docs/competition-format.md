@@ -12,7 +12,7 @@ versions and evaluation batches. A prominent Submit button links to that workspa
 | Entry | `/compete` | `/compete` |
 | Input | locally generated `decisions.csv`; or a complete project on the separate `practice-projects` board (5 evaluations per team per day) | complete repository or private project ZIP; no CSV |
 | Execution | participant computer, original scorer | approved project version, platform-controlled sequential observations |
-| Scenario | existing public scenarios; the complete-project board uses scenarios generated from them | a new secret random seed per team and attempt, calibrated difficulty |
+| Scenario | existing public scenarios; the complete-project board uses scenarios generated from them | one fixed private seed per team and scenario (reused by all of that team's evaluations), calibrated difficulty |
 | Ranking | best score per scenario, unchanged | best complete batch, mean calibrated score over all scenarios |
 | Model | optional; complete-project board: team's own key only | optional; participant supplies API and quota, no organizer credits |
 | Personal credentials | never include in results | HTTPS only; team's choice: saved encrypted on the server (default, deleted after verification) or kept only in the open page |
@@ -129,12 +129,9 @@ the downloaded kit and the copy the platform publishes are the same scenario.
 
 These are decisions for the organizers, not code changes:
 
-- Rotate the seeds of `eval-a` / `eval-b` before the online phase. The seeds and the generator are public, so any
-  scenario whose parameters have been published can be rebuilt locally — hidden weather is only hidden while the
-  parameters are. A rotation reads catalogue size and coverage weight off the published scenario, so it changes
-  the weather and nothing else; the reference defaults (64 tiles, no coverage term) only apply when a scenario's
-  config cannot be read back. Rotation also redraws the hidden `tile_anomalies.csv` tags and the
-  `instrument_fault` events, since both derive from the scenario seed.
+- Do not rotate the seeds of `eval-a` / `eval-b`. Formal runs no longer evaluate the template seed: each team is
+  scored on its own private instance derived from it. Rotating would change `template_digest` and invalidate the
+  calibration profiles, and a final-phase formal run without a calibrated instance is refused.
 - Practice-phase `results` uploads are a bare `decisions.csv` — which now also carries any `report_*` rows, so
   practice scoring settles reports exactly like hosted runs.
 - Decide how many worker runners to keep alive during the online phase. A 1–2 h wall clock per scenario means one

@@ -217,14 +217,15 @@ policy scores far lower, mostly through missed REQUIRED tiles and invalid action
 
 ## Submit
 
-Every phase takes a results file only: the `decisions.csv` your local run produced. The competition scenarios'
-weather, forecasts and events are published when the competition opens (`fetch_scenario.py eval-a`).
+The formal competition (`online`) evaluates complete projects only: upload your project on the site
+(`/compete`). The platform runs it step by step on each formal scenario, using one fixed private instance per team
+and scenario. There is no CSV path for the formal phase and its scenarios are never downloadable.
+
+The Playground `practice` phase still accepts the `decisions.csv` your local run produced:
 
 ```bash
 python3 sac_submit.py --url https://<ref>.supabase.co --key <anon key> --email you@x.org --password '...' \
     --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-python3 sac_submit.py --url ... --key ... --email ... --password ... \
-    --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 ```
 
 The URL and anon key are on the platform's Resources page.
@@ -233,4 +234,4 @@ The URL and anon key are on the platform's Resources page.
 
 参赛 Agent 的中文说明（责任边界、启用各家 LLM 的 `.env` 配置、JSON-Lines 协议、评分参数与回退保障）见
 [`agent/README_ZH.md`](agent/README_ZH.md)。本地流程：`local_runner.py` 跑基线 → `make_scenario.py` 生成更多场景 →
-修改 `agent/decision_graph.py` → `pack_agent.py` 打包 → `sac_submit.py` 提交。
+修改 `agent/decision_graph.py` → `pack_agent.py` 打包。练习阶段可用 `sac_submit.py` 提交 `decisions.csv`。正式比赛（`online`）只评测完整项目：在网站上传项目，平台为每队在每个正式场景上固定一个私有实例并逐步评测，不接受 CSV。

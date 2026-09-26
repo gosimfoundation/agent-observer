@@ -9,6 +9,7 @@ from psycopg.types.json import Jsonb
 import pytest
 
 from test_project_database import database, identity, query, rpc, setup  # noqa: F401
+from test_project_eval_ux import revision
 
 spec = importlib.util.spec_from_file_location('calibration_activation',
     Path(__file__).resolve().parents[1]/'scripts/configure-observer-calibration.py')
@@ -187,3 +188,52 @@ def test_profile_activation_is_atomic_repeatable_and_requires_deployed_runtimes(
     batch_run(s)
     with pytest.raises(psycopg.Error, match='Existing attempts'):
         query(uri, statement)
+
+
+def test_final_formal_phase_without_calibration_fails_closed(setup):
+    s = setup; uri = s["uri"]
+    query(uri, "update public.phases set counts_for_final=true where id=%s", (s["phase"],))
+    rev = revision(s)
+    create = lambda: rpc(uri, "observer_create_batch", s["phase"], rev, role="authenticated", user=s["user"])
+    with pytest.raises(psycopg.Error, match="formal_instance_not_configured"):
+        create()
+    assert query(uri, "select count(*) from public.observer_batches where phase_id=%s", (s["phase"],)) == [(0,)]
+    configure(s)
+    run = query(uri, "select id from public.observer_runs where batch_id=%s", (create(),))[0][0]
+    assert len(rpc(uri, "observer_instance_input", run)["seed"]) == 64
+
+
+def test_final_formal_run_without_instance_cannot_schedule_or_score(setup):
+    s = setup; uri = s["uri"]
+    # A run created before the phase became final has no instance.
+    _, run = batch_run(s)
+    assert rpc(uri, "observer_instance_input", run) is None
+    query(uri, "update public.phases set counts_for_final=true where id=%s", (s["phase"],))
+    with pytest.raises(psycopg.Error, match="formal_instance_missing"):
+        rpc(uri, "observer_instance_input", run)
+    summary = {"score": {"total": 1}, "raw_score": {"total": 1}}
+    with pytest.raises(psycopg.Error, match="formal_instance_missing"):
+        query(uri, "update public.observer_runs set score=1,score_summary=%s where id=%s", (Jsonb(summary), run))
+    query(uri, "update public.phases set counts_for_final=false,slug='online' where id=%s", (s["phase"],))
+    with pytest.raises(psycopg.Error, match="formal_instance_missing"):
+        rpc(uri, "observer_instance_input", run)
+    query(uri, "update public.phases set slug=%s where id=%s", (str(s["phase"]), s["phase"]))
+    query(uri, "update public.observer_runs set score=1,score_summary=%s where id=%s", (Jsonb(summary), run))
+
+
+def test_clients_hold_no_unused_write_privileges_on_scenarios_and_submissions(setup):
+    uri = setup["uri"]
+    def has(role, table, privilege):
+        return query(uri, "select has_table_privilege(%s,%s,%s)", (role, table, privilege))[0][0]
+    for privilege in ("INSERT", "DELETE", "TRUNCATE", "TRIGGER", "REFERENCES"):
+        for role in ("anon", "authenticated"):
+            assert not has(role, "public.scenarios", privilege)
+        assert not has("anon", "public.submissions", privilege)
+    assert not has("anon", "public.scenarios", "UPDATE") and not has("anon", "public.submissions", "UPDATE")
+    # Admin scenario edits (RLS is_admin policy) and client reads keep working.
+    assert has("authenticated", "public.scenarios", "UPDATE")
+    for role in ("anon", "authenticated"):
+        assert query(uri, "select has_column_privilege(%s,%s,%s,%s)", (role, "public.scenarios", "slug", "SELECT"))[0][0]
+    assert has("authenticated", "public.submissions", "SELECT")
+    with pytest.raises(psycopg.Error, match="permission denied"):
+        query(uri, "insert into public.scenarios(slug,name) values('x','x')", role="anon")

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Submit a decisions.csv results file to the Agent Observer platform (Supabase backend, standard library only).
-Every phase takes results files only; agent packages are no longer accepted.
+Only the Playground practice phase takes results files. The formal competition (`online`) evaluates complete
+projects uploaded on the site, on one fixed private instance per team and scenario; it accepts no CSV.
 
   # decisions.csv produced by local_runner.py, scored against the scenario you ran
   python3 sac_submit.py --url https://<ref>.supabase.co --key <anon key> --email you@x.org --password '...' \
       --phase practice --kind results --scenario dev-reference --file run_output/decisions.csv --wait
-  python3 sac_submit.py --url ... --key ... --email ... --password ... \
-      --phase online --kind results --scenario eval-a --file run_output/decisions.csv --wait
 
 The URL and anon key are printed on the platform's Resources page. Environment variables SAC_URL, SAC_KEY,
 SAC_EMAIL, SAC_PASSWORD are used when the flags are omitted; SAC_SITE_URL adds a clickable submission link.
