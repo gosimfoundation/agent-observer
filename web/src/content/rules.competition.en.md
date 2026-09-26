@@ -20,7 +20,7 @@ All participants use the same Participate page; the platform selects the active 
 1. Submit a complete project from a public GitHub repository or a private ZIP up to 50 MB. Any language is allowed. Review and confirm the fixed source revision, launch settings and proposed adapter after the platform checks them.
 2. Formal competition accepts complete projects only. CSV files and local CSV sessions are not accepted.
 3. Each evaluation receives current observations one round at a time. The server records each decision before releasing the next observation. Future weather and hidden anomaly answers remain private.
-4. Every team has the same daily quota of complete batches, shown on the page. Every batch covers all configured scenarios.
+4. Every team has the same daily quota of complete batches, shown on the page and reset at 00:00 UTC. Every batch covers all configured scenarios. Batches that fail because of the platform do not count toward the quota; failures caused by the project itself (build failure, crash, output that violates the protocol) do.
 
 ## 4. Execution and model APIs
 

@@ -103,3 +103,33 @@ Deno.test("deleting and choosing the mode use the caller's own team RPCs", async
     assertEquals(rejected.calls.length, 0);
   }
 });
+
+Deno.test("a repeat evaluation is only requested with an explicit confirmation", async () => {
+  const phase = "30000000-0000-4000-8000-000000000001", revision = "30000000-0000-4000-8000-000000000002";
+  const c = clients("batch");
+  await portal({ action: "evaluate", phase_id: phase, revision_id: revision, confirm_repeat: "yes" }, c);
+  await portal({ action: "evaluate", phase_id: phase, revision_id: revision, confirm_repeat: true }, c);
+  assertEquals(c.calls.map((x) => x.args), [
+    { p_phase: phase, p_revision: revision },
+    { p_phase: phase, p_revision: revision, p_confirm_repeat: true },
+  ]);
+});
+
+Deno.test("withdrawal uses the caller's team RPC and database refusals keep their codes", async () => {
+  const revision = "30000000-0000-4000-8000-000000000002";
+  const c = clients();
+  assertEquals(await portal({ action: "withdraw", revision_id: revision }, c), { accepted: true });
+  assertEquals(c.calls, [{ client: "user", name: "observer_withdraw_revision", args: { p_revision: revision } }]);
+  await assertRejects(() => portal({ action: "withdraw", revision_id: "not-a-uuid" }, clients()), ProxyError);
+  for (const code of ["revision_not_withdrawable", "revision_already_evaluated", "revision_withdrawn", "other"]) {
+    const refused = {
+      user: { rpc: () => Promise.resolve({ data: null, error: { message: code } }) } as unknown as SupabaseClient,
+      service: clients().service,
+    };
+    const error = await assertRejects(
+      () => portal({ action: "withdraw", revision_id: revision }, { ...refused, calls: [] }),
+      ProxyError,
+    );
+    assertEquals(error.code, code === "other" ? "portal_request_failed" : code);
+  }
+});

@@ -1,10 +1,12 @@
 import { supabase } from './supabase'
+import type { EvaluationQuota } from './projectEvaluation'
 
 export type ProjectRevision = {
   id: string; status: string; source_kind: string; source_location: string; source_digest: string | null
   approval_digest: string | null; manifest: Record<string, unknown> | null; adapter_files: Record<string, string>
   explanation: string; error: string; public_test: { passed?: boolean; summary?: string; run_id?: string; status?: string }
   observer_evidence: { notes: string; code_url: string } | null
+  created_at: string; approved_at?: string | null; archived_at?: string | null
 }
 /** The team's model key choice; a saved key is described, never returned. */
 export type TeamModel = {
@@ -15,13 +17,16 @@ export type PortalData = {
   phases: { phase_id: string; projects_enabled: boolean; local_sessions_enabled: boolean; daily_batches: number
     model_token_limit: number; model_call_limit: number; model_concurrency: number; phases: { slug: string; name_en: string; name_zh: string; is_active: boolean
       starts_at: string | null; ends_at: string | null } }[]
-  projects: { id: string; title: string; observer_revisions: ProjectRevision[] }[]
+  projects: { id: string; title: string; created_at: string; observer_revisions: ProjectRevision[] }[]
   batches: { id: string; mode: string; status: string; score: number | null; created_at: string
+    phase_id: string; revision_id: string | null; quota_refunded?: boolean
     observer_runs: { id: string; status: string; score: number | null; result_path: string | null
       score_summary?: { raw_score?: { total: number }; calibration?: { version: string } } | null }[] }[]
   providers: { id: string; name: string; base_url: string; models: string[]; shared: boolean; enabled: boolean; daily_token_limit: number }[]
   team_model: TeamModel | null
   model_bases: string[]
+  /** Missing until the database provides it; the database enforces the limit either way. */
+  quota?: EvaluationQuota[] | null
 }
 
 export async function portal<T>(action: string, fields: Record<string, unknown> = {}): Promise<T> {

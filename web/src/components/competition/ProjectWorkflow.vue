@@ -6,6 +6,7 @@ import { portal, uploadProjectFile, type PortalData, type ProjectRevision } from
 import { usePersonalModel } from '../../composables/usePersonalModel'
 import { DEFAULT_MODEL_KEY_MODE, teamModelMode, type ModelKeyMode } from '../../lib/modelKeyMode'
 import { competition } from '../../stores/competition'
+import { canWithdraw, countedEvaluations, recentDuplicate, visibleProjects, withdrawnCount } from '../../lib/projectEvaluation'
 const { pick, t, tf, locale } = useI18n()
 const { team, refreshMe } = useAuth()
 const personal=usePersonalModel()
@@ -13,6 +14,9 @@ const data = ref<PortalData | null>(null)
 // Suggestions only: any public https:// address works (the server refuses IPs and internal names).
 const personalBases=computed(()=>data.value?.model_bases.filter(base=>base.startsWith('https://'))??[])
 const loading = ref(true), busy = ref(false), error = ref(''), notice = ref('')
+// A completed request keeps its button disabled until the list shows its result,
+// so a second click (or a failed refresh) cannot create a duplicate.
+const locked = ref(new Set<string>()), showWithdrawn = ref(false), targetBatch = ref('')
 const form = ref({ title: '', kind: 'repository', url: '' })
 const selectedFile = ref<File | null>(null), review = ref<ProjectRevision | null>(null)
 const reviewPanel = ref<HTMLElement | null>(null)
@@ -36,13 +40,23 @@ const words = computed(() => pick({
   localCommand: 'Extract the runner, replace the project path, and run this command. Paste the credential at its hidden prompt.',
   expires: 'Credential expires', localSecret: 'This credential is only for this run. Do not commit it to a repository.',
   closed: 'Project evaluation is not open for the current competition.',
+  step1: 'Step 1 · Upload a project', step1Note: 'Up to 10 uploads per day. Uploading does not use evaluations.',
+  step2: 'Step 2 · Review and confirm a version', step2Note: 'Does not use evaluations. When preparation finishes, open the review, check the execution settings and adapter code, and confirm the version.',
+  step3: 'Step 3 · Start an evaluation', step3Note: 'Each click uses one of today’s evaluations. One evaluation runs every scenario of this phase once; its score is the average of those scenarios. The leaderboard keeps your team’s best evaluation. Evaluations that fail because of the platform are not counted.',
+  left: 'Evaluations left today', perDay: 'per day', resets: 'resets at', active: 'An evaluation is running. Start the next one when it finishes.',
+  noneLeft: 'No evaluations left today.', noApproved: 'Confirm a version in step 2 first.', evaluated: 'Evaluated', times: '×', confirmedAt: 'Confirmed',
+  evaluateAgain: 'Evaluate again', repeat: 'This version has already been evaluated. Evaluating it again uses one more of today’s evaluations', repeatLeft: 'left today', proceed: 'Continue?',
+  withdraw: 'Withdraw', withdrawConfirm: 'Withdraw this version? It will be hidden and can no longer be confirmed or evaluated. The upload still counts toward today’s 10 uploads.',
+  withdrawn: 'Version withdrawn.', withdrawnPill: 'Withdrawn', showWithdrawn: 'Show withdrawn versions', hideWithdrawn: 'Hide withdrawn versions',
+  duplicate: 'You submitted the same project a few minutes ago. Submit it again? This uses one of today’s 10 uploads.',
+  logs: 'Logs', refunded: 'Not counted toward the daily limit', noBatches: 'No evaluations yet.',
   csv: 'Existing CSV submission', newProject: 'Submit a project', name: 'Project name', repository: 'Public GitHub repository',
   zip: 'Private ZIP upload', privacy: 'Public repositories remain public after forking. ZIP projects and detailed results are private to your team and the organizers.',
-  file: 'Complete project ZIP · up to 50 MB', submit: 'Prepare project', projects: 'Your projects', empty: 'No projects yet.',
+  file: 'Complete project ZIP · up to 50 MB', submit: 'Upload and prepare', projects: 'Your projects', empty: 'No projects yet.',
   refresh: 'Refresh', review: 'Review interface', explain: 'Adapter explanation', original: 'Original source fingerprint',
   manifest: 'Execution settings', changes: 'Added adapter files', unchanged: 'This project supplies its own interface; no adapter files were added.',
   check: 'I reviewed the execution settings and adapter code, and confirm this exact version.', approve: 'Confirm version',
-  testPassed: 'Public scenario test passed', testResult: 'Download public test result', projectDownload: 'Download this project version', phase: 'Evaluation phase', evaluate: 'Evaluate confirmed version',
+  testPassed: 'Public scenario test passed', testResult: 'Download public test result', projectDownload: 'Download this project version', phase: 'Evaluation phase', evaluate: 'Evaluate this version',
   batches: 'Evaluations', local: 'Start local CSV session', localHelp: 'Run locally with the same step-by-step information. Upload the resulting decisions.csv after the session.',
   download: 'Download private result', uploadCsv: 'Upload matching CSV', average: 'Combined score',
   api: 'Model APIs', apiHelp: 'Model use is optional. Team keys stay on the server. Set the model parameter to the call name below; OPENAI_BASE_URL and OPENAI_API_KEY are provided for each run. Each run and provider has separate limits.', callName: 'Model call name',
@@ -55,17 +69,27 @@ const words = computed(() => pick({
   team: 'Join or create a team first.', phaseUnavailable: 'No evaluation phase is open.',
 }, {
   title: '智能体项目', intro: '提交完整项目，测试接口后，确认用于评测的具体版本。',
-  diagnostics: '查看运行日志', diagnosticsHelp: '编译和程序输出只供本队与主办方查看。', noLogs: '暂时没有任务日志。',
+  diagnostics: '运行日志', diagnosticsHelp: '编译和程序输出只供本队与主办方查看。', noLogs: '暂时没有任务日志。',
   localInfo: '本地运行信息', runner: '下载本地运行器', credential: '本次临时凭证', copy: '复制凭证',
   localCommand: '解压运行器后，替换项目路径并运行下面的命令，按提示粘贴凭证；凭证输入不会显示。',
   expires: '凭证到期时间', localSecret: '凭证只用于这次运行，请勿提交到仓库。',
+  step1: '第1步 · 上传项目', step1Note: '每天最多 10 次，不占评测次数。',
+  step2: '第2步 · 检查并确认版本', step2Note: '不占评测次数。准备完成后点“检查接口”，核对运行设置和适配代码，再确认版本。',
+  step3: '第3步 · 开始评测', step3Note: '每点一次占当天 1 次；一次评测会把本赛程全部场景各跑一遍，分数是这些场景的平均分；排行榜取本队最高的一次；因平台原因失败的不计次数。',
+  left: '今天还剩', perDay: '每天', resets: '重置时间', active: '本队有评测正在进行，结束后才能开始下一次。',
+  noneLeft: '今天的评测次数已用完。', noApproved: '请先在第2步确认一个版本。', evaluated: '已评测', times: '次', confirmedAt: '确认于',
+  evaluateAgain: '再评测一次', repeat: '这个版本已经评测过。再评测一次会再占用今天 1 次评测', repeatLeft: '今天还剩', proceed: '确定继续吗？',
+  withdraw: '撤回', withdrawConfirm: '撤回这个版本？撤回后它会被隐藏，不能再确认或评测；已用的上传次数不退回。',
+  withdrawn: '已撤回。', withdrawnPill: '已撤回', showWithdrawn: '显示已撤回的版本', hideWithdrawn: '隐藏已撤回的版本',
+  duplicate: '几分钟前刚提交过相同的项目。确定再提交一次吗？这会占用今天 10 次上传中的 1 次。',
+  logs: '日志', refunded: '未计入次数', noBatches: '还没有评测记录。',
   closed: '当前比赛尚未开放项目评测。', csv: '原有 CSV 提交', newProject: '提交项目',
   name: '项目名称', repository: '公开 GitHub 仓库', zip: '私有 ZIP 上传',
   privacy: '公开仓库 Fork 后仍然公开；ZIP 项目和详细结果只供本队与主办方查看。', file: '完整项目 ZIP · 最大 50 MB',
-  submit: '准备项目', projects: '我的项目', empty: '还没有项目。', refresh: '刷新', review: '检查接口', explain: '适配说明',
+  submit: '上传并准备', projects: '我的项目', empty: '还没有项目。', refresh: '刷新', review: '检查接口', explain: '适配说明',
   original: '原始代码指纹', manifest: '运行设置', changes: '新增的适配文件', unchanged: '项目自带接口，没有新增适配文件。',
   check: '我已检查运行设置和适配代码，确认使用这个版本。', approve: '确认版本', testPassed: '公开场景测试通过', testResult: '下载公开测试结果', projectDownload: '下载此版本项目',
-  phase: '评测赛程', evaluate: '评测已确认版本', batches: '评测记录', local: '启动本地 CSV 会话',
+  phase: '评测赛程', evaluate: '评测此版本', batches: '评测记录', local: '启动本地 CSV 会话',
   localHelp: '在本机运行，按步骤获得相同信息；运行结束后上传生成的 decisions.csv。', download: '下载私有结果',
   uploadCsv: '上传匹配的 CSV', average: '综合成绩', api: '模型 API', apiHelp: '模型调用可选，队伍密钥保存在服务器。model 参数使用下方调用名；每次运行会提供 OPENAI_BASE_URL 和 OPENAI_API_KEY。运行与接口均有独立额度。', callName: '模型调用名',
   shared: '主办方接口', own: '队伍接口', modelNames: '模型名称，用逗号分隔', endpoint: 'API 地址', key: 'API 密钥',
@@ -80,6 +104,15 @@ const activePhases = computed(() => (data.value?.phases ?? []).filter(p => (p.ph
 const projectsOpen = computed(() => activePhases.value.some(p => p.projects_enabled))
 const openPhases = computed(() => activePhases.value.filter(p => !p.phases.starts_at || Date.parse(p.phases.starts_at) <= Date.now()))
 const selectedPhase = computed(() => openPhases.value.find(p => p.phase_id === phaseId.value))
+const quota = computed(() => data.value?.quota?.find(q => q.phase_id === phaseId.value) ?? null)
+const activeBatch = computed(() => (data.value?.batches ?? []).some(b => ['queued', 'running'].includes(b.status)))
+const shownProjects = computed(() => visibleProjects(data.value?.projects, showWithdrawn.value))
+const hiddenCount = computed(() => withdrawnCount(data.value?.projects))
+const approvedVersions = computed(() => (data.value?.projects ?? []).flatMap(p => p.observer_revisions
+  .filter(r => r.status === 'approved' && !r.archived_at)
+  .map(r => ({ title: p.title, revision: r, evaluated: countedEvaluations(data.value?.batches, r.id, phaseId.value) }))))
+const titles = computed(() => new Map((data.value?.projects ?? []).flatMap(p => p.observer_revisions.map(r => [r.id, p.title] as const))))
+const phaseName = (id: string) => { const p = data.value?.phases.find(x => x.phase_id === id)?.phases; return p ? pick(p.name_en, p.name_zh) : '' }
 // Team-key runs have no practical token cap (1,000,000,000 or more is shown as uncapped).
 const TOKENS_UNCAPPED = 1_000_000_000
 const modelLimits = computed(() => {
@@ -102,16 +135,20 @@ function errorMessage(e: unknown) {
     preparation_daily_limit: pick('Your team has used today’s ten project preparations.', '本队今天的十次项目准备机会已用完。'),
     local_session_not_ready: pick('The local engine is not ready yet, or the run has ended. Refresh its status.', '本地会话尚未启动或已经结束，请刷新查看状态。'),
     daily_limit: pick('The daily evaluation limit has been reached.', '今天的评测次数已用完。'),
+    revision_already_evaluated: pick('This version has already been evaluated.', '这个版本已经评测过。'),
+    revision_withdrawn: pick('This version was withdrawn.', '这个版本已撤回。'),
+    revision_not_withdrawable: pick('Only versions that are not being prepared and were never evaluated can be withdrawn.', '只能撤回未在准备中、也从未评测过的版本。'),
     wrong_file_type: pick('Choose a file with the required extension.', '请选择要求的文件类型。'),
     file_too_large: pick('The file is empty or exceeds the size limit.', '文件为空或超过大小限制。'),
     invalid_repository_url: pick('Enter a public https://github.com/owner/repository URL.', '请输入公开 GitHub 仓库的完整地址。'),
     model_destination_not_enabled: t('submit.model_api.endpoint_refused'),
     invalid_team_model: t('submit.model_api.invalid'),
   }
-  return messages[code] ?? words.value.failed
+  return code === 'cancelled' ? '' : messages[code] ?? words.value.failed
 }
 async function reload() {
   data.value = await portal<PortalData>('list')
+  locked.value = new Set()
   modeChoice.value = modelMode.value
   await personal.refresh()
   // Bind evaluations to the entry phase (beta entry first), never to whatever
@@ -119,31 +156,58 @@ async function reload() {
   const preferred=competition.betaPhaseId??competition.projectPhaseId??competition.phaseId
   if (!openPhases.value.some(p => p.phase_id === phaseId.value)) phaseId.value = openPhases.value.find(p => p.phase_id===preferred)?.phase_id ?? openPhases.value[0]?.phase_id ?? ''
 }
-async function action(work: () => Promise<void>, success = words.value.done) {
-  if (busy.value) return
+async function action(work: () => Promise<void>, success = words.value.done, key = '') {
+  if (busy.value || (key && locked.value.has(key))) return
   busy.value = true; error.value = ''; notice.value = ''
-  try { await work(); await reload(); notice.value = success }
-  catch (e) { error.value = errorMessage(e) }
-  finally { busy.value = false }
+  try { await work() } catch (e) { error.value = errorMessage(e); busy.value = false; return }
+  // The request succeeded even if the refresh below fails; never invite a retry.
+  if (key) locked.value.add(key)
+  notice.value = success
+  try { await reload() } catch { /* the periodic refresh retries and unlocks */ } finally { busy.value = false }
 }
-function submit() { void action(async () => {
-  if (form.value.kind === 'repository') await portal('submit_repository', { title: form.value.title, url: form.value.url })
-  else {
-    if (!selectedFile.value) throw new Error('wrong_file_type')
-    const upload_id = await uploadProjectFile(selectedFile.value, 'source')
-    await portal('submit_zip', { title: form.value.title, upload_id })
-  }
-}, words.value.prepared) }
+function submit() {
+  const url = form.value.kind === 'repository' ? form.value.url : null
+  if (recentDuplicate(data.value?.projects, form.value.title, url) && !window.confirm(words.value.duplicate)) return
+  void action(async () => {
+    if (url !== null) await portal('submit_repository', { title: form.value.title, url })
+    else {
+      if (!selectedFile.value) throw new Error('wrong_file_type')
+      const upload_id = await uploadProjectFile(selectedFile.value, 'source')
+      await portal('submit_zip', { title: form.value.title, upload_id })
+    }
+    form.value = { title: '', kind: form.value.kind, url: '' }; selectedFile.value = null
+    const file = document.querySelector<HTMLInputElement>('[data-testid="project-zip"]'); if (file) file.value = ''
+  }, words.value.prepared, 'submit')
+}
 function openReview(r: ProjectRevision) {
   review.value = r; confirmed.value = false; notes.value = r.observer_evidence?.notes ?? ''; codeUrl.value = r.observer_evidence?.code_url ?? ''
   void nextTick(() => reviewPanel.value?.focus())
 }
-function approve() { if (review.value && confirmed.value) void action(async () => {
-  await portal('approve', { revision_id: review.value!.id, digest: review.value!.approval_digest }); review.value = null
-}, words.value.confirmed) }
-function evaluate(revision_id: string) { void action(async () => {
-  await portal('evaluate', { phase_id: phaseId.value, revision_id })
-}, words.value.queued) }
+function approve() { if (review.value && confirmed.value) { const id = review.value.id; void action(async () => {
+  await portal('approve', { revision_id: id, digest: review.value!.approval_digest }); review.value = null
+}, words.value.confirmed, 'approve:' + id) } }
+const repeatQuestion = () => sentences(words.value.repeat + (quota.value ? pick(` (${quota.value.remaining} ${words.value.repeatLeft}).`, `（${words.value.repeatLeft} ${quota.value.remaining} 次）。`) : pick('.', '。')), words.value.proceed)
+function evaluate(revision_id: string) {
+  const phase_id = phaseId.value
+  // The server also refuses an unconfirmed repeat (the list may be incomplete); ask then.
+  let repeat = countedEvaluations(data.value?.batches, revision_id, phase_id) > 0
+  if (repeat && !window.confirm(repeatQuestion())) return
+  void action(async () => {
+    try { await portal('evaluate', { phase_id, revision_id, ...(repeat ? { confirm_repeat: true } : {}) }) }
+    catch (e) {
+      if (repeat || !(e instanceof Error) || e.message !== 'revision_already_evaluated') throw e
+      if (!window.confirm(repeatQuestion())) throw new Error('cancelled')
+      repeat = true
+      await portal('evaluate', { phase_id, revision_id, confirm_repeat: true })
+    }
+  }, words.value.queued, 'evaluate:' + revision_id)
+}
+function withdraw(revision_id: string) {
+  if (!window.confirm(words.value.withdrawConfirm)) return
+  void action(async () => { await portal('withdraw', { revision_id }); if (review.value?.id === revision_id) review.value = null },
+    words.value.withdrawn, 'withdraw:' + revision_id)
+}
+function showLogs(fields: Record<string, string>) { void action(async () => { diagnostics.value = await portal('diagnostics', fields) }) }
 function chooseMode() {
   const mode = modeChoice.value, hadKey = !!savedModel.value
   if (mode === modelMode.value) return
@@ -171,6 +235,11 @@ onMounted(async () => {
   await refreshMe()
   try { if (team.value) await reload() } catch (e) { error.value = errorMessage(e) }
   finally { loading.value = false }
+  // Links from the records page point at one evaluation; show it once it is loaded.
+  if (location.hash.startsWith('#batch-')) {
+    targetBatch.value = location.hash.slice(7)
+    void nextTick(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'center' }))
+  }
   timer = setInterval(() => { if (!busy.value && team.value && !document.hidden) void reload().catch(() => {}) }, 15000)
 })
 onUnmounted(() => { if (timer) clearInterval(timer) })
@@ -235,28 +304,30 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       </section>
       <p class="mb-5"><button type="button" class="btn sm" :disabled="busy" @click="action(reload)">{{ words.refresh }}</button></p>
       <form v-if="projectsOpen" class="panel mb-6" @submit.prevent="submit">
-        <h2 id="prepare">1 · {{ words.newProject }}</h2>
+        <h2 id="prepare">{{ words.step1 }}</h2><p class="help mb-4">{{ words.step1Note }}</p>
         <label class="field"><span>{{ words.name }}</span><input v-model="form.title" type="text" required maxlength="100" data-testid="project-title"></label>
         <label class="check"><input v-model="form.kind" type="radio" value="repository">{{ words.repository }}</label>
         <label class="check"><input v-model="form.kind" type="radio" value="zip">{{ words.zip }}</label>
         <label v-if="form.kind === 'repository'" class="field"><span>{{ words.repository }}</span><input v-model="form.url" type="url" required placeholder="https://github.com/owner/project" data-testid="project-url"></label>
         <label v-else class="field border border-dashed border-border-subtle p-5"><span>{{ words.file }}</span><input type="file" accept=".zip,application/zip" required data-testid="project-zip" @change="selectedFile = ($event.target as HTMLInputElement).files?.[0] ?? null"></label>
         <p class="help mb-4">{{ words.privacy }}</p>
-        <button class="btn primary" :disabled="busy" data-testid="project-submit">{{ busy ? words.working : words.submit }}</button>
+        <button class="btn primary" :disabled="busy || locked.has('submit')" data-testid="project-submit">{{ busy ? words.working : words.submit }}</button>
       </form>
-      <section class="panel mb-6">
-        <h2 id="evaluate">2 · {{ pick('Confirm a version and evaluate','确认版本并评测') }}</h2><p v-if="!data?.projects.length" class="text3">{{ words.empty }}</p>
-        <p v-if="!openPhases.length" class="help">{{ words.phaseUnavailable }}</p>
-        <article v-for="p in data?.projects" :key="p.id" class="project-row">
+      <section class="panel mb-6" data-testid="project-versions">
+        <h2 id="review">{{ words.step2 }}</h2><p class="help">{{ words.step2Note }}</p>
+        <p v-if="!shownProjects.length" class="text3 mt-3">{{ words.empty }}</p>
+        <article v-for="p in shownProjects" :key="p.id" class="project-row">
           <h3>{{ p.title }}</h3>
-          <div v-for="r in p.observer_revisions" :key="r.id" class="flex flex-wrap items-center gap-3 mt-3">
-            <span class="pill">{{ statuses[r.status] ?? r.status }}</span>
-            <span v-if="r.error" class="errors" role="status">{{ r.error }}</span>
-            <button class="btn sm" :disabled="busy" @click="action(async () => { diagnostics = await portal('diagnostics', { revision_id: r.id }) })">{{ words.diagnostics }}</button>
-            <button v-if="['reviewable','approved'].includes(r.status) || (r.status === 'failed' && r.manifest)" type="button" class="btn sm" @click="openReview(r)">{{ words.review }}</button>
-            <button v-if="r.status === 'approved'" type="button" class="btn primary sm" :disabled="busy || !selectedPhase?.projects_enabled" @click="evaluate(r.id)">{{ words.evaluate }}</button>
+          <div v-for="r in p.observer_revisions" :key="r.id" class="flex flex-wrap items-center gap-3 mt-3" :data-revision-id="r.id">
+            <span class="pill">{{ r.archived_at ? words.withdrawnPill : statuses[r.status] ?? r.status }}</span>
+            <span class="meta">{{ new Date(r.created_at).toLocaleString() }}</span>
+            <span v-if="r.error && !r.archived_at" class="errors" role="status">{{ r.error }}</span>
+            <button v-if="!r.archived_at && (['reviewable','approved'].includes(r.status) || (r.status === 'failed' && r.manifest))" type="button" class="btn sm" :class="{ primary: r.status === 'reviewable' }" @click="openReview(r)">{{ words.review }}</button>
+            <button v-if="canWithdraw(r, data?.batches)" type="button" class="btn sm" :disabled="busy || locked.has('withdraw:'+r.id)" data-testid="project-withdraw" @click="withdraw(r.id)">{{ words.withdraw }}</button>
+            <button type="button" class="log-link" :disabled="busy" @click="showLogs({ revision_id: r.id })">{{ words.logs }}</button>
           </div>
         </article>
+        <button v-if="hiddenCount" type="button" class="log-link mt-4" @click="showWithdrawn = !showWithdrawn">{{ showWithdrawn ? words.hideWithdrawn : words.showWithdrawn + ' (' + hiddenCount + ')' }}</button>
       </section>
       <section v-if="review" ref="reviewPanel" tabindex="-1" class="panel mb-6" data-testid="project-review" aria-live="polite">
         <h2>{{ words.review }}</h2><p v-if="review.public_test.passed" class="pill ok mt-3">{{ words.testPassed }}</p>
@@ -270,8 +341,8 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         <h3 class="mt-5">{{ words.manifest }}</h3><pre>{{ JSON.stringify(review.manifest, null, 2) }}</pre>
         <h3 class="mt-5">{{ words.changes }}</h3><p v-if="!Object.keys(review.adapter_files).length" class="help">{{ words.unchanged }}</p>
         <div v-for="(code, path) in review.adapter_files" :key="path"><h4 class="break-all">{{ path }}</h4><pre>{{ code }}</pre></div>
-        <template v-if="review.status === 'reviewable'"><label class="check mt-4"><input v-model="confirmed" type="checkbox" data-testid="project-confirm">{{ words.check }}</label>
-          <button class="btn primary mt-3" :disabled="busy || !confirmed || !review.public_test.passed" data-testid="project-approve" @click="approve">{{ words.approve }}</button></template>
+        <template v-if="review.status === 'reviewable' && !review.archived_at"><label class="check mt-4"><input v-model="confirmed" type="checkbox" data-testid="project-confirm">{{ words.check }}</label>
+          <button class="btn primary mt-3" :disabled="busy || !confirmed || !review.public_test.passed || locked.has('approve:'+review.id)" data-testid="project-approve" @click="approve">{{ words.approve }}</button></template>
         <form class="mt-6" @submit.prevent="action(async () => { await portal('evidence', { revision_id: review!.id, notes, code_url: codeUrl }) })">
           <h3>{{ words.evidence }}</h3><p class="help">{{ words.evidenceHelp }}</p>
           <label class="field"><span>{{ words.notes }}</span><textarea v-model="notes" maxlength="8000" rows="5"></textarea></label>
@@ -279,16 +350,36 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
           <button class="btn sm" :disabled="busy">{{ words.saveEvidence }}</button>
         </form><button class="btn sm mt-4" @click="review = null">{{ words.close }}</button>
       </section>
-      <section class="panel mb-6"><h2 id="results">3 · {{ words.batches }}</h2>
-        <article v-for="b in data?.batches" :key="b.id" :id="'batch-'+b.id" class="project-row">
-          <p>{{ new Date(b.created_at).toLocaleString() }} · {{ statuses[b.status] ?? b.status }}</p>
+      <section class="panel mb-6" data-testid="project-evaluate">
+        <h2 id="evaluate">{{ words.step3 }}</h2><p class="help">{{ words.step3Note }}</p>
+        <p v-if="!openPhases.length" class="help">{{ words.phaseUnavailable }}</p>
+        <template v-else>
+          <p class="mt-4" data-testid="evaluation-quota">{{ selectedPhase ? pick(selectedPhase.phases.name_en, selectedPhase.phases.name_zh) : '' }}<template v-if="quota">
+            · <strong>{{ pick(`${words.left}: ${quota.remaining}`, `${words.left} ${quota.remaining} 次`) }}</strong>
+            <span class="help">({{ pick(`${quota.daily_batches} ${words.perDay}`, `${words.perDay} ${quota.daily_batches} 次`) }}<template v-if="quota.resets_at">, {{ words.resets }} {{ new Date(quota.resets_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</template>)</span></template></p>
+          <p v-if="quota && quota.remaining <= 0" class="help">{{ words.noneLeft }}</p>
+          <p v-else-if="activeBatch" class="help">{{ words.active }}</p>
+          <p v-if="!approvedVersions.length" class="text3 mt-3">{{ words.noApproved }}</p>
+          <div v-for="v in approvedVersions" :key="v.revision.id" class="flex flex-wrap items-center gap-3 mt-3" :data-revision-id="v.revision.id">
+            <span>{{ v.title }}</span>
+            <span v-if="v.revision.approved_at" class="meta">{{ words.confirmedAt }} {{ new Date(v.revision.approved_at).toLocaleString() }}</span>
+            <span v-if="v.evaluated" class="meta">{{ pick(`${words.evaluated} ${v.evaluated}${words.times}`, `${words.evaluated} ${v.evaluated} ${words.times}`) }}</span>
+            <button type="button" class="btn primary sm" :disabled="busy || locked.has('evaluate:'+v.revision.id) || !selectedPhase?.projects_enabled || activeBatch || (quota != null && quota.remaining <= 0)" data-testid="project-evaluate-button" @click="evaluate(v.revision.id)">{{ v.evaluated ? words.evaluateAgain : words.evaluate }}</button>
+          </div>
+        </template>
+      </section>
+      <section class="panel mb-6"><h2 id="results">{{ words.batches }}</h2>
+        <p v-if="!data?.batches.length" class="text3 mt-3">{{ words.noBatches }}</p>
+        <article v-for="b in data?.batches" :key="b.id" :id="'batch-'+b.id" class="project-row" :class="{ target: b.id === targetBatch }">
+          <p>{{ new Date(b.created_at).toLocaleString() }}<template v-if="b.revision_id && titles.get(b.revision_id)"> · {{ titles.get(b.revision_id) }}</template><template v-if="phaseName(b.phase_id)"> · {{ phaseName(b.phase_id) }}</template> · {{ statuses[b.status] ?? b.status }}
+            <span v-if="b.quota_refunded" class="pill info ml-2" data-testid="batch-refunded">{{ words.refunded }}</span></p>
           <p v-if="b.score != null">{{ words.average }}: {{ b.score.toFixed(2) }}</p>
           <div v-for="run in b.observer_runs" :key="run.id" class="flex flex-wrap gap-3 mt-3 items-center">
             <span class="pill">{{ statuses[run.status] ?? run.status }}</span>
             <span v-if="run.score != null">{{ run.score_summary?.calibration ? t('leaderboard.calibrated_score') + ': ' : '' }}{{ run.score.toFixed(2) }}</span>
-            <span v-if="run.score_summary?.raw_score" class="help">{{ t('leaderboard.raw_score') }}: {{ run.score_summary.raw_score.total.toFixed(2) }}</span>
-            <button class="btn sm" :disabled="busy" @click="action(async () => { diagnostics = await portal('diagnostics', { run_id: run.id }) })">{{ words.diagnostics }}</button>
+            <span v-if="run.score_summary?.raw_score" class="meta">{{ t('leaderboard.raw_score') }}: {{ run.score_summary.raw_score.total.toFixed(2) }}</span>
             <button v-if="run.result_path" class="btn sm" :disabled="busy" @click="download(run.id)">{{ words.download }}</button>
+            <button type="button" class="log-link" :disabled="busy" @click="showLogs({ run_id: run.id })">{{ words.logs }}</button>
           </div>
         </article>
       </section>
@@ -307,5 +398,10 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 <style scoped>
 h2 { font-size: 1.2rem; font-weight: 600; } h3 { font-weight: 600; }
 .project-row { padding: 1rem 0; border-bottom: 1px solid #333; }
+.project-row.target { outline: 1px solid #315efb; outline-offset: .25rem; }
+/* Logs are secondary to the step actions: a quiet text link at the end of a row. */
+.log-link { margin-left: auto; background: none; border: 0; padding: .25rem 0; font-size: .75rem; color: #858585; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.meta { font-size: .8rem; color: #858585; }
+.log-link:hover { color: #bdbdbd; } .log-link:disabled { opacity: .5; cursor: default; }
 pre { max-height: 24rem; overflow: auto; padding: 1rem; margin-top: .5rem; background: #0b0b0b; font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>

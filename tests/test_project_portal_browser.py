@@ -90,7 +90,8 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         rpc(uri,'observer_enqueue_job',job,'prepare',None,revision,'AGENTIC-OBSERVER26-runner-1',nonce,'private input','private nonce')
         rpc(uri,'observer_claim_job',job,nonce,'404','1','303','101','a'*40)
         rpc(uri,'observer_finish_job',job,'404','1',{'diagnostics':{'code':'completed','log':'Compiler output <script>alert(1)</script>'}},'')
-        page.get_by_role('button',name='Private run logs',exact=True).first.click()
+        # Logs are a quiet link, separate from the step actions.
+        page.get_by_test_id('project-versions').get_by_role('button',name='Logs',exact=True).first.click()
         logs=page.get_by_test_id('project-diagnostics')
         expect(logs.locator('pre')).to_have_text('Compiler output <script>alert(1)</script>',timeout=15000)
         assert 'private input' not in page.content()
@@ -105,8 +106,33 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         expect(page.locator('pre').filter(has_text='<script>')).to_have_count(1)
         page.get_by_test_id('project-confirm').check()
         page.get_by_test_id('project-approve').click()
-        expect(page.get_by_role('button',name='Evaluate confirmed version')).to_be_visible(timeout=15000)
+        evaluate=page.get_by_test_id('project-evaluate')
+        expect(evaluate.get_by_role('button',name='Evaluate this version',exact=True)).to_be_visible(timeout=15000)
         assert query(uri,'select status from public.observer_revisions where id=%s',(revision,))==[('approved',)]
+        # The fixture's failed batch was never refunded, so one of three is used.
+        expect(evaluate.get_by_test_id('evaluation-quota')).to_contain_text('Evaluations left today: 2')
+        evaluate.get_by_role('button',name='Evaluate this version',exact=True).click()
+        expect(page.get_by_role('status').filter(has_text='Evaluation queued.')).to_be_visible(timeout=15000)
+        batch=query(uri,"select id from public.observer_batches where revision_id=%s and purpose='formal'",(revision,))[0][0]
+        expect(evaluate.get_by_role('button',name='Evaluate this version',exact=True)).to_be_disabled()
+        # A platform failure is labelled and refunded; retrying it is not a repeat.
+        query(uri,"update public.observer_runs set status='failed',error='engine_job_failed' where batch_id=%s",(batch,))
+        query(uri,'select private.observer_finalize_batch(%s)',(batch,))
+        page.get_by_role('button',name='Refresh',exact=True).click()
+        expect(page.locator('#batch-'+str(batch)).get_by_test_id('batch-refunded')).to_have_text('Not counted toward the daily limit',timeout=15000)
+        expect(evaluate.get_by_test_id('evaluation-quota')).to_contain_text('Evaluations left today: 2')
+        evaluate.get_by_role('button',name='Evaluate this version',exact=True).click()
+        expect(page.get_by_role('status').filter(has_text='Evaluation queued.')).to_be_visible(timeout=15000)
+        query(uri,"""update public.observer_runs set status='scored',score=5,finished_at=now()
+          where batch_id=(select id from public.observer_batches where revision_id=%s and status='queued')""",(revision,))
+        query(uri,"select private.observer_finalize_batch(id) from public.observer_batches where revision_id=%s",(revision,))
+        page.get_by_role('button',name='Refresh',exact=True).click()
+        # Evaluating the same version again asks first; declining creates nothing.
+        dialogs=[]
+        page.once('dialog',lambda d:(dialogs.append(d.message),d.dismiss()))
+        evaluate.get_by_role('button',name='Evaluate again',exact=True).click(timeout=15000)
+        assert dialogs and '1 left today' in dialogs[0]
+        assert query(uri,"select count(*) from public.observer_batches where revision_id=%s and purpose='formal'",(revision,))==[(2,)]
         page.get_by_role('radio',name='Private ZIP upload',exact=True).check()
         page.get_by_test_id('project-title').fill('ZIP project')
         page.get_by_test_id('project-zip').set_input_files({'name':'project.zip','mimeType':'application/zip',
@@ -175,6 +201,19 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
             expect(page.get_by_test_id('model-api-settings').get_by_role('heading',name=title,exact=True)).to_be_visible(timeout=15000)
         page.goto(portal_site+'/projects?lang=en')
         expect(page.get_by_test_id('model-api-settings').get_by_role('heading',name='Model API (optional)')).to_be_visible(timeout=15000)
+        # A version that was never evaluated can be withdrawn after a confirmation.
+        page.get_by_test_id('project-title').fill('Withdrawn project')
+        page.get_by_test_id('project-url').fill('https://github.com/owner/withdrawn')
+        page.get_by_test_id('project-submit').click()
+        versions=page.get_by_test_id('project-versions')
+        expect(versions.get_by_role('heading',name='Withdrawn project',exact=True)).to_be_visible(timeout=15000)
+        expect(page.get_by_test_id('project-title')).to_have_value('')
+        page.once('dialog',lambda d:d.accept())
+        versions.locator('article',has_text='Withdrawn project').get_by_test_id('project-withdraw').click()
+        expect(versions.get_by_role('heading',name='Withdrawn project',exact=True)).to_have_count(0,timeout=15000)
+        versions.get_by_role('button',name='Show withdrawn versions (1)',exact=True).click()
+        expect(versions.locator('article',has_text='Withdrawn project').locator('.pill')).to_have_text('Withdrawn')
+        expect(versions.locator('article',has_text='Repository project').get_by_test_id('project-withdraw')).to_have_count(0)
 
         page.get_by_role('button',name='Review interface',exact=True).click()
         page.get_by_label('Architecture and reproduction notes').fill('Run the project using the submitted manifest.')
