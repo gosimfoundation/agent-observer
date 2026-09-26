@@ -147,22 +147,24 @@ def test_stored_mode_formal_runs_use_only_their_own_teams_saved_key(setup):
     assert reserve(uri,run,participant)['provider_id']==str(replacement)
 
 
-def test_one_outstanding_call_and_run_limits_bound_stored_formal_use(setup):
+def test_model_concurrency_and_run_limits_bound_stored_formal_use(setup):
     s=setup;uri=s['uri'];run,participant=formal_run(s)
     save(uri,s['user'])
-    # The fixture phase allows concurrency 4; formal runs still permit one call at a time.
+    # The fixture phase allows concurrency 4: exactly four calls may be outstanding at once.
     def attempt(_):
         try:return reserve(uri,run,participant)['reserved']
         except psycopg.Error as exc:
             assert 'run_model_quota' in str(exc)
             return False
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
-        assert sorted(pool.map(attempt,range(6)))==[False]*5+[True]
-    active=query(uri,"select id from private.observer_model_calls where run_id=%s and status='reserved'",(run,))[0][0]
-    rpc(uri,'observer_settle_model',active,10)
+        assert sorted(pool.map(attempt,range(6)))==[False]*2+[True]*4
+    assert query(uri,'select calls_active from private.observer_sessions where run_id=%s',(run,))==[(4,)]
+    with pytest.raises(psycopg.Error,match='run_model_quota'):reserve(uri,run,participant)
+    for (active,) in query(uri,"select id from private.observer_model_calls where run_id=%s and status='reserved'",(run,)):
+        rpc(uri,'observer_settle_model',active,10)
     # The fixture run allows 1,000 tokens and 10 calls.
     with pytest.raises(psycopg.Error,match='run_model_quota'):reserve(uri,run,participant,tokens=1000)
-    for _ in range(9):
+    for _ in range(6):
         call=uuid.uuid4();reserve(uri,run,participant,call);rpc(uri,'observer_settle_model',call,10)
     with pytest.raises(psycopg.Error,match='run_model_quota'):reserve(uri,run,participant)
     assert query(uri,'select calls_used,calls_active,tokens_used from private.observer_sessions where run_id=%s',(run,))==[(10,0,100)]
@@ -223,7 +225,9 @@ def test_saved_keys_never_fund_other_runs_and_practice_is_unchanged(setup):
     query(uri,"update private.observer_site_mode set mode='competition' where id")
     try:
         assert rpc(uri,'observer_model_route',run,participant)=={'personal':True,'mode':'stored'}
-        with pytest.raises(psycopg.Error,match='run_model_quota'):reserve(uri,run,participant)  # organizer call still open
+        # The open organizer call counts toward the run's concurrency.
+        query(uri,'update private.observer_sessions set concurrency_limit=1 where run_id=%s',(run,))
+        with pytest.raises(psycopg.Error,match='run_model_quota'):reserve(uri,run,participant)
         open_call=query(uri,"select id from private.observer_model_calls where run_id=%s and status='reserved'",(run,))[0][0]
         rpc(uri,'observer_settle_model',open_call,1)
         assert reserve(uri,run,participant)['provider_id']==str(provider)
@@ -278,8 +282,16 @@ def test_personal_model_routes_and_claims_are_private_and_credentials_are_not_st
     assert query(uri,'select status from private.observer_personal_model_calls where id=%s',(call,))==[('done',)]
     stored=query(uri,'select row_to_json(c) from private.observer_personal_model_calls c where id=%s',(call,))[0][0]
     assert set(stored)=={'id','run_id','request_digest','status','created_at','updated_at'}
-    # The relay keeps its own bound: one outstanding call per run.
+    # The relay honours the run's bounds: at most model_concurrency (4) outstanding calls...
     second=uuid.uuid4();assert rpc(uri,'observer_request_personal_model',run,participant,second,'a'*64)
+    for _ in range(3):assert rpc(uri,'observer_request_personal_model',run,participant,uuid.uuid4(),'a'*64)
+    with pytest.raises(psycopg.Error,match='run_model_quota'):
+        rpc(uri,'observer_request_personal_model',run,participant,uuid.uuid4(),'a'*64)
+    # ...and at most model_call_limit (10) calls per run.
+    query(uri,"update private.observer_personal_model_calls set status='timeout' where run_id=%s and id<>%s",(run,second))
+    for _ in range(5):
+        extra=uuid.uuid4();assert rpc(uri,'observer_request_personal_model',run,participant,extra,'a'*64)
+        rpc(uri,'observer_finish_personal_model',extra,'done')
     with pytest.raises(psycopg.Error,match='run_model_quota'):
         rpc(uri,'observer_request_personal_model',run,participant,uuid.uuid4(),'a'*64)
     assert query(uri,'select count(*) from private.observer_providers where team_id=%s',(s['team'],))==[(0,)]
@@ -331,6 +343,37 @@ def test_migration_restores_explicit_formal_limits_only():
         query(uri,stored.read_text())
         rows=query(uri,'select phase_id,model_token_limit,model_call_limit,model_concurrency from public.observer_phase_settings')
         assert sorted(rows)==sorted([(formal,10000000,10000,1),(online,10000000,10000,1),(other,5000,10,4)])
+    finally:
+        server.cleanup()
+
+
+def test_participant_key_phases_get_loose_limits_and_organizer_phases_are_unchanged():
+    server,uri=start(apply_migrations=False)
+    try:
+        query(uri,(ROOT/'tests/supabase/auth_stub.sql').read_text())
+        migrations=sorted((ROOT/'supabase/migrations').glob('*.sql'))
+        loose=ROOT/'supabase/migrations/20260926000700_participant_model_limits.sql'
+        assert loose in migrations
+        for path in migrations:
+            if path.name<loose.name:query(uri,path.read_text())
+        phases={slug:uuid.uuid4() for slug in ('final-a','online','practice-projects','observer-acceptance-abc','practice','lab')}
+        for slug,phase in phases.items():
+            query(uri,"insert into public.phases(id,slug,name_en,name_zh,counts_for_final) values(%s,%s,'P','P',%s)",
+                  (phase,slug,slug=='final-a'))
+        query(uri,"""insert into public.observer_phase_settings(phase_id,model_token_limit,model_call_limit,model_concurrency)
+          select id,10000000,10000,1 from public.phases where slug<>'lab'""")
+        query(uri,'insert into public.observer_phase_settings(phase_id,model_token_limit,model_call_limit,model_concurrency) values(%s,5000,10,2)',
+              (phases['lab'],))
+        # Re-running the migration is harmless.
+        query(uri,loose.read_text());query(uri,loose.read_text())
+        rows={r[0]:r[1:] for r in query(uri,'select phase_id,model_token_limit,model_call_limit,model_concurrency from public.observer_phase_settings')}
+        for slug in ('final-a','online','practice-projects','observer-acceptance-abc'):
+            assert rows[phases[slug]]==(1000000000,100000,4),slug
+        # Phases that spend organizer keys keep their settings.
+        assert rows[phases['practice']]==(10000000,10000,1) and rows[phases['lab']]==(5000,10,2)
+        for column,value in (('model_token_limit',1000000001),('model_call_limit',100001),('model_concurrency',5),('model_concurrency',0)):
+            with pytest.raises(psycopg.errors.CheckViolation):
+                query(uri,f'update public.observer_phase_settings set {column}=%s where phase_id=%s',(value,phases['lab']))
     finally:
         server.cleanup()
 

@@ -146,8 +146,8 @@ def test_same_as_reuses_formal_scenarios_with_their_calibration(database):
     rows=query(uri,'select scenario_id::text,profile_id::text from private.observer_scenario_calibration where phase_id=%s',(plan['phase_id'],))
     assert dict(rows)==profiles
     assert all(c['calibrated'] and c['profile_matches_bundle'] for c in plan['calibration'])
-    limits=query(uri,'select model_call_limit,model_token_limit from public.observer_phase_settings where phase_id=%s',(plan['phase_id'],))[0]
-    assert limits==(10000,10000000)
+    limits=query(uri,'select model_call_limit,model_token_limit,model_concurrency from public.observer_phase_settings where phase_id=%s',(plan['phase_id'],))[0]
+    assert limits==(100000,1000000000,4)
 
 
 def test_management_api_rows_are_positional(monkeypatch):

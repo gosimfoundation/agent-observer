@@ -18,6 +18,12 @@ import urllib.parse
 import urllib.request
 
 ROOT=Path(__file__).resolve().parents[1]
+# Per-run model bounds for runs on the team's own key (see migration
+# 20260926000600): tokens are effectively unlimited because the team pays for
+# them; calls stay capped because each one passes through observer-model.
+MODEL_TOKEN_LIMIT=1_000_000_000
+MODEL_CALL_LIMIT=100_000
+MODEL_CONCURRENCY=4
 sys.path.insert(0,str(ROOT))
 from project_platform.artifacts import pack_files
 from project_platform.package import ProjectFile
@@ -60,10 +66,10 @@ do $verify$ begin
     where s.id={q(preview_id)} and s.is_active and s.weather_public and s.forecasts_public and s.events_public)
     then raise exception 'Public preview is not ready';end if;
 end $verify$;
--- Participant-funded model use (saved team keys): explicit per-run bounds, one call at a time.
+-- Participant-funded model use (team keys): no practical token cap, bounded calls, up to 4 at a time.
 insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,runtime_seconds,
   daily_batches,model_token_limit,model_call_limit,model_concurrency)
-  values({q(phase_id)},true,false,{runtime},{daily},10000000,10000,1)
+  values({q(phase_id)},true,false,{runtime},{daily},{MODEL_TOKEN_LIMIT},{MODEL_CALL_LIMIT},{MODEL_CONCURRENCY})
 on conflict(phase_id) do nothing;
 do $settings$ begin
   if not exists(select 1 from public.observer_phase_settings where phase_id={q(phase_id)}
