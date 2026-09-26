@@ -233,7 +233,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         <label class="check"><input v-model="form.kind" type="radio" value="repository">{{ words.repository }}</label>
         <label class="check"><input v-model="form.kind" type="radio" value="zip">{{ words.zip }}</label>
         <label v-if="form.kind === 'repository'" class="field"><span>{{ words.repository }}</span><input v-model="form.url" type="url" required placeholder="https://github.com/owner/project" data-testid="project-url"></label>
-        <label v-else class="field"><span>{{ words.file }}</span><input type="file" accept=".zip" required data-testid="project-zip" @change="selectedFile = ($event.target as HTMLInputElement).files?.[0] ?? null"></label>
+        <label v-else class="field border border-dashed border-border-subtle p-5"><span>{{ words.file }}</span><input type="file" accept=".zip,application/zip" required data-testid="project-zip" @change="selectedFile = ($event.target as HTMLInputElement).files?.[0] ?? null"></label>
         <p class="help mb-4">{{ words.privacy }}</p>
         <button class="btn primary" :disabled="busy" data-testid="project-submit">{{ busy ? words.working : words.submit }}</button>
       </form>
