@@ -119,7 +119,8 @@ onMounted(async () => {
             <div><dt>{{ t('resources.targets') }}</dt><dd>{{ s.n_targets ?? '—' }}</dd></div>
             <div><dt>{{ t('resources.requests') }}</dt><dd>{{ s.n_requests ?? '—' }}</dd></div>
           </dl>
-          <div v-for="g in GROUPS" :key="g" class="file-group">
+          <p v-if="competition.mode==='competition'" class="text2 mt-5 text-sm">{{ t('resources.session_data') }}</p>
+          <template v-else><div v-for="g in GROUPS" :key="g" class="file-group">
             <div class="file-group-head">
               <span class="label">{{ t(`resources.file_group.${g}`) }}</span>
               <span v-if="!groupVisible(s, g)" class="pill closed">{{ t('resources.hidden') }}</span>
@@ -132,6 +133,7 @@ onMounted(async () => {
               </template>
             </div>
           </div>
+          </template>
           <!-- No checksum here: for a hidden-weather scenario the per-file hashes make a six-digit seed
                brute-forceable offline. Public scenarios still carry it inside scenario_manifest.json. -->
           <p class="text3 mt-3 text-xs m">{{ t('resources.contract') }}: {{ s.contract ?? 'challenge-score-v3' }}<template v-if="!s.weather_public"> · {{ t('resources.seed_hidden') }}</template></p>

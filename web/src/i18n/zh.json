@@ -1903,6 +1903,7 @@
     "slots": "时隙",
     "tiles_n": "天区",
     "seed": "种子",
+    "session_data": "比赛数据在评测时逐轮提供，不提供原始场景文件下载。",
     "seed_hidden": "种子不公开",
     "checksum_label": "校验和",
     "cli": "命令行",

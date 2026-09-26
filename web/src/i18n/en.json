@@ -1903,6 +1903,7 @@
     "slots": "slots",
     "tiles_n": "tiles",
     "seed": "seed",
+    "session_data": "Competition data is supplied round by round during evaluation. Source bundles cannot be downloaded.",
     "seed_hidden": "seed not published",
     "checksum_label": "checksum",
     "cli": "Command line",

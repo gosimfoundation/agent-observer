@@ -912,5 +912,8 @@
       "title": "Joyeuse fête de la Mi-Automne !",
       "close": "Fermer"
     }
+  },
+  "resources": {
+    "session_data": "Les données du concours sont fournies à chaque tour pendant l’évaluation. Les fichiers sources des scénarios ne sont pas téléchargeables."
   }
 }
