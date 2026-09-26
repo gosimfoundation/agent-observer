@@ -11,6 +11,9 @@
 
 export const REPLAY_POSITION = 'hs26-replay:position'
 export const REPLAY_SEEK = 'hs26-replay:seek'
+/** Playback settings from the page: `{ speed?, play?, loop? }` (the home-page demo autoplays and loops). */
+export const REPLAY_PLAYBACK = 'hs26-replay:playback'
+export interface ReplayPlayback { speed?: number; play?: boolean; loop?: boolean }
 
 /** `seq` is the last seek the replay had applied when it sent this: reports older than the page's latest seek are stale. */
 export interface ReplayPositionMessage { type: typeof REPLAY_POSITION; round: number; rounds: number; playing: boolean; seq: number }
@@ -41,20 +44,36 @@ export function readPositionMessage(data: unknown): ReplayPositionMessage | null
 export const isStaleReport = (msg: ReplayPositionMessage, lastSeek: number): boolean => msg.seq < lastSeek
 
 /**
- * Runs inside the replay after its own script. `index`, `playing`, `DATA` and `updateUI` are the
- * replay's globals: every repaint reports the round, and a seek from the page moves to it and pauses,
- * without reporting back. Nothing is reported on load: the page seeks the replay to the shared position
- * once the frame has loaded.
+ * Runs inside the replay after its own script. `index`, `playing`, `speed`, `lastStep`, `DATA` and
+ * `updateUI` are the replay's globals: every repaint reports the round, and a seek from the page moves
+ * to it and pauses, without reporting back. Nothing is reported on load: the page seeks the replay to
+ * the shared position once the frame has loaded. A playback message sets the speed, starts or stops,
+ * and with `loop` starts over a moment after the last round.
  */
 const BRIDGE = `(function(){
 if(typeof updateUI!=='function'||typeof DATA==='undefined'||window.parent===window)return;
-var paint=updateUI,quiet=false,seq=0;
+var paint=updateUI,quiet=false,seq=0,loop=false,hold=0,last=DATA.rounds.length-1;
+function button(){return document.getElementById('play')}
+function setPlaying(on){playing=on;lastStep=performance.now();var b=button();if(b)b.textContent=on?'\u2161 PAUSE':'\u25B6 PLAY'}
 function report(){if(!quiet)parent.postMessage({type:'${REPLAY_POSITION}',round:index,rounds:DATA.rounds.length,playing:playing,seq:seq},'*')}
-updateUI=function(){paint.apply(this,arguments);report()};
+updateUI=function(){
+  paint.apply(this,arguments);report();
+  var b=button();
+  if(loop&&!playing&&index===last&&b&&/REPLAY/.test(b.textContent)&&!hold)
+    hold=setTimeout(function(){hold=0;if(loop&&!playing&&index===last){index=0;setPlaying(true);updateUI()}},2500);
+};
 window.addEventListener('message',function(e){
-  var d=e.data;if(e.source!==parent||!d||d.type!=='${REPLAY_SEEK}')return;
-  seq=Math.max(seq,Number(d.seq)||0);var i=Math.max(0,Math.min(DATA.rounds.length-1,Math.floor(Number(d.round))||0));
-  if(playing){playing=false;var b=document.getElementById('play');if(b)b.textContent='\\u25B6 PLAY'}
+  var d=e.data;if(e.source!==parent||!d)return;
+  if(d.type==='${REPLAY_PLAYBACK}'){
+    if(Number(d.speed)>0){speed=Number(d.speed);var s=document.getElementById('speed');if(s)s.value=String(d.speed);lastStep=performance.now()}
+    if(typeof d.loop==='boolean')loop=d.loop;
+    if(d.play===true&&!playing){if(index===last)index=0;setPlaying(true);updateUI()}
+    else if(d.play===false&&playing){setPlaying(false);updateUI()}
+    return;
+  }
+  if(d.type!=='${REPLAY_SEEK}')return;
+  seq=Math.max(seq,Number(d.seq)||0);var i=Math.max(0,Math.min(last,Math.floor(Number(d.round))||0));
+  if(playing)setPlaying(false);
   index=i;quiet=true;try{paint()}finally{quiet=false}
 });
 })();`

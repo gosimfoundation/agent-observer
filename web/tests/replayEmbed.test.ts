@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import vm from 'node:vm'
-import { REPLAY_LAYOUT_PATCH, REPLAY_POSITION, REPLAY_SEEK, cursorForRound, embedReplayHtml, isStaleReport, readPositionMessage, roundForCursor } from '../src/lib/replayEmbed.ts'
+import { REPLAY_LAYOUT_PATCH, REPLAY_PLAYBACK, REPLAY_POSITION, REPLAY_SEEK, cursorForRound, embedReplayHtml, isStaleReport, readPositionMessage, roundForCursor } from '../src/lib/replayEmbed.ts'
 
 test('replay rounds and sky-map cursors address the same action', () => {
   // round k (0-based) is report action k; the map's cursor counts actions shown, so it is k + 1
@@ -31,21 +31,25 @@ test('only well-formed position messages are read, and reports older than the la
 /** Run a miniature replay page (same globals as decision_replay.html) with the injected bridge. */
 function miniReplay() {
   const page = embedReplayHtml(`<html><head><style>x{}</style></head><body><script>
-const DATA={rounds:[{},{},{},{},{}]};let index=0,playing=false;
+const DATA={rounds:[{},{},{},{},{}]};let index=0,playing=false,speed=1,lastStep=0;
 function updateUI(){painted.push(index)}
 function play(){playing=true;index++;updateUI()}
+function finish(){index=DATA.rounds.length-1;playing=false;document.getElementById('play').textContent='\u25B6 REPLAY';updateUI()}
 </script></body></html>`)
   const scripts = [...page.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]!)
   const posted: any[] = []
   const listeners: ((e: any) => void)[] = []
   const parent = { postMessage: (data: any) => posted.push(data) }
   const button = { textContent: 'Ⅱ PAUSE' }
-  const ctx: any = { painted: [] as number[], parent, document: { getElementById: () => button } }
+  const timers: (() => void)[] = []
+  const select = { value: '1' }
+  const ctx: any = { painted: [] as number[], parent, performance: { now: () => 0 }, setTimeout: (fn: () => void) => timers.push(fn),
+    document: { getElementById: (id: string) => id === 'speed' ? select : button } }
   ctx.window = { parent, addEventListener: (_: string, fn: (e: any) => void) => listeners.push(fn) }
   vm.createContext(ctx)
   for (const s of scripts) vm.runInContext(s, ctx)
   const send = (data: any, source: any = parent) => listeners.forEach(fn => fn({ source, data }))
-  return { page, ctx, posted, send, button, get: (expr: string) => vm.runInContext(expr, ctx) }
+  return { page, ctx, posted, send, button, select, timers, get: (expr: string) => vm.runInContext(expr, ctx) }
 }
 
 test('the bridge reports each replay step and applies seeks without echoing them', () => {
@@ -77,4 +81,42 @@ test('stored replays get the narrow-width layout the template now ships', () => 
   const page = embedReplayHtml(template)
   assert.ok(page.indexOf('data-hs26-embed>@media') < page.indexOf('</head>'))
   assert.ok(page.lastIndexOf('<script data-hs26-embed>') > page.indexOf('const DATA'))
+})
+
+test('the page can set the speed, autoplay and loop the replay', () => {
+  const r = miniReplay()
+  r.send({ type: REPLAY_PLAYBACK, speed: 8, play: true, loop: true })
+  assert.equal(r.get('speed'), 8)
+  assert.equal(r.select.value, '8')
+  assert.equal(r.get('playing'), true)
+  assert.equal(r.button.textContent, '\u2161 PAUSE')
+  r.get('finish()')
+  assert.equal(r.timers.length, 1, 'the finished run is held, then starts over')
+  r.timers[0]!()
+  assert.equal(r.get('index'), 0)
+  assert.equal(r.get('playing'), true)
+  r.send({ type: REPLAY_PLAYBACK, play: false })
+  assert.equal(r.get('playing'), false)
+  r.send({ type: REPLAY_PLAYBACK, loop: false })
+  r.get('finish()')
+  assert.equal(r.timers.length, 1, 'without loop the replay stays on its last round')
+})
+
+test('the bundled demo replay inflates in the browser, and plain bytes pass through', async () => {
+  const { gzipSync } = await import('node:zlib')
+  const { inflateText } = await import('../src/lib/demoReplay.ts')
+  const page = '<html><body>const DATA = {"rounds":[]};</body></html>'
+  assert.equal(await inflateText(new Uint8Array(gzipSync(page))), page)
+  assert.equal(await inflateText(new TextEncoder().encode(page)), page)
+})
+
+test('the committed demo is the full baseline run, not a trimmed one', async () => {
+  const { gunzipSync } = await import('node:zlib')
+  const facts = JSON.parse(readFileSync(new URL('../public/demo/baseline-dev-reference.json', import.meta.url), 'utf8'))
+  const page = gunzipSync(readFileSync(new URL('../public/demo/baseline-dev-reference.html.gz', import.meta.url))).toString('utf8')
+  const data = JSON.parse(page.match(/^const DATA = (.*);$/m)![1]!)
+  assert.equal(facts.scenario, 'dev-reference')
+  assert.equal(data.rounds.length, facts.rounds)
+  assert.equal(new Set(data.rounds.map((r: any) => r.night_id)).size, facts.nights)
+  assert.equal(facts.nights, 180)
 })

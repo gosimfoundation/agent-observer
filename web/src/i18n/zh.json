@@ -553,6 +553,7 @@
     "rail": {
       "top": "封面",
       "film": "短片",
+      "demo": "示例回放",
       "quest": "通关路线",
       "participants": "选手墙",
       "vision": "愿景",
@@ -569,6 +570,12 @@
     "film": {
       "kicker": "活动短片",
       "play": "播放"
+    },
+    "demo": {
+      "kicker": "官方示例",
+      "title": "官方示例：基线智能体在公开练习场景中的回放",
+      "facts": "场景 {scenario} · 种子 {seed} · {nights} 夜 · {rounds} 次决策 · 最终得分 {score}",
+      "note": "平台评分器和回放渲染器对入门包基线智能体的真实输出。默认 8× 播放，拖动天空可以转动视角。"
     }
   },
   "vision": {

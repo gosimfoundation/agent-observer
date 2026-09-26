@@ -553,6 +553,7 @@
     "rail": {
       "top": "Top",
       "film": "Film",
+      "demo": "Demo",
       "quest": "Main quest",
       "participants": "Participants",
       "vision": "Vision",
@@ -569,6 +570,12 @@
     "film": {
       "kicker": "Event film",
       "play": "Play"
+    },
+    "demo": {
+      "kicker": "Official example",
+      "title": "Official example: baseline agent replay on a public practice scenario",
+      "facts": "Scenario {scenario} · seed {seed} · {nights} nights · {rounds} decisions · final score {score}",
+      "note": "Real output of the platform's scorer and replay renderer for the starter kit's baseline agent. Plays at 8×; drag the sky to look around."
     }
   },
   "vision": {
