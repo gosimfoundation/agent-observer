@@ -31,6 +31,7 @@ class SessionError(RuntimeError):
 SESSION_REGION = os.environ.get("OBSERVER_SESSION_REGION", "ap-southeast-1")
 # Seconds the server may hold one poll open while waiting for the next step.
 LONG_POLL_SECONDS = 10.0
+LARGE_REQUEST_BYTES = 1024 * 1024
 
 
 def long_poll_seconds(deadline: float | None) -> float:
@@ -55,7 +56,9 @@ class SessionClient:
         if action == "initialize":
             arguments["publication"] = encode_publication(arguments["publication"])
         payload = json.dumps({"action": action, **arguments}, allow_nan=False, separators=(",", ":")).encode()
-        request_timeout = self.catalog_timeout if (action == "initialize" or
+        # Catalogs and large observations (a formal first step is several MB) need
+        # longer transfers than a normal step.
+        request_timeout = self.catalog_timeout if (action == "initialize" or len(payload) > LARGE_REQUEST_BYTES or
             (action == "poll" and arguments.get("scope") != "engine" and not arguments.get("initialized"))) else self.timeout
         attempts = 0
         # Protocol writes are idempotent with sequence+body. A network retry must

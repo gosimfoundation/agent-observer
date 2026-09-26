@@ -103,3 +103,23 @@ def test_catalog_transfer_budget_does_not_extend_decision_deadlines():
     client.call('initialize',publication={},deadline=time.monotonic()+0.5)
     assert timeouts[:5]==[120,120,30,30,30]
     assert 0<timeouts[-1]<=0.5
+
+
+def test_large_session_requests_get_the_transfer_timeout():
+    from project_platform.session import SessionClient
+    seen = []
+
+    class Opener:
+        def open(self, request, timeout):
+            seen.append(timeout)
+            class Response:
+                def __enter__(self): return self
+                def __exit__(self, *args): return False
+                def read(self, _limit): return b'{"data":{"response":null}}'
+            return Response()
+
+    client = SessionClient("https://platform.test/functions/v1/observer-session", "obs_x.y")
+    client.opener = Opener()
+    client.call("advance", sequence=1, observation={"blob": "x" * 2_000_000})
+    client.call("advance", sequence=2, observation={"blob": "x"})
+    assert seen == [client.catalog_timeout, client.timeout]
