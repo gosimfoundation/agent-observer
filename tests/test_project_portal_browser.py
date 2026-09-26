@@ -158,7 +158,7 @@ def test_single_entry_repository_zip_review_and_preserved_csv_journey(portal_sit
         personal.get_by_test_id('personal-model-endpoint').fill(suggested)
         personal.get_by_label('Model',exact=True).fill('own-model')
         personal.get_by_test_id('personal-api-key').fill('in-memory-browser-fixture')
-        personal.get_by_role('button',name='Use for this session',exact=True).click()
+        personal.get_by_role('button',name='Connect (key not saved)',exact=True).click()
         expect(personal.get_by_role('button',name='Disconnect and clear key')).to_be_visible()
         assert 'in-memory-browser-fixture' not in page.evaluate('JSON.stringify({...localStorage,...sessionStorage})')
         assert query(uri,"select count(*) from private.observer_providers where team_id=%s and encrypted_key<>''",(s['team'],))==[(0,)]
