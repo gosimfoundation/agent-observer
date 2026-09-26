@@ -150,3 +150,20 @@ def test_session_requests_and_responses_are_gzipped_when_large():
     assert json.loads(gzip.decompress(body))["observation"]["blob"] == "x" * 50_000
     client.call("poll", scope="engine")
     assert "Content-encoding" not in sent[1][0]
+
+
+def test_gzipped_error_bodies_keep_their_code():
+    import gzip, io, urllib.error
+    from challenge.challenge_workflow import GlobalDeadlineExpired
+    from project_platform.session import SessionClient
+
+    class Opener:
+        def open(self, request, timeout):
+            body = gzip.compress(b'{"error":"session_deadline"}')
+            raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized",
+                                         {"Content-Encoding": "gzip"}, io.BytesIO(body))
+
+    client = SessionClient("https://platform.test/functions/v1/observer-session", "obs_x.y")
+    client.opener = Opener()
+    with pytest.raises(GlobalDeadlineExpired):
+        client.call("poll", scope="engine")

@@ -103,8 +103,12 @@ class SessionClient:
                     return result
             except urllib.error.HTTPError as exc:
                 try:
-                    error = json.loads(exc.read(4096)).get("error","session_error")
-                except (ValueError, AttributeError):
+                    raw_error = exc.read(4096)
+                    # A proxy may gzip error bodies because requests accept gzip.
+                    if ((exc.headers.get("Content-Encoding") if exc.headers else "") or "").strip().lower() == "gzip":
+                        raw_error = _decompress(raw_error)
+                    error = json.loads(raw_error).get("error","session_error")
+                except (ValueError, AttributeError, zlib.error, SessionError):
                     error = "session_error"
                 if error == "session_deadline":
                     raise GlobalDeadlineExpired() from None
