@@ -136,3 +136,25 @@ Deno.test("unconfigured deployments do not consume retries; provisioning failure
   assertEquals(output, [{ id: run, scheduled: false, error: "schedule_unavailable" }]);
   assertEquals(calls.includes("observer_schedule_run"), false);
 });
+
+Deno.test("a final formal run whose instance lookup is refused is never scheduled", async () => {
+  const { organization } = await placement(user);
+  const calls: string[] = [];
+  const output = await scheduleRuns({
+    masterKey: key,
+    apiBase: "https://platform.test",
+    ensureRepository: async () => {},
+    rpc: (name, args) => {
+      calls.push(name);
+      if (name === "observer_runner_configuration") return Promise.resolve([{ organization }]);
+      if (name === "observer_pending_runs") return Promise.resolve([{ id: run, user_id: user, lease, mode: "project" }]);
+      // observer_instance_input raises formal_instance_missing instead of returning NULL.
+      if (name === "observer_instance_input") return Promise.reject(new Error("formal_instance_missing"));
+      assertEquals(name, "observer_run_schedule_error");
+      assertEquals(args, { p_run: run, p_lease: lease, p_error: "schedule_unavailable" });
+      return Promise.resolve(null);
+    },
+  });
+  assertEquals(output, [{ id: run, scheduled: false, error: "schedule_unavailable" }]);
+  assertEquals(calls.includes("observer_schedule_run"), false);
+});
