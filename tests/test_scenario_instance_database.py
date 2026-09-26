@@ -39,7 +39,7 @@ def batch_run(s, *, user=None):
     return batch, run
 
 
-def test_each_team_and_attempt_get_unique_private_seed_and_fixed_profile(setup):
+def test_each_team_gets_one_fixed_private_seed_and_fixed_profile(setup):
     s = setup; uri = s["uri"]
     pid = configure(s)
     first_batch, first = batch_run(s)
@@ -52,7 +52,8 @@ def test_each_team_and_attempt_get_unique_private_seed_and_fixed_profile(setup):
     query(uri, "update public.observer_batches set status='failed',finished_at=now() where id=%s", (first_batch,))
     _, third = batch_run(s)
     c = rpc(uri, "observer_instance_input", third)
-    assert len({a["seed"], b["seed"], c["seed"]}) == 3
+    # Every evaluation of one team reuses its instance; other teams differ.
+    assert a["seed"] == c["seed"] and a["seed"] != b["seed"]
     assert a["profile"] == b["profile"] == c["profile"]
     for role in ("authenticated", "anon"):
         with pytest.raises(psycopg.Error, match="permission denied"):
@@ -64,6 +65,16 @@ def test_each_team_and_attempt_get_unique_private_seed_and_fixed_profile(setup):
     assert rpc(uri, "observer_instance_input", first) == a  # reading other attempts cannot rotate it
     with pytest.raises(psycopg.Error, match="instance_immutable"):
         query(uri, "update private.observer_scenario_instances set seed=%s where run_id=%s", ("0" * 64, first))
+
+
+def test_per_evaluation_instances_remain_available_as_a_switch(setup):
+    s = setup; uri = s["uri"]
+    configure(s)
+    query(uri, "update private.observer_scenario_calibration set seed_scope='run' where phase_id=%s", (s["phase"],))
+    first_batch, first = batch_run(s)
+    query(uri, "update public.observer_batches set status='failed',finished_at=now() where id=%s", (first_batch,))
+    _, second = batch_run(s)
+    assert rpc(uri, "observer_instance_input", first)["seed"] != rpc(uri, "observer_instance_input", second)["seed"]
 
 
 def test_fixed_practice_runs_are_unchanged_and_configuration_freezes(setup):
