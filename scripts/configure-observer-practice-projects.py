@@ -36,7 +36,9 @@ def plan(args):
     # (each run still ends when its own scenario ends).
     existing = deploy.query('select id from public.phases where slug='+q(SLUG))
     phase_id = existing[0]['id'] if existing else str(uuid.uuid4())
-    runtime = max(int(r) for r in runtimes)
+    # Complete projects talk to the platform once per step over the network, so
+    # they get more time than a local run: 5 hours (organizer decision 2026-09-26).
+    runtime = max(args.runtime, max(int(r) for r in runtimes))
     statements = [
         'insert into public.phases(id,slug,name_en,name_zh,allow_results,allow_agents,leaderboard_mode,counts_for_final,is_active,sort_order,starts_at,ends_at)'
         ' values ('+','.join(map(q, (phase_id, SLUG, 'Playground · complete projects', '练习赛 · 完整项目', False, False,
@@ -57,6 +59,7 @@ def plan(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--runtime', type=int, default=18000, help='Phase time limit in seconds (max 18000)')
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--daily', type=int, default=5)
     parser.add_argument('--scenario', action='append', help='Playground scenario slug (repeatable); default: all')
