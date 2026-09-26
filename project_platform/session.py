@@ -6,6 +6,7 @@ another run, choose a future observation, or publish a score.
 from __future__ import annotations
 
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -23,6 +24,20 @@ class SessionError(RuntimeError):
 
     def __str__(self):
         return self.code
+
+
+# Run the session function next to the database. Each request then crosses the
+# ocean once, and its server-side waits and database checks stay local.
+SESSION_REGION = os.environ.get("OBSERVER_SESSION_REGION", "ap-southeast-1")
+# Seconds the server may hold one poll open while waiting for the next step.
+LONG_POLL_SECONDS = 10.0
+
+
+def long_poll_seconds(deadline: float | None) -> float:
+    """Server wait that always ends before this client's own request timeout."""
+    if deadline is None:
+        return LONG_POLL_SECONDS
+    return max(0.0, min(LONG_POLL_SECONDS, deadline-time.monotonic()-2))
 
 
 class SessionClient:
@@ -50,7 +65,8 @@ class SessionClient:
             if remaining <= 0:
                 raise GlobalDeadlineExpired()
             request = urllib.request.Request(self.url, data=payload,
-                headers={"Authorization":"Bearer "+self.credential, "Content-Type":"application/json"}, method="POST")
+                headers={"Authorization":"Bearer "+self.credential, "Content-Type":"application/json",
+                         **({"x-region":SESSION_REGION} if SESSION_REGION else {})}, method="POST")
             try:
                 with self.opener.open(request, timeout=min(remaining,request_timeout)) as response:
                     raw = response.read(17*1024*1024+1)

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from challenge.challenge_workflow import ChallengeWorkflow
-from .session import SessionClient, wait_until
+from .session import SessionClient, long_poll_seconds, wait_until
 from .scenario_instances import PANEL_VERSION, calibrated_score
 
 
@@ -58,28 +58,48 @@ class RemoteProvider:
             publication = {**publication, "evaluation": self.evaluation}
         startup = time.monotonic()+self.startup_seconds
         self.client.call("initialize",publication=publication,deadline=startup)
-        wait_until(lambda:self.client.call("poll",scope="engine",deadline=startup)["ready"],deadline=startup)
+        wait_until(lambda:self.client.call("poll",scope="engine",wait=long_poll_seconds(startup),wait_for="ready",
+                                           deadline=startup)["ready"],deadline=startup)
         deadline_at = self.client.call("begin",deadline=startup)
         server_time = datetime.fromisoformat(deadline_at.replace("Z","+00:00"))
         self.server_deadline=time.monotonic()+max(0,(server_time-datetime.now(timezone.utc)).total_seconds())
 
-    def flush(self):
-        # Called only after the simulator has validated and actually committed
-        # the preceding response. Includes report rows emitted by that action.
+    def pending_commits(self):
+        # Steps the simulator has validated and actually committed but the
+        # server has not recorded yet. Includes report rows emitted by that action.
+        commits=[]; rows_seen=self.flushed_rows
         for entry in self.workflow.commit_log:
             if not entry["committed"] or entry["sequence"]<=self.flushed_sequence:
                 continue
-            rows=[item.csv_row() for item in self.workflow.committed[self.flushed_rows:]]
-            self.client.call("commit",sequence=entry["sequence"],committed={"rows":rows})
+            rows=[item.csv_row() for item in self.workflow.committed[rows_seen:]]
+            commits.append({"sequence":entry["sequence"],"committed":{"rows":rows}})
+            rows_seen=len(self.workflow.committed)
+        return commits
+
+    def _flushed(self,commits):
+        if commits:
             self.flushed_rows=len(self.workflow.committed)
-            self.flushed_sequence=entry["sequence"]
+            self.flushed_sequence=commits[-1]["sequence"]
+
+    def flush(self):
+        for item in self.pending_commits():
+            self.client.call("commit",sequence=item["sequence"],committed=item["committed"])
+            self._flushed([item])
 
     def __call__(self,snapshot,deadline_monotonic):
         deadline=min(deadline_monotonic,self.server_deadline or deadline_monotonic)
-        self.flush()
+        commits=self.pending_commits()
         sequence=snapshot["decision_sequence"]
-        self.client.call("publish",sequence=sequence,observation=snapshot,deadline=deadline)
-        return wait_until(lambda:self.client.call("poll",scope="engine",deadline=deadline)["response"],deadline=deadline)
+        # One request records the previous step, publishes this one and waits
+        # server-side for the answer; retries are idempotent.
+        message=self.client.call("advance",commits=commits,sequence=sequence,observation=snapshot,
+                                 wait=long_poll_seconds(deadline),wait_for="response",deadline=deadline)
+        self._flushed(commits)
+        if message["response"]:
+            return message["response"]
+        return wait_until(lambda:self.client.call("poll",scope="engine",wait=long_poll_seconds(deadline),
+                                                  wait_for="response",deadline=deadline)["response"],
+                          deadline=deadline,interval=0.02)
 
 
 def run_session(scenario: Path, output: Path, client: SessionClient, *, wallclock_seconds: float | None = None,
