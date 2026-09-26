@@ -39,6 +39,10 @@ A 900-second calendar slot is not necessarily one decision: an exposure can span
 
 The platform records the source revision and launch configuration, tests the interface and shows them for your confirmation. Start an evaluation from the confirmed version. One batch runs all configured scenarios; each run returns decisions to the server round by round. CSV upload is not accepted.
 
+Uploading and confirming do not use evaluations (up to 10 uploads per team per day). A version that was never evaluated can be withdrawn: it is hidden and can no longer be confirmed or evaluated. A version still being prepared can be withdrawn once preparation finishes.
+
+Each click on "Evaluate this version" uses one of the day's evaluations. One evaluation runs every scenario of the phase once; its score is the average of those scenarios, and the leaderboard keeps the team's best complete evaluation. Evaluations that fail because of the platform (evaluation engine, scheduling, network, timeouts and similar) are not counted and are marked "Not counted toward the daily limit"; failures caused by your program (build failure, crash, output that violates the protocol) are counted. Evaluating an already evaluated version again asks for confirmation. The daily count resets at 00:00 UTC and the page shows how many evaluations are left today.
+
 ## 5. Optional personal model APIs
 
 Bring your own API and quota if your algorithm needs a model. The platform does not provide model credits. Do not commit keys to your repository or ZIP.
