@@ -264,7 +264,7 @@
           "desc": "Observe a tile, or wait. One action per slot, and the reason for it."
         }
       ],
-      "closing": "You don't need an astronomy background. During the October 1–4 online training, international astronomers and agent experts run practice sessions, and you can rehearse the competition flow on the Playground complete-project track.",
+      "closing": "You don't need an astronomy background. During the October 1–4 online training, international astronomers and agent experts run practice sessions. You can also submit a complete project on the Playground to rehearse with the same evaluation flow as the competition.",
       "cardKicker": "How the challenge arrives",
       "cardTitle": "One Survey Mission Card",
       "cardLede": "Every round of the challenge starts from a mission card. Everything that round holds you to is written on it:",
@@ -543,7 +543,7 @@
         },
         {
           "title": "Enter the online competition",
-          "desc": "October 5–7: submit a complete project or connect the local runner. Future weather stays private. Before then, rehearse the same flow on the Playground complete-project track and the anomaly mechanics with finals-preview.",
+          "desc": "October 5–7: submit a complete project or connect the local runner. Future weather stays private; rehearse anomaly mechanics with finals-preview.",
           "desc_gated": "October 5–7: complete projects and local-session CSVs use the same live information. The score is the mean of all scenarios in one batch.",
           "time": "Oct 5",
           "to": "/brief#section-7"
@@ -553,6 +553,7 @@
     "rail": {
       "top": "Top",
       "film": "Film",
+      "demo": "Demo",
       "quest": "Main quest",
       "participants": "Participants",
       "vision": "Vision",
@@ -569,6 +570,12 @@
     "film": {
       "kicker": "Event film",
       "play": "Play"
+    },
+    "demo": {
+      "kicker": "Official example",
+      "title": "Official example: baseline agent replay on a public practice scenario",
+      "facts": "Scenario {scenario} · seed {seed} · {nights} nights · {rounds} decisions · final score {score}",
+      "note": "Real output of the platform's scorer and replay renderer for the starter kit's baseline agent. Plays at 8×; drag the sky to look around."
     }
   },
   "vision": {
@@ -751,7 +758,7 @@
         "title": "Three stages from training to awards",
         "paragraphs": [
           "The event has three stages: online training from October 1–4, online competition from October 5–7, and Awards Day at GOSIM Shenzhen on October 17.",
-          "Training covers the simulator and participant protocol; details will be announced. During training, rehearse the competition flow on the Playground complete-project track: scenarios come from Playground data, 5 evaluations per team per day, your own model key only, and a separate board. Competition accepts complete projects and official local-session CSVs. The server reveals current information step by step and scores each complete multi-scenario batch."
+          "Training covers the simulator and participant protocol; details will be announced. Competition accepts complete projects and official local-session CSVs. The server reveals current information step by step and scores each complete multi-scenario batch."
         ],
         "rounds": [
           {
@@ -759,7 +766,7 @@
             "name": "Online Training",
             "dates": "Oct 1–4",
             "format": "Online",
-            "challenge": "Learn the shared simulator, mission cards, and the observer interface, prepare with public development scenarios, and rehearse the competition flow on the Playground complete-project track.",
+            "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
             "participants": "Open worldwide to individuals and teams."
           },
           {
@@ -1153,7 +1160,7 @@
         "name": "Online Training",
         "dates": "Oct 1–4",
         "format": "Online",
-        "challenge": "Learn the shared simulator, mission cards, and the observer interface, prepare with public development scenarios, and rehearse the competition flow on the Playground complete-project track.",
+        "challenge": "Learn the shared simulator, mission cards, and the observer interface, then prepare with public development scenarios.",
         "participants": "Open worldwide to individuals and teams."
       },
       {
@@ -1690,9 +1697,10 @@
       "title": "Model API (optional)",
       "intro": "No model credits are provided, and deterministic projects need no API. Choose how the platform handles your key:",
       "choice": "How your model key is handled",
-      "stored": "Save encrypted (recommended)",
-      "stored_help": "The key is stored encrypted on the server; you can close this page during evaluation. It is deleted after the results are verified.",
-      "relay": "Do not save",
+      "tradeoff": "Not saved: keep this page open during evaluations. Saved: stored encrypted and deleted automatically after the results are verified.",
+      "stored": "Save encrypted on the server",
+      "stored_help": "The key is stored encrypted on the server, so you can close this page during evaluation. It is deleted automatically once the competition has ended and the results are verified.",
+      "relay": "Do not save (default)",
       "relay_help": "The key stays only in this page and is never stored on the server. Keep this page open until each evaluation finishes; model calls fail while it is closed. If your team is verified as a top team, you must also open this page at the time agreed with the organizers.",
       "relay_deletes": "Choosing this deletes the saved key.",
       "usage": "Your project keeps using the OPENAI_BASE_URL and OPENAI_API_KEY provided for each run; model calls go to your endpoint and model.",
@@ -1718,7 +1726,7 @@
       "relay_selected": "Keys will not be saved. Keep this page open during evaluations.",
       "keep_open": "Keep this page open until each evaluation finishes, including automatic adaptation. Closing it clears the key; reconnecting requires entering it again.",
       "relay_running": "An evaluation is running: connect your key here and keep this page open until it finishes.",
-      "connect": "Use for this session",
+      "connect": "Connect (key not saved)",
       "disconnect": "Disconnect and clear key",
       "connected": "Connected for this page session.",
       "working": "Calling your API…",
@@ -2002,7 +2010,7 @@
       },
       {
         "q": "Where do I rehearse the finals mechanics?",
-        "a": "Re-download the starter kit and double-click run_finals_preview (or run local_runner --scenario scenarios/finals-preview). This seven-night scenario has the full mechanics on and ships its anomaly-tag file so local scoring works; the sample agent scores about 8214 and finds and reports the instrument fault on its own. Practice scenarios (demo-week, dev-reference…) keep the old rules — nothing to re-adapt. To rehearse the competition submission and cloud run, use the Playground complete-project track (its scenarios have no anomaly mechanics).",
+        "a": "Re-download the starter kit and double-click run_finals_preview (or run local_runner --scenario scenarios/finals-preview). This seven-night scenario has the full mechanics on and ships its anomaly-tag file so local scoring works; the sample agent scores about 8214 and finds and reports the instrument fault on its own. Practice scenarios (demo-week, dev-reference…) keep the old rules — nothing to re-adapt. To try the full submission and cloud run, submit a complete project on the Playground (its scenarios have no anomaly mechanics).",
         "gated": true
       }
     ]

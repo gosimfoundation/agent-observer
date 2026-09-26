@@ -45,8 +45,8 @@ Bring your own API and quota if your algorithm needs a model. The platform does 
 
 Enter a supported HTTPS endpoint, model and key in Participate and choose how the key is handled. Either way, the key never enters project files, run artifacts or logs.
 
-- **Save encrypted (default)**: the key is stored encrypted on the server, used only for evaluation and verification, and deleted once the results have been verified. The page does not need to stay open during evaluation; you can replace or delete a saved key at any time.
-- **Do not save**: the key stays only in your open page and is never stored on the server. Keep the page open until each evaluation finishes; model calls fail while it is closed. If your team is among the top teams and is verified, you must also open the page at the time agreed with the organizers.
+- **Do not save (default)**: the key stays only in your open page and is never stored on the server. Keep the page open until each evaluation finishes; model calls fail while it is closed. If your team is among the top teams and is verified, you must also open the page at the time agreed with the organizers.
+- **Save encrypted (opt-in)**: the key is stored encrypted on the server, used only for evaluation and verification, and deleted automatically once the competition has ended and the results have been verified. The page does not need to stay open during evaluation; you can replace or delete a saved key at any time.
 
 Switching from "save encrypted" to "do not save" deletes the stored key immediately.
 

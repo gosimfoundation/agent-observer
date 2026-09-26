@@ -110,9 +110,23 @@
   .progress-block{text-align:right;display:flex;align-items:center;gap:16px}
   .progress-big{font:600 15px/1 var(--mono);letter-spacing:.04em;color:var(--ink);min-width:96px}
 
+  /* Embedded in the submission page the replay is often under 1080px wide. The three columns stay side by
+     side, narrower, so the decision panel never covers the sky; below 720px they stack and the page scrolls. */
   @media(max-width:1080px){
-    main{grid-template-columns:230px 1fr}
-    .right{position:absolute;right:18px;top:18px;width:262px;max-height:calc(100% - 36px);z-index:3}
+    main{grid-template-columns:minmax(160px,190px) minmax(0,1fr) minmax(190px,230px);gap:10px;padding:10px}
+    .panel{padding:14px}.decision-action{font-size:30px;margin-bottom:14px}.kv{grid-template-columns:66px 1fr}
+    .legend{right:18px;flex-wrap:wrap;gap:6px 12px}
+    #dome-caption{top:50px;left:18px;right:auto;bottom:auto;text-align:left}
+  }
+  @media(max-width:720px){
+    html,body{height:auto;overflow:auto}
+    #app{height:auto;min-height:100%;grid-template-rows:auto auto auto;grid-template-columns:minmax(0,1fr)}
+    header{flex-wrap:wrap;gap:8px 14px;padding:10px 14px}.header-rule{display:none}
+    .brand{flex-wrap:wrap;min-width:0}.subtitle{line-height:1.5;overflow-wrap:anywhere}
+    main{grid-template-columns:minmax(0,1fr)}
+    #sky-wrap{height:clamp(260px,70vw,420px);order:-1}
+    footer{grid-template-columns:auto minmax(0,1fr);gap:10px 14px;padding:12px 14px;position:sticky;bottom:0;z-index:4}
+    .progress-block{grid-column:1/-1;justify-content:space-between}
   }
 </style>
 </head>
@@ -386,7 +400,7 @@ function weatherParticles(cond,w,h,dt){
   ctx.restore();
 }
 function draw(ts){
-  const rect=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);if(canvas.width!==rect.width*dpr||canvas.height!==rect.height*dpr){canvas.width=rect.width*dpr;canvas.height=rect.height*dpr}ctx.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height,r=DATA.rounds[index],when=new Date(r.decision_time_utc),obs=observedBefore(index),statuses=statusMap(),cond=conditions(r);
+  const rect=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),bw=Math.round(rect.width*dpr),bh=Math.round(rect.height*dpr);if(canvas.width!==bw||canvas.height!==bh){canvas.width=bw;canvas.height=bh}ctx.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height,r=DATA.rounds[index],when=new Date(r.decision_time_utc),obs=observedBefore(index),statuses=statusMap(),cond=conditions(r);
   ctx.fillStyle='#040c1e';ctx.fillRect(0,0,w,h);
   bindOrbit();
   if(!cam.drag&&!REDUCED){cam.idle+=1;if(cam.idle>150)cam.az+=0.0007}

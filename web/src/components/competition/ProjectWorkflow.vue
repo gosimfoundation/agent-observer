@@ -4,6 +4,7 @@ import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '../../stores/auth'
 import { portal, uploadProjectFile, type PortalData, type ProjectRevision } from '../../lib/observerPortal'
 import { usePersonalModel } from '../../composables/usePersonalModel'
+import { DEFAULT_MODEL_KEY_MODE, teamModelMode, type ModelKeyMode } from '../../lib/modelKeyMode'
 import { competition } from '../../stores/competition'
 const { pick, t, tf, locale } = useI18n()
 const { team, refreshMe } = useAuth()
@@ -17,11 +18,12 @@ const selectedFile = ref<File | null>(null), review = ref<ProjectRevision | null
 const reviewPanel = ref<HTMLElement | null>(null)
 const phaseId = ref(''), confirmed = ref(false), notes = ref(''), codeUrl = ref('')
 const diagnostics = ref<{ kind: string; status: string; code: string; log: string }[] | null>(null)
-// Formal model calls use the team's choice: a key saved encrypted on the server
-// (default; no page needs to stay open) or the relay to this open page.
-const modelMode = computed(() => data.value?.team_model?.mode ?? 'stored')
+// Formal model calls use the team's choice: the relay to this open page (default;
+// nothing is stored) or, as an explicit opt-in, a key saved encrypted on the
+// server that is deleted automatically after the results are verified.
+const modelMode = computed(() => teamModelMode(data.value?.team_model))
 const savedModel = computed(() => data.value?.team_model?.saved ?? null)
-const modeChoice = ref<'stored' | 'relay'>('stored'), replacingKey = ref(false)
+const modeChoice = ref<ModelKeyMode>(DEFAULT_MODEL_KEY_MODE), replacingKey = ref(false)
 const modelForm = ref({ base_url: '', model: '', key: '' })
 const relayRunning = computed(() => modelMode.value === 'relay' && (data.value?.batches ?? []).some(b => ['queued', 'running'].includes(b.status)))
 watch(modelMode, mode => { if (mode === 'stored') personal.clear() })
@@ -186,12 +188,13 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
       <section class="panel mb-6" data-testid="model-api-settings">
         <h2 id="model-api">{{ t('submit.model_api.title') }}</h2>
         <p class="help mt-3">{{ t('submit.model_api.intro') }}</p>
+        <p class="help" data-testid="model-mode-tradeoff">{{ t('submit.model_api.tradeoff') }}</p>
         <fieldset class="mt-4" :disabled="busy">
           <legend class="sr-only">{{ t('submit.model_api.choice') }}</legend>
-          <label class="check"><input v-model="modeChoice" type="radio" name="model-key-mode" value="stored" aria-describedby="model-mode-stored-help" data-testid="model-mode-stored" @change="chooseMode">{{ t('submit.model_api.stored') }}</label>
-          <p id="model-mode-stored-help" class="help mb-3">{{ t('submit.model_api.stored_help') }}</p>
           <label class="check"><input v-model="modeChoice" type="radio" name="model-key-mode" value="relay" aria-describedby="model-mode-relay-help" data-testid="model-mode-relay" @change="chooseMode">{{ t('submit.model_api.relay') }}</label>
-          <p id="model-mode-relay-help" class="help">{{ savedModel ? sentences(t('submit.model_api.relay_help'), t('submit.model_api.relay_deletes')) : t('submit.model_api.relay_help') }}</p>
+          <p id="model-mode-relay-help" class="help mb-3">{{ savedModel ? sentences(t('submit.model_api.relay_help'), t('submit.model_api.relay_deletes')) : t('submit.model_api.relay_help') }}</p>
+          <label class="check"><input v-model="modeChoice" type="radio" name="model-key-mode" value="stored" aria-describedby="model-mode-stored-help" data-testid="model-mode-stored" @change="chooseMode">{{ t('submit.model_api.stored') }}</label>
+          <p id="model-mode-stored-help" class="help">{{ t('submit.model_api.stored_help') }}</p>
         </fieldset>
         <p class="help mt-4">{{ t('submit.model_api.usage') }}</p>
         <template v-if="modelMode === 'stored'">
@@ -237,7 +240,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
         <label class="check"><input v-model="form.kind" type="radio" value="repository">{{ words.repository }}</label>
         <label class="check"><input v-model="form.kind" type="radio" value="zip">{{ words.zip }}</label>
         <label v-if="form.kind === 'repository'" class="field"><span>{{ words.repository }}</span><input v-model="form.url" type="url" required placeholder="https://github.com/owner/project" data-testid="project-url"></label>
-        <label v-else class="field"><span>{{ words.file }}</span><input type="file" accept=".zip" required data-testid="project-zip" @change="selectedFile = ($event.target as HTMLInputElement).files?.[0] ?? null"></label>
+        <label v-else class="field border border-dashed border-border-subtle p-5"><span>{{ words.file }}</span><input type="file" accept=".zip,application/zip" required data-testid="project-zip" @change="selectedFile = ($event.target as HTMLInputElement).files?.[0] ?? null"></label>
         <p class="help mb-4">{{ words.privacy }}</p>
         <button class="btn primary" :disabled="busy" data-testid="project-submit">{{ busy ? words.working : words.submit }}</button>
       </form>

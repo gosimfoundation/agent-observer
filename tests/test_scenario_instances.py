@@ -173,3 +173,14 @@ def test_parallel_difficulty_matches_the_sequential_measurement(tmp_path):
     scenario = tmp_path / 'candidate'
     generate_candidate(TEMPLATE, scenario, seed='b' * 64, candidate=0)
     assert measure_difficulty(scenario, workers=4) == measure_difficulty(scenario, workers=1)
+
+
+def test_panel_never_repeats_completed_tiles_without_anomaly_mechanics():
+    # Playground scenarios (no anomaly mechanics) reject repeat observations of a
+    # completed tile. The panel must not offer them, or it scores below waiting
+    # and the scenario cannot be calibrated at all (invalid_calibration_span).
+    pre_anomaly = Path(__file__).resolve().parents[1] / "starter_kit/scenarios/demo-week"
+    assert not ChallengeWorkflow(pre_anomaly).scorer.mechanics
+    wait = benchmark_policy(pre_anomaly, "wait")["score"]
+    assert all(benchmark_policy(pre_anomaly, name)["score"] > wait for name in POLICIES)
+    assert measure_difficulty(pre_anomaly, workers=1)["span"] > 0

@@ -156,6 +156,7 @@ def benchmark_policy(scenario: Path, policy: str, *, reuse_windows: bool = True)
     if reuse_windows:
         _reuse_geometry_windows(workflow, scenario)
     contract = workflow.initial_publication()["scoring_contract"]
+    mechanics = workflow.scorer.mechanics
     best: dict[str, float] = {}
 
     def decide(snapshot, _deadline):
@@ -163,7 +164,13 @@ def benchmark_policy(scenario: Path, policy: str, *, reuse_windows: bool = True)
         if feedback and feedback["tile_id"] in snapshot["progress"]["completed_tile_ids"]:
             tile = feedback["tile_id"]
             best[tile] = max(best.get(tile, 0.0), feedback["score"])
-        candidates = preview_actions(snapshot, contract, best)
+        # Without the anomaly mechanics a repeat of a completed tile is an
+        # invalid duplicate (scoring_core rejects it with a penalty). Passing a
+        # realized-best ledger makes the preview offer such repeats, so the
+        # panel would spend the survey on penalties and score below waiting
+        # (span <= 0, uncalibratable). Scenarios with the mechanics keep the
+        # ledger, so their panel scores and existing profiles are unchanged.
+        candidates = preview_actions(snapshot, contract, best if mechanics else None)
         if not candidates:
             return {"action": "wait"}
         # Stable sort preserves the public preview's tie-breaking order.

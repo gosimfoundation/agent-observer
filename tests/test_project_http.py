@@ -265,7 +265,8 @@ def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run
     assert post(url,{'action':'list'},'invalid-token')[0]==401
     status,listed=post(url,{'action':'list'},token)
     assert status==200,listed
-    assert listed['data']['team_model']=={'mode':'stored','saved':None}
+    # Not saving is the default; saving a key is the explicit opt-in.
+    assert listed['data']['team_model']=={'mode':'relay','saved':None}
     https_base=next(b for b in listed['data']['model_bases'] if b.startswith('https://'))
     http_base=next(b for b in listed['data']['model_bases'] if b.startswith('http://'))
     key='only-the-trusted-proxy-can-read-this-key-7Qx2'
@@ -288,7 +289,7 @@ def test_real_portal_auth_private_keys_project_submission_and_team_isolation(run
     assert status==200 and key not in json.dumps(listed) and stored[0][0] not in json.dumps(listed)
     assert listed['data']['team_model']['saved']['model']=='team-model'
     status,foreign=post(url,{'action':'list'},other_token)
-    assert status==200 and foreign['data']['team_model']=={'mode':'stored','saved':None}
+    assert status==200 and foreign['data']['team_model']=={'mode':'relay','saved':None}
     assert post(url,{'action':'delete_team_model'},other_token)[1]['data']=={'deleted':False}
     assert post(url,{'action':'set_team_model_mode','mode':'relay'},other_token)[1]['data']=={'mode':'relay'}
     assert post(url,{'action':'list'},token)[1]['data']['team_model']['saved'] is not None
@@ -328,6 +329,8 @@ def test_formal_run_calls_the_saved_https_provider_without_page_or_organizer_fal
     query(uri,'update private.observer_sessions set call_limit=10 where run_id=%s',(s['run'],))
     body={'model':'project-default','messages':[{'role':'user','content':'Reply OK'}],'max_tokens':32}
     organizer=len(stack['requests'])
+    # The team opts in to a saved key but has not saved one yet.
+    assert post(portal,{'action':'set_team_model_mode','mode':'stored'},token)[1]['data']=={'mode':'stored'}
     status,response=post(model_url,body,credential)
     assert status==403 and response['error']['code']=='team_model_not_configured'
     assert len(stack['requests'])==organizer and provider.requests==[]

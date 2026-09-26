@@ -621,6 +621,12 @@
     "film": {
       "kicker": "Film de l'événement",
       "play": "Lire"
+    },
+    "demo": {
+      "kicker": "Exemple officiel",
+      "title": "Exemple officiel : replay de l'agent de référence sur un scénario d'entraînement public",
+      "facts": "Scénario {scenario} · graine {seed} · {nights} nuits · {rounds} décisions · score final {score}",
+      "note": "Sortie réelle du scoreur et du moteur de replay de la plateforme pour l'agent de référence du kit. Lecture à 8× ; faites glisser le ciel pour changer de vue."
     }
   },
   "teammates": {
@@ -802,9 +808,10 @@
       "title": "API de modèle (facultatif)",
       "intro": "Aucun crédit de modèle n'est fourni, et les projets déterministes n'ont pas besoin d'API. Choisissez comment la plateforme traite votre clé :",
       "choice": "Traitement de votre clé de modèle",
-      "stored": "Enregistrer chiffrée (recommandé)",
-      "stored_help": "La clé est stockée chiffrée sur le serveur ; vous pouvez fermer cette page pendant l'évaluation. Elle est supprimée une fois les résultats vérifiés.",
-      "relay": "Ne pas enregistrer",
+      "tradeoff": "Sans enregistrement : gardez cette page ouverte pendant les évaluations. Avec enregistrement : clé chiffrée, supprimée automatiquement après la vérification des résultats.",
+      "stored": "Enregistrer chiffrée sur le serveur",
+      "stored_help": "La clé est stockée chiffrée sur le serveur ; vous pouvez donc fermer cette page pendant l'évaluation. Elle est supprimée automatiquement une fois la compétition terminée et les résultats vérifiés.",
+      "relay": "Ne pas enregistrer (par défaut)",
       "relay_help": "La clé reste uniquement dans cette page et n'est jamais stockée sur le serveur. Gardez cette page ouverte jusqu'à la fin de chaque évaluation ; les appels de modèle échouent lorsqu'elle est fermée. Si votre équipe est vérifiée parmi les premières, vous devrez aussi ouvrir cette page au moment convenu avec les organisateurs.",
       "relay_deletes": "Ce choix supprime la clé enregistrée.",
       "usage": "Votre projet continue d'utiliser OPENAI_BASE_URL et OPENAI_API_KEY fournis pour chaque exécution ; les appels vont à votre point d'accès et à votre modèle.",
@@ -830,7 +837,7 @@
       "relay_selected": "Les clés ne seront pas enregistrées. Gardez cette page ouverte pendant les évaluations.",
       "keep_open": "Gardez cette page ouverte jusqu'à la fin de chaque évaluation, y compris l'adaptation automatique. La fermer efface la clé ; pour vous reconnecter, saisissez-la de nouveau.",
       "relay_running": "Une évaluation est en cours : connectez votre clé ici et gardez cette page ouverte jusqu'à la fin.",
-      "connect": "Utiliser pour cette session",
+      "connect": "Connecter (clé non enregistrée)",
       "disconnect": "Se déconnecter et effacer la clé",
       "connected": "Connecté pour cette session de page.",
       "working": "Appel de votre API…",

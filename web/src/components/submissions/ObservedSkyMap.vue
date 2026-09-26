@@ -7,7 +7,9 @@ import { actionNet, nightOf, outcomeClass, type ReportAction } from '../../lib/r
 import { replaySite } from '../../composables/useReplayClock'
 import { fmtUtc, num } from '../../lib/format'
 
-const props = defineProps<{ slug: string; actions: ReportAction[]; tilesPublic: boolean }>()
+/** `cursor` is the position shared with the decision replay above (actions shown so far); the map follows it and reports its own moves. */
+const props = defineProps<{ slug: string; actions: ReportAction[]; tilesPublic: boolean; cursor?: number | null }>()
+const emit = defineEmits<{ 'update:cursor': [cursor: number] }>()
 const { t } = useI18n()
 const canvas = ref<HTMLCanvasElement | null>(null)
 const tiles = ref<SkyTile[]>([])
@@ -56,7 +58,10 @@ function toggle() {
   playing.value = true
   // long runs (hundreds of waits) advance several actions per tick so a full replay stays under a minute
   const step = Math.max(1, Math.ceil(total.value / 160))
-  timer = window.setInterval(() => { if (index.value >= total.value) stop(); else index.value = Math.min(total.value, index.value + step) }, prefersReducedMotion() ? 700 : 250)
+  const advance = () => { if (index.value >= total.value) stop(); else index.value = Math.min(total.value, index.value + step) }
+  // Step at once: moving the shared cursor is what pauses the replay above, so the two never play together.
+  advance()
+  if (playing.value) timer = window.setInterval(advance, prefersReducedMotion() ? 700 : 250)
 }
 
 onMounted(async () => {
@@ -76,13 +81,15 @@ onMounted(async () => {
     }
   } catch { failed.value = true }
   finally { loading.value = false }
-  index.value = total.value
+  index.value = props.cursor ?? total.value
   await new Promise(r => requestAnimationFrame(r))
   if (canvas.value) { observer = new ResizeObserver(render); observer.observe(canvas.value) }
   render()
 })
 onUnmounted(() => { stop(); observer?.disconnect() })
-watch(index, render)
+watch(index, i => { render(); if (i !== props.cursor) emit('update:cursor', i) })
+// The replay moved: follow it, and stop this map's own playback so only one player drives the position.
+watch(() => props.cursor, c => { if (c != null && c !== index.value) { stop(); index.value = Math.max(0, Math.min(total.value, c)) } })
 </script>
 
 <template>
@@ -123,7 +130,7 @@ watch(index, render)
 .observed-range::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: #315efb; border: 0; cursor: pointer; }
 .observed-range::-moz-range-thumb { width: 12px; height: 12px; background: #315efb; border: 0; border-radius: 0; cursor: pointer; }
 .observed-cursor { font-size: .72rem; color: #bdbdbd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.observed-nights { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; max-height: 11rem; overflow-y: auto; padding-right: .5rem; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .72rem; font-variant-numeric: tabular-nums; }
+.observed-nights { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: .5rem 1.5rem; max-height: 11rem; overflow-y: auto; padding-right: .5rem; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .72rem; font-variant-numeric: tabular-nums; }
 .observed-night { display: flex; gap: .75rem; border-left: 2px solid #315efb; padding-left: .6rem; color: #f5f5f5; }
 .legend i.diamond { border: 1px solid #f5f5f5; transform: rotate(45deg) scale(.8); }
 </style>
