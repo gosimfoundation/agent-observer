@@ -34,6 +34,9 @@ const known = new Set([
   "phase_closed",
   "local_sessions_disabled",
   "revision_not_approved",
+  "revision_already_evaluated",
+  "revision_withdrawn",
+  "revision_not_withdrawable",
   "daily_limit",
   "batch_already_active",
   "no_scenarios",
@@ -123,10 +126,13 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
       ];
       const results = await Promise.all(queries);
       results.forEach((r) => failure(r.error));
+      // Remaining evaluations are informational; the database enforces the limit.
+      const quota = await d.user.rpc("observer_evaluation_quota");
       return {
         phases: results[0].data,
         projects: results[1].data,
         batches: results[2].data,
+        quota: quota.error ? null : quota.data,
         providers: await userRpc("observer_list_providers"),
         team_model: await userRpc("observer_team_model"),
         model_bases: d.modelBases,
@@ -186,8 +192,13 @@ export async function portalRequest(request: Request, d: Dependencies): Promise<
         batch_id: await userRpc("observer_create_batch", {
           p_phase: uuid(body.phase_id),
           p_revision: body.revision_id ? uuid(body.revision_id) : null,
+          // Another evaluation of an already evaluated version is an explicit choice.
+          ...(body.confirm_repeat === true ? { p_confirm_repeat: true } : {}),
         }),
       };
+    case "withdraw":
+      await userRpc("observer_withdraw_revision", { p_revision: uuid(body.revision_id) });
+      return { accepted: true };
     case "evidence": {
       const url = text(body.code_url, 1000, true);
       if (url) {
