@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { ProxyError } from "../_shared/observer-model.ts";
-import { sessionRequest } from "../_shared/observer-session.ts";
+import { decodedRequest, jsonResponse, sessionRequest } from "../_shared/observer-session.ts";
 
 const cors = {
   "access-control-allow-origin": "*",
@@ -44,13 +44,18 @@ Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   try {
     if (request.method !== "POST") throw new ProxyError(405, "method_not_allowed");
-    const result = await sessionRequest(request, async (name, args) => {
+    const result = await sessionRequest(decodedRequest(request), async (name, args) => {
       const { data, error } = await service.rpc(name, args);
       if (error) {
         // Privileged logs contain only the fixed RPC name and database code,
         // never request bodies, credentials, catalogs or arbitrary error text.
-        if (!known.has(error.message)) console.warn("observer_session_rpc_failed", name,
-          /^[A-Z0-9]{5,12}$/.test(error.code ?? "") ? error.code : "unknown");
+        if (!known.has(error.message)) {
+          console.warn(
+            "observer_session_rpc_failed",
+            name,
+            /^[A-Z0-9]{5,12}$/.test(error.code ?? "") ? error.code : "unknown",
+          );
+        }
         const code = known.has(error.message) ? error.message : "session_service_unavailable";
         throw new ProxyError(
           code === "invalid_or_expired_capability" || code === "session_deadline"
@@ -63,7 +68,10 @@ Deno.serve({ port: Number(Deno.env.get("OBSERVER_LISTEN_PORT") ?? 8000) }, async
       }
       return data;
     });
-    return new Response(JSON.stringify({ data: result }), { headers: { ...cors, "content-type": "application/json" } });
+    return jsonResponse({ data: result }, request.headers.get("accept-encoding"), {
+      ...cors,
+      "content-type": "application/json",
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error instanceof ProxyError ? error.code : "session_service_unavailable" }),

@@ -300,3 +300,19 @@ def test_reconciler_settles_unknown_usage_and_expires_missing_jobs(setup):
     assert query(uri,"select status,actual_tokens from private.observer_model_calls where id=%s",(call,))==[("settled",300)]
     assert rpc(uri,"observer_run_status",run,participant)=={"status":"failed","expired":True}
     assert rpc(uri,"observer_reconcile_sessions")==0
+
+
+def test_poll_does_not_wait_for_a_session_row_lock(setup):
+    # The engine holds the session row while it stores a multi-MB catalog; the
+    # executor's read-only poll must not hit the lock timeout meanwhile.
+    run, participant, engine = session(setup)
+    with psycopg.connect(setup["uri"]) as holder:
+        holder.execute("select 1 from private.observer_sessions where run_id=%s for update", (run,))
+        with psycopg.connect(setup["uri"]) as conn:
+            conn.execute("set lock_timeout='200ms'")
+            conn.execute("set local role service_role")
+            polled = conn.execute("select public.observer_poll(%s,%s)", (run, participant)).fetchone()[0]
+            state = conn.execute("select public.observer_step_state(%s,%s,'engine')", (run, engine)).fetchone()[0]
+    assert polled["sequence"] == state["sequence"] and state["answered"] is False
+    with pytest.raises(psycopg.Error, match="invalid_or_expired_capability"):
+        rpc(setup["uri"], "observer_poll", run, "wrong-token-" + "x" * 40)

@@ -44,6 +44,31 @@ export async function waitForStep(
   }
 }
 
+// Formal observations are ~0.5 MB of JSON per step and cross the ocean twice;
+// gzip makes them ~10x smaller. Both directions are opt-in per request.
+const COMPRESS_FROM_BYTES = 16 * 1024;
+
+export function decodedRequest(request: Request): Request {
+  const encoding = request.headers.get("content-encoding")?.trim().toLowerCase();
+  if (!encoding || encoding === "identity") return request;
+  if (encoding !== "gzip" || !request.body) throw new ProxyError(415, "unsupported_content_encoding");
+  // boundedJson still caps the decompressed size while streaming.
+  return new Request(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.body.pipeThrough(new DecompressionStream("gzip")),
+  });
+}
+
+export function jsonResponse(value: unknown, acceptEncoding: string | null, headers: Record<string, string>): Response {
+  const text = JSON.stringify(value);
+  if (text.length < COMPRESS_FROM_BYTES || !/\bgzip\b/i.test(acceptEncoding ?? "")) {
+    return new Response(text, { headers });
+  }
+  const body = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  return new Response(body, { headers: { ...headers, "content-encoding": "gzip", vary: "accept-encoding" } });
+}
+
 export async function sessionRequest(request: Request, rpc: Rpc): Promise<unknown> {
   const { run, token } = capability(request.headers.get("authorization"));
   const body = await boundedJson(request, 17 * 1024 * 1024);

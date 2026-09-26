@@ -1,5 +1,5 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import { sessionRequest, waitForStep } from "./observer-session.ts";
+import { decodedRequest, jsonResponse, sessionRequest, waitForStep } from "./observer-session.ts";
 
 const TOKEN = "obs_11111111-1111-4111-8111-111111111111." + "a".repeat(43);
 
@@ -69,4 +69,20 @@ Deno.test("invalid wait values are rejected", async () => {
   const { rpc } = fakeRpc([{ ready: true, observed: true, answered: true }]);
   await assertRejects(() => sessionRequest(request({ action: "poll", wait: -1 }), rpc));
   await assertRejects(() => sessionRequest(request({ action: "poll", wait: 1, wait_for: "anything" }), rpc));
+});
+
+Deno.test("gzip request bodies are decoded and large responses compressed on request", async () => {
+  const body = new Blob([JSON.stringify({ action: "status" })]).stream().pipeThrough(new CompressionStream("gzip"));
+  const decoded = decodedRequest(
+    new Request("https://platform.test/", { method: "POST", headers: { "content-encoding": "gzip" }, body }),
+  );
+  assertEquals(await decoded.json(), { action: "status" });
+  const value = { data: "x".repeat(20000) };
+  const plain = jsonResponse(value, null, {});
+  assertEquals(plain.headers.get("content-encoding"), null);
+  const zipped = jsonResponse(value, "gzip, deflate", {});
+  assertEquals(zipped.headers.get("content-encoding"), "gzip");
+  const text = await new Response(zipped.body!.pipeThrough(new DecompressionStream("gzip"))).text();
+  assertEquals(JSON.parse(text), value);
+  assertEquals(jsonResponse({ small: 1 }, "gzip", {}).headers.get("content-encoding"), null);
 });
