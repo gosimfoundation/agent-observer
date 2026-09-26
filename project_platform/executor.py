@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from challenge.challenge_workflow import GlobalDeadlineExpired
 
 from .docker_runtime import DockerWorkspace
-from .session import SessionClient, SessionError, wait_until
+from .session import SessionClient, SessionError, long_poll_seconds, wait_until
 
 
 def execute(runtime: DockerWorkspace, client: SessionClient, environment: dict[str,str], *, startup_seconds: float = 1500):
@@ -39,19 +39,29 @@ def _execute(runtime: DockerWorkspace, client: SessionClient, environment: dict[
     client.call("ready",deadline=startup)
     last_sequence=0
     last_response=None
+    # The server holds each poll until the next observation exists, and a
+    # response request returns the following step, so a step costs one request.
+    wait={"wait":long_poll_seconds(None),"wait_for":"observation"}
+    def session_ended(call):
+        try:
+            return call(), None
+        except SessionError as exc:
+            if exc.code=="invalid_or_expired_capability":
+                status=client.call("status")
+                if status["status"] in ("scored","awaiting_csv"):
+                    return None, status
+            raise
+    message=None
     try:
         while True:
-            try:
-                message=client.call("poll",initialized=True)
-            except SessionError as exc:
-                if exc.code=="invalid_or_expired_capability":
-                    status=client.call("status")
-                    if status["status"] in ("scored","awaiting_csv"):
-                        return status
-                raise
+            if message is None:
+                message,finished=session_ended(lambda:client.call("poll",initialized=True,**wait))
+                if finished is not None:
+                    return finished
             snapshot=message["observation"]
             if snapshot is None:
-                time.sleep(0.1)
+                message=None
+                time.sleep(0.02)
                 continue
             sequence=message["sequence"]
             if sequence==last_sequence:
@@ -59,14 +69,18 @@ def _execute(runtime: DockerWorkspace, client: SessionClient, environment: dict[
                 # nondeterministic participant model a second time.
                 if not message["action_received"]:
                     client.call("respond",sequence=sequence,response=last_response)
-                time.sleep(0.1)
+                message=None
+                time.sleep(0.02)
                 continue
             if sequence!=last_sequence+1:
                 raise SessionError("unexpected_sequence")
             deadline_at=datetime.fromisoformat(message["deadline_at"].replace("Z","+00:00"))
             deadline=time.monotonic()+max(0,(deadline_at-datetime.now(timezone.utc)).total_seconds())
             response=transport(snapshot,deadline)
-            client.call("respond",sequence=sequence,response=response,deadline=deadline)
+            message,finished=session_ended(lambda:client.call("respond",sequence=sequence,response=response,
+                deadline=deadline,wait=long_poll_seconds(deadline),wait_for="observation"))
+            if finished is not None:
+                return finished
             last_sequence,last_response=sequence,response
     finally:
         runtime.close()
