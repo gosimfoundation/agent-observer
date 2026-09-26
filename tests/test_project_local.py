@@ -113,6 +113,7 @@ def test_large_session_requests_get_the_transfer_timeout():
         def open(self, request, timeout):
             seen.append(timeout)
             class Response:
+                headers = {}
                 def __enter__(self): return self
                 def __exit__(self, *args): return False
                 def read(self, _limit): return b'{"data":{"response":null}}'
@@ -123,3 +124,29 @@ def test_large_session_requests_get_the_transfer_timeout():
     client.call("advance", sequence=1, observation={"blob": "x" * 2_000_000})
     client.call("advance", sequence=2, observation={"blob": "x"})
     assert seen == [client.catalog_timeout, client.timeout]
+
+
+def test_session_requests_and_responses_are_gzipped_when_large():
+    import gzip, json
+    from project_platform.session import SessionClient
+    sent = []
+    big = {"data": {"observation": {"tiles": ["T%05d" % i for i in range(20000)]}}}
+
+    class Opener:
+        def open(self, request, timeout):
+            sent.append((dict(request.header_items()), request.data))
+            class Response:
+                headers = {"Content-Encoding": "gzip"}
+                def __enter__(self): return self
+                def __exit__(self, *args): return False
+                def read(self, _limit): return gzip.compress(json.dumps(big).encode())
+            return Response()
+
+    client = SessionClient("https://platform.test/functions/v1/observer-session", "obs_x.y")
+    client.opener = Opener()
+    assert client.call("advance", sequence=1, observation={"blob": "x" * 50_000}) == big["data"]
+    headers, body = sent[0]
+    assert headers["Content-encoding"] == "gzip" and headers["Accept-encoding"] == "gzip"
+    assert json.loads(gzip.decompress(body))["observation"]["blob"] == "x" * 50_000
+    client.call("poll", scope="engine")
+    assert "Content-encoding" not in sent[1][0]

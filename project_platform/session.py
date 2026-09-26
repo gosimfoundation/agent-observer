@@ -5,9 +5,11 @@ another run, choose a future observation, or publish a score.
 """
 from __future__ import annotations
 
+import gzip
 import json
 import os
 import time
+import zlib
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -32,6 +34,17 @@ SESSION_REGION = os.environ.get("OBSERVER_SESSION_REGION", "ap-southeast-1")
 # Seconds the server may hold one poll open while waiting for the next step.
 LONG_POLL_SECONDS = 10.0
 LARGE_REQUEST_BYTES = 1024 * 1024
+# Formal observations are ~0.5 MB of JSON per step; gzip them in both directions.
+COMPRESS_FROM_BYTES = 16 * 1024
+MAX_RESPONSE_BYTES = 17 * 1024 * 1024
+
+
+def _decompress(raw: bytes) -> bytes:
+    inflater = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    data = inflater.decompress(raw, MAX_RESPONSE_BYTES + 1)
+    if len(data) > MAX_RESPONSE_BYTES or inflater.unconsumed_tail:
+        raise SessionError("session_response_too_large")
+    return data
 
 
 def long_poll_seconds(deadline: float | None) -> float:
@@ -60,6 +73,11 @@ class SessionClient:
         # longer transfers than a normal step.
         request_timeout = self.catalog_timeout if (action == "initialize" or len(payload) > LARGE_REQUEST_BYTES or
             (action == "poll" and arguments.get("scope") != "engine" and not arguments.get("initialized"))) else self.timeout
+        body = payload
+        encoding = {}
+        if len(payload) >= COMPRESS_FROM_BYTES:
+            body = gzip.compress(payload, 5)
+            encoding = {"Content-Encoding": "gzip"}
         attempts = 0
         # Protocol writes are idempotent with sequence+body. A network retry must
         # send exactly the same action, never ask the agent to decide again.
@@ -67,14 +85,18 @@ class SessionClient:
             remaining = (deadline-time.monotonic()) if deadline is not None else request_timeout
             if remaining <= 0:
                 raise GlobalDeadlineExpired()
-            request = urllib.request.Request(self.url, data=payload,
+            request = urllib.request.Request(self.url, data=body,
                 headers={"Authorization":"Bearer "+self.credential, "Content-Type":"application/json",
+                         "Accept-Encoding":"gzip", **encoding,
                          **({"x-region":SESSION_REGION} if SESSION_REGION else {})}, method="POST")
             try:
                 with self.opener.open(request, timeout=min(remaining,request_timeout)) as response:
-                    raw = response.read(17*1024*1024+1)
-                    if len(raw)>17*1024*1024:
+                    raw = response.read(MAX_RESPONSE_BYTES+1)
+                    if len(raw)>MAX_RESPONSE_BYTES:
                         raise SessionError("session_response_too_large")
+                    headers = getattr(response, "headers", None) or {}
+                    if (headers.get("Content-Encoding") or "").strip().lower() == "gzip":
+                        raw = _decompress(raw)
                     result = json.loads(raw)["data"]
                     if action == "poll" and isinstance(result, dict) and result.get("publication") is not None:
                         result["publication"] = decode_publication(result["publication"])
