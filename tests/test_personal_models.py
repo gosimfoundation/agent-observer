@@ -1,8 +1,9 @@
 """Team model keys for formal runs in real PostgreSQL.
 
-Stored mode (default): ciphertext only, team-scoped, formal-only, bounded per run
-and purgeable. Relay mode: the page relay stores no key. Neither mode ever falls
-back to organizer credits, and choosing the relay deletes a saved key at once.
+Relay mode (default): the page relay stores no key. Stored mode (explicit opt-in):
+ciphertext only, team-scoped, formal-only, bounded per run and purged manually or
+automatically once no phase can use it. Neither mode ever falls back to organizer
+credits, and choosing the relay deletes a saved key at once.
 """
 import concurrent.futures
 import uuid
@@ -61,7 +62,8 @@ def test_team_members_save_replace_and_delete_without_reading_the_key_back(setup
     s=setup;uri=s['uri']
     teammate,_=identity(uri,team=s['team'])
     outsider,_=identity(uri)
-    assert team_model(uri,s['user'])=={'mode':'stored','saved':None}
+    # Not saving is the default; saving a key is the opt-in that selects stored mode.
+    assert team_model(uri,s['user'])=={'mode':'relay','saved':None}
     first=save(uri,s['user'])
     view=team_model(uri,teammate)
     assert view['mode']=='stored' and set(view['saved'])=={'base_url','model','key_hint','saved_at'}
@@ -108,6 +110,8 @@ def test_team_members_save_replace_and_delete_without_reading_the_key_back(setup
 
 def test_stored_mode_formal_runs_use_only_their_own_teams_saved_key(setup):
     s=setup;uri=s['uri'];run,participant=formal_run(s)
+    assert rpc(uri,'observer_model_route',run,participant)['mode']=='relay'
+    assert choose(uri,s['user'],'stored')=='stored'
     assert rpc(uri,'observer_model_route',run,participant)=={'personal':True,'mode':'stored'}
     # No saved key: no organizer provider, legacy team row or other team is substituted.
     with pytest.raises(psycopg.Error,match='team_model_not_configured'):reserve(uri,run,participant)
@@ -327,5 +331,97 @@ def test_migration_restores_explicit_formal_limits_only():
         query(uri,stored.read_text())
         rows=query(uri,'select phase_id,model_token_limit,model_call_limit,model_concurrency from public.observer_phase_settings')
         assert sorted(rows)==sorted([(formal,10000000,10000,1),(online,10000000,10000,1),(other,5000,10,4)])
+    finally:
+        server.cleanup()
+
+
+OPT_IN=ROOT/'supabase/migrations/20260926000600_model_key_opt_in_auto_purge.sql'
+
+
+def auto_purge(uri):
+    return query(uri,'select private.observer_auto_purge_provider_keys()')[0][0]
+
+
+def keys_of(uri,team):
+    return query(uri,"select count(*) from private.observer_providers where team_id=%s and encrypted_key<>''",(team,))[0][0]
+
+
+def test_opt_in_migration_keeps_teams_that_saved_and_is_idempotent(setup):
+    s=setup;uri=s['uri']
+    saver,saver_team=identity(uri);save(uri,saver)
+    chooser,_=identity(uri);choose(uri,chooser,'stored')
+    newcomer,_=identity(uri)
+    # A saved key without a mode row (older data) is kept in stored mode by the migration.
+    query(uri,'delete from private.observer_team_model_modes where team_id=%s',(saver_team,))
+    query(uri,OPT_IN.read_text());query(uri,OPT_IN.read_text())
+    assert team_model(uri,saver)['mode']=='stored' and saved(uri,saver) is not None
+    assert team_model(uri,chooser)=={'mode':'stored','saved':None}
+    assert team_model(uri,newcomer)=={'mode':'relay','saved':None}
+    assert query(uri,'select count(*),bool_and(enabled),max(retention)::text from private.observer_key_retention')==[(1,True,'7 days')]
+    with pytest.raises(psycopg.Error,match='permission denied'):
+        query(uri,'select private.observer_auto_purge_provider_keys()',role='authenticated',user=newcomer)
+
+
+def test_saved_keys_are_purged_automatically_only_after_every_phase_that_uses_them_ended():
+    server,uri=start()
+    try:
+        idle,idle_team=identity(uri);busy,busy_team=identity(uri)
+        phase,scenario,lab=uuid.uuid4(),uuid.uuid4(),uuid.uuid4()
+        query(uri,"insert into public.phases(id,slug,name_en,name_zh,daily_limit,counts_for_final) values(%s,'final-a','F','F',10,false)",(phase,))
+        query(uri,"""insert into public.observer_phase_settings(phase_id,projects_enabled,local_sessions_enabled,
+              model_token_limit,model_call_limit,model_concurrency) values(%s,true,true,1000,10,1)""",(phase,))
+        query(uri,"insert into public.scenarios(id,slug,name) values(%s,'s','S')",(scenario,))
+        query(uri,'insert into public.phase_scenarios values(%s,%s)',(phase,scenario))
+        idle_key=save(uri,idle);save(uri,busy)
+        run,participant,_=session({'uri':uri,'phase':phase,'user':busy})
+        query(uri,'update public.phases set counts_for_final=true where id=%s',(phase,))
+        # An open-ended, upcoming-end or recently ended formal phase keeps every key.
+        assert auto_purge(uri)==0
+        query(uri,"update public.phases set ends_at=now()+interval '1 day' where id=%s",(phase,))
+        assert auto_purge(uri)==0
+        query(uri,"update public.phases set ends_at=now()-interval '1 day' where id=%s",(phase,))
+        assert auto_purge(uri)==0
+        # Ended long enough ago, but a key saved recently still gets the full retention period.
+        query(uri,"update public.phases set ends_at=now()-interval '8 days' where id=%s",(phase,))
+        assert auto_purge(uri)==0
+        query(uri,"update private.observer_team_models set saved_at=now()-interval '8 days'")
+        # A phase restricted to another team does not hold this team's key; an open
+        # non-formal phase holds keys only while the site is in competition mode.
+        acceptance=uuid.uuid4()
+        query(uri,"insert into public.phases(id,slug,name_en,name_zh) values(%s,'observer-acceptance-x','A','A'),(%s,'lab','L','L')",(acceptance,lab))
+        query(uri,"insert into public.observer_phase_settings(phase_id,projects_enabled,access_team_id) values(%s,true,%s),(%s,true,null)",
+              (acceptance,busy_team,lab))
+        query(uri,"update private.observer_site_mode set mode='competition' where id")
+        assert auto_purge(uri)==0 and keys_of(uri,idle_team)==1
+        query(uri,"update private.observer_site_mode set mode='practice' where id")
+        query(uri,"update private.observer_key_retention set enabled=false where id")
+        assert auto_purge(uri)==0
+        query(uri,"update private.observer_key_retention set enabled=true where id")
+        # The idle team's key goes; the team whose evaluation is still queued keeps its key.
+        assert auto_purge(uri)==1
+        assert keys_of(uri,idle_team)==0 and keys_of(uri,busy_team)==1
+        assert query(uri,'select count(*) from private.observer_providers where id=%s',(idle_key,))==[(0,)]
+        assert team_model(uri,idle)=={'mode':'stored','saved':None}
+        # An unsettled reservation also holds the key after the run has left the queue.
+        query(uri,"update public.observer_runs set status='scored',finished_at=now(),score=1 where id=%s",(run,))
+        query(uri,"update public.observer_batches set status='scored',finished_at=now(),score=1")
+        provider=query(uri,'select provider_id from private.observer_team_models where team_id=%s',(busy_team,))[0][0]
+        call=uuid.uuid4()
+        query(uri,"""insert into private.observer_provider_usage(provider_id,usage_day) values(%s,current_date) on conflict do nothing""",(provider,))
+        query(uri,"""insert into private.observer_model_calls(id,run_id,provider_id,usage_day,request_digest,reserved_tokens)
+              values(%s,%s,%s,current_date,%s,5)""",(call,run,provider,'e'*64))
+        assert auto_purge(uri)==0
+        query(uri,"update private.observer_model_calls set status='settled',actual_tokens=5,settled_at=now() where id=%s",(call,))
+        # The open acceptance phase restricted to this team still holds its key.
+        assert auto_purge(uri)==0
+        query(uri,"update public.phases set ends_at=now()-interval '10 days' where id=%s",(acceptance,))
+        # The used key keeps only a keyless receipt anchor, as with the manual purge.
+        assert auto_purge(uri)==1 and auto_purge(uri)==0
+        assert query(uri,'select encrypted_key,enabled from private.observer_providers where id=%s',(provider,))==[('',False)]
+        audit=query(uri,"select detail from public.audit_log where action='observer.provider_keys_auto_purged' order by id")
+        assert [a[0] for a in audit]==[{'count':1,'teams':[str(idle_team)]},{'count':1,'teams':[str(busy_team)]}]
+        assert CIPHER not in str(audit)
+        # The manual purge keeps working alongside it.
+        save(uri,idle);assert rpc(uri,'observer_purge_provider_keys')==1
     finally:
         server.cleanup()
